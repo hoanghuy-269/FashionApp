@@ -1,0 +1,74 @@
+{
+    "roles": [
+        {
+            "id": "r1",
+            "name": "customer",
+            "description": "Khách hàng mua sắm"
+        },
+        {
+            "id": "r2",
+            "name": "shop",
+            "description": "Nhân viên / Chủ shop"
+        },
+        {
+            "id": "r3",
+            "name": "admin",
+            "description": "Quản trị viên hệ thống"
+        }
+    ],
+    "login_methods": [
+        {
+            "id": "m1",
+            "name": "local",
+            "description": "Đăng nhập bằng tài khoản & mật khẩu"
+        },
+        {
+            "id": "m2",
+            "name": "google",
+            "description": "Đăng nhập qua Google"
+        },
+        {
+            "id": "m3",
+            "name": "facebook",
+            "description": "Đăng nhập qua Facebook"
+        }
+    ],
+    "users": [
+        {
+            "id": "u1",
+            "name": "Nguyễn Văn A",
+            "email": "vana@gmail.com",
+            "username": "vana01",
+            "password": "123456",
+            "avatar": "https://example.com/avatar1.png",
+            "phone": "0909123456",
+            "address": "Hà Nội",
+            "roleId": "r1",
+            "loginMethodId": "m1"
+        },
+        {
+            "id": "u2",
+            "name": "Shop ABC",
+            "email": "shopabc@gmail.com",
+            "username": "shopabc",
+            "password": "abc123",
+            "avatar": "https://example.com/avatar2.png",
+            "phone": "0909888777",
+            "address": "TP.HCM",
+            "roleId": "r2",
+            "loginMethodId": "m1"
+        },
+        {
+            "id": "u3",
+            "name": "Trần Thị C",
+            "email": "tranthic@gmail.com",
+            "username": "",
+            "password": "",
+            "avatar": "https://example.com/avatar3.png",
+            "phone": "0909555444",
+            "address": "Đà Nẵng",
+            "roleId": "r1",
+            "loginMethodId": "m2"
+        }
+    ]
+}
