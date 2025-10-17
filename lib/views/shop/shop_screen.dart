@@ -1,4 +1,5 @@
-import 'package:fashion_app/views/shop/shop_employmanagement_screen.dart';
+import 'package:fashion_app/views/shop/shop_personnal_screen.dart';
+import 'package:fashion_app/views/shop/shop_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -45,10 +46,20 @@ class _ShopHomeState extends State<ShopHome> {
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: width * 0.05,
-                        backgroundColor: Colors.blue.shade100,
-                        child: const Icon(Icons.person, color: Colors.blue),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ShopProfileScreen(),
+                            ),
+                          );
+                        },
+                        child: CircleAvatar(
+                          radius: width * 0.05,
+                          backgroundColor: Colors.blue.shade100,
+                          child: const Icon(Icons.person, color: Colors.blue),
+                        ),
                       ),
                       SizedBox(width: width * 0.03),
                       Text(
@@ -98,7 +109,7 @@ class _ShopHomeState extends State<ShopHome> {
               // danh sách các chức năng
               SizedBox(height: height * 0.04),
               Text(
-                "Một Số chức năng",
+                "Quản lí cửa hàng",
                 style: TextStyle(
                   fontSize: width * 0.04,
                   fontWeight: FontWeight.bold,
@@ -140,7 +151,7 @@ class _ShopHomeState extends State<ShopHome> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ShopEmploymanagementScreen(),
+                          builder: (context) => ShopPersonnalScreen(),
                         ),
                       );
                     },
@@ -225,11 +236,6 @@ class _ShopHomeState extends State<ShopHome> {
               fontWeight: FontWeight.bold,
               color: Colors.blue,
             ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            "12 đơn hoàn tất, 1 đơn huỷ",
-            style: TextStyle(fontSize: 14, color: Colors.black54),
           ),
         ],
       ),

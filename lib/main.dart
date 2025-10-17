@@ -1,4 +1,4 @@
-import 'package:fashion_app/views/shop/shophome_screen.dart';
+import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';

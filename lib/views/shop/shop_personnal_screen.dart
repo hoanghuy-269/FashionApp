@@ -1,17 +1,17 @@
-import 'package:fashion_app/views/shop/shop_addemploy_creen.dart';
+import 'package:fashion_app/views/shop/shop_addpersonal_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-class ShopEmploymanagementScreen extends StatefulWidget {
-  const ShopEmploymanagementScreen({super.key});
+class ShopPersonnalScreen extends StatefulWidget {
+  const ShopPersonnalScreen({super.key});
 
   @override
-  State<ShopEmploymanagementScreen> createState() =>
-      _ShopEmploymanagementScreenState();
+  State<ShopPersonnalScreen> createState() =>
+      _ShopPersonnalScreenState();
 }
 
-class _ShopEmploymanagementScreenState
-    extends State<ShopEmploymanagementScreen> {
+class _ShopPersonnalScreenState
+    extends State<ShopPersonnalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,6 +30,7 @@ class _ShopEmploymanagementScreenState
           IconButton(
             onPressed: () {
               showDialog(
+                barrierDismissible: false,
                 context: context,
                 builder: (_) => const ShopAddemployCreen(),
               );
