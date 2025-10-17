@@ -1,8 +1,10 @@
+import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:fashion_app/views/shop/shop_personnal_screen.dart';
 import 'package:fashion_app/views/shop/shop_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:provider/provider.dart';
 
 class ShopHome extends StatefulWidget {
   const ShopHome({super.key});
@@ -28,6 +30,7 @@ class _ShopHomeState extends State<ShopHome> {
 
   @override
   Widget build(BuildContext context) {
+    final vm = Provider.of<ShopViewModel>(context, listen: false);
     final size = MediaQuery.of(context).size;
     final width = size.width;
     final height = size.height;
@@ -63,7 +66,7 @@ class _ShopHomeState extends State<ShopHome> {
                       ),
                       SizedBox(width: width * 0.03),
                       Text(
-                        "Tên Shop",
+                         vm.currentShop?.shopName ?? "Tên cửa hàng",
                         style: TextStyle(
                           fontSize: width * 0.045,
                           fontWeight: FontWeight.bold,

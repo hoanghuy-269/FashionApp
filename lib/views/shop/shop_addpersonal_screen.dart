@@ -1,9 +1,12 @@
 import 'dart:io';
 
-import 'package:fashion_app/core/utils/FlushbarExtension.dart';
+import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
+import 'package:fashion_app/data/models/shopstaff_model.dart';
+import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 class ShopAddemployCreen extends StatefulWidget {
   const ShopAddemployCreen({super.key});
@@ -21,7 +24,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
   File? frontID;
   File? backID;
 
-  String validatEmploy(String? value) {
+  bool validatEmploy() {
     if (nameController.text.trim().isEmpty ||
         acountController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty ||
@@ -29,12 +32,14 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
         frontID == null ||
         backID == null) {
       context.showError('Vui lòng điền đầy đủ thông tin');
+      return false;
     }
     if (selectedRole.isEmpty) {
       context.showError('Vui lòng chọn chức vụ');
+      return false;
     }
     context.showSuccess('Thêm nhân viên thành công');
-    return '';
+    return true;
   }
 
   Future<void> pickImage(bool isFront) async {
@@ -88,7 +93,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                 prefixIcon: Icons.lock_outline,
                 obscureText: true,
               ),
-        
+
               const SizedBox(height: 5),
               _buildInputField(
                 'Căn cước công dân',
@@ -118,13 +123,13 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                 ],
               ),
               const SizedBox(height: 8),
-        
+
               const Text(
                 "Chức vụ ",
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
               ),
               const SizedBox(height: 10),
-        
+
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -136,8 +141,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                 ),
               ),
               const SizedBox(height: 16),
-        
-        
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -149,7 +153,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        padding: const EdgeInsets.all(10)
+                        padding: const EdgeInsets.all(10),
                       ),
                       onPressed: () {
                         Navigator.of(context).pop();
@@ -162,23 +166,58 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      
                     ),
                   ),
                   const SizedBox(width: 10),
                   SizedBox(
                     width: MediaQuery.of(context).size.width * 0.30,
-        
+
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        padding: const EdgeInsets.all(10)
+                        padding: const EdgeInsets.all(10),
                       ),
-                      onPressed: () {
-                        validatEmploy(null);
+                      onPressed: () async {
+                        if (!validatEmploy()) return;
+                        final vm = Provider.of<ShopStaffViewmodel>(
+                          context,
+                          listen: false,
+                        );
+
+                        final frontUrl =
+                            await GalleryUtil.uploadImageToFirebase(
+                              frontID!,
+                              folderName: 'staff_ids/front',
+                            );
+                        final backUrl = await GalleryUtil.uploadImageToFirebase(
+                          backID!,
+                          folderName: 'staff_ids/back',
+                        );
+
+                        if (frontUrl == null || backUrl == null) {
+                          context.showError(
+                            'Tải ảnh thất bại. Vui lòng thử lại!',
+                          );
+                          return;
+                        }
+                        final newEmploee = ShopstaffModel(
+                          employeeId: '123',
+                          shopId: '123',
+                          fullName: nameController.text.trim(),
+                          password: passwordController.text.trim(),
+                          nameaccount: acountController.text.trim(),
+                          nationalId: cccdControler.text.trim(),
+                          nationalIdFront: frontUrl,
+                          nationalIdBack: backUrl,
+                          roleIds: selectedRole,
+                          createdAt: DateTime.now(),
+                        );
+
+                         vm.addNewStaff(newEmploee);
+                        context.showSuccess('Thêm nhân viên thành công');
                       },
                       child: Text(
                         "Thêm",

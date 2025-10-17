@@ -1,6 +1,9 @@
+import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
+import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -14,7 +17,20 @@ void main() async {
   } catch (e) {
     print(" Lỗi kết nối Firebase: $e");
   }
-  runApp(const MyApp());
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => ShopViewModel(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ShopStaffViewmodel(),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget  {

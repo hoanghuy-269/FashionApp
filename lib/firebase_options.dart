@@ -50,19 +50,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDlpLFtVpEkzwLepv0hQc71gN2chYQUyzQ',
-    appId: '1:941303536123:android:6778ca33e6f4de637cd35e',
-    messagingSenderId: '941303536123',
-    projectId: 'fashion-app-a9018',
-    storageBucket: 'fashion-app-a9018.firebasestorage.app',
+    apiKey: 'AIzaSyCky5R4UUm0MCHlX130aAIfKqTWTufXN3M',
+    appId: '1:314949258585:android:720eb557102781a9ec9048',
+    messagingSenderId: '314949258585',
+    projectId: 'fashional-app',
+    storageBucket: 'fashional-app.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBkKKwmSttfe2g_EODK1gsey9MOlLpPCq4',
-    appId: '1:941303536123:ios:0326b44bcaad5d4f7cd35e',
-    messagingSenderId: '941303536123',
-    projectId: 'fashion-app-a9018',
-    storageBucket: 'fashion-app-a9018.firebasestorage.app',
+    apiKey: 'AIzaSyC7AgXknj__TCvLGiLn0ZhyWbIoWCLg2-A',
+    appId: '1:314949258585:ios:61f6effa567e9bfeec9048',
+    messagingSenderId: '314949258585',
+    projectId: 'fashional-app',
+    storageBucket: 'fashional-app.firebasestorage.app',
     iosBundleId: 'com.example.fashionApp',
   );
+
 }

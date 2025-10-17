@@ -27,7 +27,7 @@ class ShopModel {
     required this.activityStatusId,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  factory ShopModel.fromJson(Map<String, dynamic> json) {
+  factory ShopModel.fromtoMap(Map<String, dynamic> json) {
     return ShopModel(
       shopId: json['shopId'],
       userId: json['userId'],
@@ -44,7 +44,7 @@ class ShopModel {
     );
   }
   
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     return {
       'shopId': shopId,
       'userId': userId,
@@ -60,5 +60,7 @@ class ShopModel {
       'activityStatusId': activityStatusId,
     };
   }
+
+  void addShop(ShopModel newShop) {}
 }
 
