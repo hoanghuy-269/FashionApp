@@ -40,6 +40,8 @@ dependencies:
   firebase_storage: ^13.0.3
   cloud_firestore: ^6.0.3
   provider: ^6.1.5+1
+  pin_code_fields: ^8.0.1
+  firebase_auth: ^6.1.1
   
 
 dev_dependencies:
@@ -59,15 +61,11 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   assets:
-    - assets/icons/
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
+  - assets/icons/
+  - assets/images/
+  
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  assets:
-  - assets/images/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
