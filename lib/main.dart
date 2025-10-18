@@ -1,3 +1,7 @@
+import 'package:fashion_app/views/admin_confirm_screen.dart';
+import 'package:fashion_app/views/admin_home_screen.dart';
+import 'package:fashion_app/views/admin_manageShop_screen.dart';
+import 'package:fashion_app/views/admin_shopAccount_screeen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -18,7 +22,7 @@ void main() async {
 
 class MyApp extends StatelessWidget  {
   const MyApp({super.key});
-
+ 
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +50,9 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
   return Scaffold(
-
+    body: Center(
+      child: AdminHomeScreen(),
+    ),
   );
   }
 }
