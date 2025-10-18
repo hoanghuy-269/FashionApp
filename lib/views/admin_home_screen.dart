@@ -29,14 +29,30 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       backgroundColor: const Color(0xFFF3F5F7),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(isDesktop ? 48 : isTablet ? 24 : 16),
+          padding: EdgeInsets.all(
+            isDesktop
+                ? 48
+                : isTablet
+                ? 24
+                : 16,
+          ),
           child: Column(
             children: [
               // --- Header ---
               Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isDesktop ? 48 : isTablet ? 24 : 16,
-                  vertical: isDesktop ? 24 : isTablet ? 16 : 12,
+                  horizontal:
+                      isDesktop
+                          ? 48
+                          : isTablet
+                          ? 24
+                          : 16,
+                  vertical:
+                      isDesktop
+                          ? 24
+                          : isTablet
+                          ? 16
+                          : 12,
                 ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -58,8 +74,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     CircleAvatar(
                       radius: isTablet ? 30 : 24,
                       backgroundColor: const Color.fromARGB(255, 41, 127, 129),
-                      child: Icon(Icons.person,
-                          color: Colors.white, size: isTablet ? 34 : 28),
+                      child: Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: isTablet ? 34 : 28,
+                      ),
                     ),
                     SizedBox(width: isTablet ? 16 : 12),
                     Expanded(
@@ -73,8 +92,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.notifications_none,
-                          size: isTablet ? 30 : 26),
+                      icon: Icon(
+                        Icons.notifications_none,
+                        size: isTablet ? 30 : 26,
+                      ),
                       color: Colors.blueGrey[700],
                       onPressed: () {
                         Navigator.push(
@@ -89,7 +110,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 ),
               ),
 
-              SizedBox(height: isDesktop ? 32 : isTablet ? 24 : 20),
+              SizedBox(
+                height:
+                    isDesktop
+                        ? 32
+                        : isTablet
+                        ? 24
+                        : 20,
+              ),
 
               // --- 2 nút thống kê có ẩn/hiện số riêng ---
               Row(
@@ -106,7 +134,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       },
                     ),
                   ),
-                  SizedBox(width: isDesktop ? 32 : isTablet ? 20 : 16),
+                  SizedBox(
+                    width:
+                        isDesktop
+                            ? 32
+                            : isTablet
+                            ? 20
+                            : 16,
+                  ),
                   Expanded(
                     child: _buildStatButton(
                       'Số đơn',
@@ -122,81 +157,123 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 ],
               ),
 
-              SizedBox(height: isDesktop ? 32 : isTablet ? 24 : 20),
+              SizedBox(
+                height:
+                    isDesktop
+                        ? 32
+                        : isTablet
+                        ? 24
+                        : 20,
+              ),
 
               // --- 3 ô chính, mỗi ô một dòng ---
               Expanded(
-                child: isDesktop
-                    ? GridView.count(
-                        crossAxisCount: 2,
-                        childAspectRatio: 2.5,
-                        crossAxisSpacing: 24,
-                        mainAxisSpacing: 24,
-                        children: [
-                          _buildGridItemFullWidth(Icons.people_alt_rounded,
-                              'Khách hàng', Colors.teal, () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const AdminShopaccountScreeen(),
-                              ),
-                            );
-                          }),
-                          _buildGridItemFullWidth(Icons.manage_accounts_rounded,
-                              'Quản lý shop', Colors.deepPurple, () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const AdminManageshopScreen(),
-                              ),
-                            );
-                          }),
-                          _buildGridItemFullWidth(Icons.local_offer_rounded,
-                              'Mã giảm giá', Colors.pinkAccent, () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const AdminDiscountScreen(),
-                              ),
-                            );
-                          }),
-                        ],
-                      )
-                    : ListView(
-                        children: [
-                          _buildGridItemFullWidth(Icons.people_alt_rounded,
-                              'Khách hàng', Colors.teal, () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const AdminShopaccountScreeen(),
-                              ),
-                            );
-                          }),
-                          SizedBox(height: isTablet ? 16 : 12),
-                          _buildGridItemFullWidth(Icons.manage_accounts_rounded,
-                              'Quản lý shop', Colors.deepPurple, () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const AdminManageshopScreen(),
-                              ),
-                            );
-                          }),
-                          SizedBox(height: isTablet ? 16 : 12),
-                          _buildGridItemFullWidth(Icons.local_offer_rounded,
-                              'Mã giảm giá', Colors.pinkAccent, () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const AdminDiscountScreen(),
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
+                child:
+                    isDesktop
+                        ? GridView.count(
+                          crossAxisCount: 2,
+                          childAspectRatio: 2.5,
+                          crossAxisSpacing: 24,
+                          mainAxisSpacing: 24,
+                          children: [
+                            _buildGridItemFullWidth(
+                              Icons.people_alt_rounded,
+                              'Khách hàng',
+                              Colors.teal,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminShopaccountScreeen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildGridItemFullWidth(
+                              Icons.manage_accounts_rounded,
+                              'Quản lý shop',
+                              Colors.deepPurple,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminManageshopScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildGridItemFullWidth(
+                              Icons.local_offer_rounded,
+                              'Mã giảm giá',
+                              Colors.pinkAccent,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminDiscountScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        )
+                        : ListView(
+                          children: [
+                            _buildGridItemFullWidth(
+                              Icons.people_alt_rounded,
+                              'Khách hàng',
+                              Colors.teal,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminShopaccountScreeen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(height: isTablet ? 16 : 12),
+                            _buildGridItemFullWidth(
+                              Icons.manage_accounts_rounded,
+                              'Quản lý shop',
+                              Colors.deepPurple,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminManageshopScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(height: isTablet ? 16 : 12),
+                            _buildGridItemFullWidth(
+                              Icons.local_offer_rounded,
+                              'Mã giảm giá',
+                              Colors.pinkAccent,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminDiscountScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
               ),
             ],
           ),
@@ -206,7 +283,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   }
 
   Widget _buildStatButton(
-      String title, String value, bool isTablet, VoidCallback toggle) {
+    String title,
+    String value,
+    bool isTablet,
+    VoidCallback toggle,
+  ) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: isTablet ? 20 : 16),
       decoration: BoxDecoration(
@@ -251,14 +332,18 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               value.contains('*') ? Icons.visibility_off : Icons.visibility,
               color: Colors.grey[700],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
   Widget _buildGridItemFullWidth(
-      IconData icon, String title, Color color, VoidCallback onTap) {
+    IconData icon,
+    String title,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: onTap,
