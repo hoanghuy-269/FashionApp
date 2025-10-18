@@ -1,3 +1,7 @@
+import 'package:fashion_app/views/admin_confirm_screen.dart';
+import 'package:fashion_app/views/admin_home_screen.dart';
+import 'package:fashion_app/views/admin_manageShop_screen.dart';
+import 'package:fashion_app/views/admin_shopAccount_screeen.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
@@ -51,6 +55,6 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: ShopHome()));
+    return Scaffold(body: Center(child: AdminHomeScreen()));
   }
 }
