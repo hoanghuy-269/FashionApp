@@ -6,7 +6,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -22,12 +21,8 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => ShopViewModel(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ShopStaffViewmodel(),
-        ),
+        ChangeNotifierProvider(create: (_) => ShopViewModel()),
+        ChangeNotifierProvider(create: (_) => ShopStaffViewmodel()),
       ],
       child: const MyApp(),
     ),
@@ -54,15 +49,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   @override
-
   Widget build(BuildContext context) {
-  return Scaffold(
-    body: Center(
-      child: ShopHome(
-      ),
-    ),
-  );
+    return Scaffold(body: Center(child: ShopHome()));
   }
 }
