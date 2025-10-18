@@ -1,5 +1,9 @@
+import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
+import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
+import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'views/login_screen.dart';
 import 'views/register_screen.dart';
@@ -17,7 +21,20 @@ void main() async {
   } catch (e) {
     print(" Lỗi kết nối Firebase: $e");
   }
-  runApp(const MyApp());
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => ShopViewModel(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ShopStaffViewmodel(),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -26,19 +43,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      //home: VerificationScreen(phoneNumber: "00000000"),
-      home: RegisterScreen(),
+      debugShowCheckedModeBanner: false,
+      home: const MyHomePage(),
     );
   }
 }
 
-// class MyHomePage extends StatefulWidget {
-//   const MyHomePage({super.key, required this.title});
-//   final String title;
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
 
 //   @override
 //   State<MyHomePage> createState() => _MyHomePageState();
@@ -46,10 +58,14 @@ class MyApp extends StatelessWidget {
 
 // class _MyHomePageState extends State<MyHomePage> {
 
-//   @override
-//   Widget build(BuildContext context) {
-//   return Scaffold(
+  @override
 
-//   );
-//   }
-// }
+  Widget build(BuildContext context) {
+  return Scaffold(
+    body: Center(
+      child: ShopHome(
+      ),
+    ),
+  );
+  }
+}
