@@ -15,7 +15,7 @@ class ShopHome extends StatefulWidget {
 
 class _ShopHomeState extends State<ShopHome> {
   String selectedTab = "Doanh thu";
-
+  
   @override
   void initState() {
     super.initState();
@@ -26,11 +26,15 @@ class _ShopHomeState extends State<ShopHome> {
         statusBarIconBrightness: Brightness.dark,
       ),
     );
+    // lấy id mãu cửa hàng hiện tại
+    WidgetsBinding.instance.addPostFrameCallback((_){
+      Provider.of<ShopViewModel>(context, listen: false).fetchShopById("123");
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final vm = Provider.of<ShopViewModel>(context, listen: false);
+    final vm = Provider.of<ShopViewModel>(context);
     final size = MediaQuery.of(context).size;
     final width = size.width;
     final height = size.height;

@@ -1,8 +1,8 @@
 import 'dart:io';
-
 import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/data/models/shopstaff_model.dart';
+import 'package:fashion_app/viewmodels/rolestaff_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,6 +23,14 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
   String selectedRole = "";
   File? frontID;
   File? backID;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<RolestaffViewmodel>(context, listen: false).fetchRoles();
+    });
+  }
 
   bool validatEmploy() {
     if (nameController.text.trim().isEmpty ||
@@ -57,6 +65,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
 
   @override
   Widget build(BuildContext context) {
+    // UI that needs RolestaffViewmodel updates uses Consumer below
     return Dialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -132,12 +141,14 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
 
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildRoleOption("Ship"),
-                    _buildRoleOption("Thu Ngân"),
-                    _buildRoleOption("Quản lí kho"),
-                  ],
+                child: Consumer<RolestaffViewmodel>(
+                  builder: (context, vrModel, _) {
+                    return Row(
+                      children: vrModel.roles
+                          .map((role) => _buildRoleOption(role.roleName, role.roleId))
+                          .toList(),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 16),
@@ -182,30 +193,29 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                       ),
                       onPressed: () async {
                         if (!validatEmploy()) return;
-                        final vm = Provider.of<ShopStaffViewmodel>(
-                          context,
-                          listen: false,
-                        );
 
-                        final frontUrl =
-                            await GalleryUtil.uploadImageToFirebase(
-                              frontID!,
-                              folderName: 'staff_ids/front',
-                            );
+                        // Capture local context-independent variables
+                        final shopVm = Provider.of<ShopStaffViewmodel>(context, listen: false);
+
+                        // upload images
+                        final frontUrl = await GalleryUtil.uploadImageToFirebase(
+                          frontID!,
+                          folderName: 'staff_ids/front',
+                        );
                         final backUrl = await GalleryUtil.uploadImageToFirebase(
                           backID!,
                           folderName: 'staff_ids/back',
                         );
 
                         if (frontUrl == null || backUrl == null) {
-                          context.showError(
-                            'Tải ảnh thất bại. Vui lòng thử lại!',
-                          );
+                          if (!mounted) return;
+                          context.showError('Tải ảnh thất bại. Vui lòng thử lại!');
                           return;
                         }
+
                         final newEmploee = ShopstaffModel(
-                          employeeId: '123',
-                          shopId: '123',
+                          employeeId: '3433',
+                          shopId: 'shop123',
                           fullName: nameController.text.trim(),
                           password: passwordController.text.trim(),
                           nameaccount: acountController.text.trim(),
@@ -216,8 +226,9 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                           createdAt: DateTime.now(),
                         );
 
-                         vm.addNewStaff(newEmploee);
-                        context.showSuccess('Thêm nhân viên thành công');
+                        await shopVm.addNewStaff(newEmploee);
+
+                        if (!mounted) return;
                       },
                       child: Text(
                         "Thêm",
@@ -385,21 +396,34 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     );
   }
 
-  Widget _buildRoleOption(String role) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Radio<String>(
-          value: role,
-          groupValue: selectedRole,
-          onChanged: (String? value) {
-            setState(() {
-              selectedRole = value!;
-            });
-          },
+  Widget _buildRoleOption(String roleName, String roleId) {
+    final isSelected = selectedRole == roleId;
+
+    return GestureDetector(
+      onTap:
+          () => setState(() {
+            selectedRole = roleId;
+          }),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? Colors.blueAccent : Colors.grey,
+            width: 1.5,
+          ),
         ),
-        Text(role),
-      ],
+        child: Text(
+          roleName,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
     );
   }
 }
