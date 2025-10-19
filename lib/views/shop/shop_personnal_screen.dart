@@ -2,6 +2,8 @@ import 'package:fashion_app/viewmodels/rolestaff_viewmodel.dart';
 import 'package:fashion_app/views/shop/shop_addpersonal_screen.dart';
 import 'package:fashion_app/views/shop/shop_updatestaff_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:fashion_app/core/utils/flushbar_extension.dart';
+import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
@@ -24,7 +26,11 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
       roleVm.fetchRoles().catchError((e, st) => debugPrint('role error $e\n$st'));
 
       final staffVm = Provider.of<ShopStaffViewmodel>(context, listen: false);
-      staffVm.fetchStaffsByShop('123').catchError((e, st) => debugPrint('staff error $e\n$st'));
+      final shopVm = Provider.of<ShopViewModel>(context, listen: false);
+      final shopId = shopVm.currentShop?.shopId;
+      if (shopId != null && shopId.isNotEmpty) {
+        staffVm.fetchStaffsByShop(shopId).catchError((e, st) => debugPrint('staff error $e\n$st'));
+      }
     });
   }
 
@@ -90,9 +96,8 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
 
               Consumer<ShopStaffViewmodel>(
                 builder: (context, vm, _) {
-                  final shopId = '123';
-                  final staffinShop =
-                      vm.staffs.where((s) => s.shopId == shopId).toList();
+          final shopId = Provider.of<ShopViewModel>(context, listen: false).currentShop?.shopId ?? '';
+          final staffinShop = vm.staffs.where((s) => s.shopId == shopId).toList();
                   return Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -173,8 +178,18 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
                                               child: const Text('Hủy'),
                                             ),
                                             TextButton(
-                                              onPressed: () {
+                                              onPressed: () async {
+                                                // close the dialog first
                                                 Navigator.pop(context);
+                                                try {
+                                                  final staffVm = Provider.of<ShopStaffViewmodel>(context, listen: false);
+                                                  await staffVm.deleteStaff(staff.employeeId);
+                                                  if (!mounted) return;
+                                                  // context.showSuccess('Xóa nhân viên thành công');
+                                                } catch (e) {
+                                                  if (!mounted) return;
+                                                  // context.showError('Xóa thất bại: $e');
+                                                }
                                               },
                                               child: const Text(
                                                 'Xóa',

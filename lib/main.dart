@@ -57,7 +57,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    // return Scaffold(body: Center(child: ShopHome()));
-    return Scaffold(body: Center(child: AdminHomeScreen()));
+     return Scaffold(body: Center(child: ShopScreen()));
+    //return Scaffold(body: Center(child: AdminHomeScreen()));
   }
 }

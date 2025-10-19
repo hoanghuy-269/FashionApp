@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/data/models/shopstaff_model.dart';
 import 'package:fashion_app/data/repositories/staff_repositories.dart';
@@ -93,6 +94,12 @@ class ShopStaffViewmodel extends ChangeNotifier {
       String? frontUrl = model.nationalIdFront;
       String? backUrl = model.nationalIdBack;
 
+      // generate Firestore auto-id if employeeId not provided
+      String employeeId = model.employeeId;
+      if (employeeId.isEmpty) {
+        employeeId = FirebaseFirestore.instance.collection('shopstaffs').doc().id;
+      }
+
       if (front != null) {
         frontUrl = await GalleryUtil.uploadImageToFirebase(
           front,
@@ -107,7 +114,7 @@ class ShopStaffViewmodel extends ChangeNotifier {
       }
 
       final updated = ShopstaffModel(
-        employeeId: model.employeeId,
+        employeeId: employeeId,
         shopId: model.shopId,
         fullName: model.fullName,
         password: model.password,

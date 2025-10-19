@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
+import 'package:fashion_app/data/models/shopstaff_model.dart';
 import 'package:fashion_app/viewmodels/rolestaff_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
+import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -194,42 +196,36 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                       onPressed: () async {
                         if (!validatEmploy()) return;
 
-                        // Capture local context-independent variables
-                        final shopVm = Provider.of<ShopStaffViewmodel>(context, listen: false);
-
-                        // upload images
-                        final frontUrl = await GalleryUtil.uploadImageToFirebase(
-                          frontID!,
-                          folderName: 'staff_ids/front',
-                        );
-                        final backUrl = await GalleryUtil.uploadImageToFirebase(
-                          backID!,
-                          folderName: 'staff_ids/back',
-                        );
-
-                        if (frontUrl == null || backUrl == null) {
-                          if (!mounted) return;
-                          context.showError('Tải ảnh thất bại. Vui lòng thử lại!');
+                        final staffVm = Provider.of<ShopStaffViewmodel>(context, listen: false);
+                        final shopVm = Provider.of<ShopViewModel>(context, listen: false);
+                        final shopId = shopVm.currentShop?.shopId;
+                        if (shopId == null || shopId.isEmpty) {
+                          context.showError('Không có cửa hàng đang được chọn. Vui lòng tạo hoặc chọn cửa hàng.');
                           return;
                         }
 
-                        // final newEmploee = ShopstaffModel(
-                        //   employeeId: 'shop234',
-                        //   shopId: 'shop123',
-                        //   fullName: nameController.text.trim(),
-                        //   password: passwordController.text.trim(),
-                        //   nameaccount: acountController.text.trim(),
-                        //   nationalId: cccdControler.text.trim(),
-                        //   nationalIdFront: frontUrl,
-                        //   nationalIdBack: backUrl,
-                        //   roleIds: selectedRole,
-                        //   createdAt: DateTime.now(),
-                        // );
+                        final model = ShopstaffModel(
+                          employeeId: '', // let viewmodel generate id
+                          shopId: shopId,
+                          fullName: nameController.text.trim(),
+                          password: passwordController.text.trim(),
+                          nameaccount: acountController.text.trim(),
+                          nationalId: cccdControler.text.trim(),
+                          nationalIdFront: null,
+                          nationalIdBack: null,
+                          roleIds: selectedRole,
+                          createdAt: DateTime.now(),
+                        );
 
-                        // await shopVm.addNewStaff(newEmploee);
-
-                        if (!mounted) return;
-                        Navigator.of(context).pop();
+                        try {
+                          await staffVm.saveStaff(model, front: frontID, back: backID);
+                          if (!mounted) return;
+                          Navigator.of(context).pop();
+                          print("  Thêm nhân viên thành công");
+                        } catch (e) {
+                          if (!mounted) return;
+                        print("  Lưu thất bại: $e");
+                        }
                       },
                       child: Text(
                         "Thêm",

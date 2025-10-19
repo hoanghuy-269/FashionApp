@@ -6,14 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
-class ShopHome extends StatefulWidget {
-  const ShopHome({super.key});
+class ShopScreen extends StatefulWidget {
+  const ShopScreen({super.key});
 
   @override
-  State<ShopHome> createState() => _ShopHomeState();
+  State<ShopScreen> createState() => _ShopScreenState();
 }
 
-class _ShopHomeState extends State<ShopHome> {
+class _ShopScreenState extends State<ShopScreen> {
   String selectedTab = "Doanh thu";
   
   @override
@@ -26,9 +26,15 @@ class _ShopHomeState extends State<ShopHome> {
         statusBarIconBrightness: Brightness.dark,
       ),
     );
-    // lấy id mãu cửa hàng hiện tại
     WidgetsBinding.instance.addPostFrameCallback((_){
-      Provider.of<ShopViewModel>(context, listen: false).fetchShopById("123");
+      final vm = Provider.of<ShopViewModel>(context, listen: false);
+      () async {
+        try {
+          await vm.fetchShopForCurrentUser();
+        } catch (e, st) {
+          debugPrint('fetch shop error $e\n$st');
+        }
+      }();
     });
   }
 
