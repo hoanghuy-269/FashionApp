@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
-import 'package:fashion_app/data/models/shopstaff_model.dart';
 import 'package:fashion_app/viewmodels/rolestaff_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +27,9 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<RolestaffViewmodel>(context, listen: false).fetchRoles();
+       final roleVm = Provider.of<RolestaffViewmodel>(context, listen: false);
+        roleVm.fetchRoles();
+
     });
   }
 
@@ -65,7 +66,6 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
 
   @override
   Widget build(BuildContext context) {
-    // UI that needs RolestaffViewmodel updates uses Consumer below
     return Dialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -131,7 +131,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 20),
 
               const Text(
                 "Chức vụ ",
@@ -142,9 +142,9 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Consumer<RolestaffViewmodel>(
-                  builder: (context, vrModel, _) {
+                  builder: (context, sfroles, _) {
                     return Row(
-                      children: vrModel.roles
+                      children: sfroles.roles
                           .map((role) => _buildRoleOption(role.roleName, role.roleId))
                           .toList(),
                     );
@@ -213,22 +213,23 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                           return;
                         }
 
-                        final newEmploee = ShopstaffModel(
-                          employeeId: '3433',
-                          shopId: 'shop123',
-                          fullName: nameController.text.trim(),
-                          password: passwordController.text.trim(),
-                          nameaccount: acountController.text.trim(),
-                          nationalId: cccdControler.text.trim(),
-                          nationalIdFront: frontUrl,
-                          nationalIdBack: backUrl,
-                          roleIds: selectedRole,
-                          createdAt: DateTime.now(),
-                        );
+                        // final newEmploee = ShopstaffModel(
+                        //   employeeId: 'shop234',
+                        //   shopId: 'shop123',
+                        //   fullName: nameController.text.trim(),
+                        //   password: passwordController.text.trim(),
+                        //   nameaccount: acountController.text.trim(),
+                        //   nationalId: cccdControler.text.trim(),
+                        //   nationalIdFront: frontUrl,
+                        //   nationalIdBack: backUrl,
+                        //   roleIds: selectedRole,
+                        //   createdAt: DateTime.now(),
+                        // );
 
-                        await shopVm.addNewStaff(newEmploee);
+                        // await shopVm.addNewStaff(newEmploee);
 
                         if (!mounted) return;
+                        Navigator.of(context).pop();
                       },
                       child: Text(
                         "Thêm",
@@ -396,18 +397,20 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     );
   }
 
-  Widget _buildRoleOption(String roleName, String roleId) {
+  Widget _buildRoleOption(
+    String roleName,
+    String roleId, {
+    VoidCallback? onTap,
+    VoidCallback? onLongPress,
+  }) {
     final isSelected = selectedRole == roleId;
 
     return GestureDetector(
-      onTap:
-          () => setState(() {
-            selectedRole = roleId;
-          }),
+      onTap: onTap ?? () => setState(() => selectedRole = roleId),
+      onLongPress: onLongPress,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
         decoration: BoxDecoration(
           color: isSelected ? Colors.blue : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(10),

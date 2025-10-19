@@ -1,17 +1,40 @@
+import 'package:fashion_app/viewmodels/rolestaff_viewmodel.dart';
 import 'package:fashion_app/views/shop/shop_addpersonal_screen.dart';
+import 'package:fashion_app/views/shop/shop_updatestaff_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:provider/provider.dart';
+import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
 
 class ShopPersonnalScreen extends StatefulWidget {
   const ShopPersonnalScreen({super.key});
 
   @override
-  State<ShopPersonnalScreen> createState() =>
-      _ShopPersonnalScreenState();
+  State<ShopPersonnalScreen> createState() => _ShopPersonnalScreenState();
 }
 
-class _ShopPersonnalScreenState
-    extends State<ShopPersonnalScreen> {
+class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final roleVm = Provider.of<RolestaffViewmodel>(context, listen: false);
+      roleVm.fetchRoles().catchError((e, st) => debugPrint('role error $e\n$st'));
+
+      final staffVm = Provider.of<ShopStaffViewmodel>(context, listen: false);
+      staffVm.fetchStaffsByShop('123').catchError((e, st) => debugPrint('staff error $e\n$st'));
+    });
+  }
+
+  String _getRoleName(BuildContext context, String roleId) {
+    final roleVm = Provider.of<RolestaffViewmodel>(context, listen: false);
+    
+    if(!mounted) return '';
+    return roleVm.getRoleName(roleId, fallback: 'Chưa xác định');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,7 +55,7 @@ class _ShopPersonnalScreenState
               showDialog(
                 barrierDismissible: false,
                 context: context,
-                builder: (_) =>  ShopAddemployCreen(),
+                builder: (_) => ShopAddemployCreen(),
               );
             },
             icon: Icon(Icons.add),
@@ -65,83 +88,121 @@ class _ShopPersonnalScreenState
                 ),
               ),
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-
-                child: Text(
-                  "Tổng nhân viên : 5",
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                ),
+              Consumer<ShopStaffViewmodel>(
+                builder: (context, vm, _) {
+                  final shopId = '123';
+                  final staffinShop =
+                      vm.staffs.where((s) => s.shopId == shopId).toList();
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      'Tổng nhân viên: ${staffinShop.length}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
+                },
               ),
 
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  itemCount: 4,
-                  itemBuilder: (context, index) {
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.blue.shade100,
-                          child: Icon(Icons.person, color: Colors.blue),
-                        ),
-                        title: Text(
-                          "Nguyên Văn A",
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Text("Chức vụ : Nhân viên thu ngân"),
-                        trailing: PopupMenuButton<String>(
-                          icon: Icon(LucideIcons.moreHorizontal),
-                          onSelected: (value) {
-                            if (value == "edit") {
-                             showDialog(context: context, builder: (_)=> ShopAddemployCreen());
-                            } else if (value == "delete") {
-                              showDialog(
-                                context: context,
-                                builder:
-                                    (context) => AlertDialog(
-                                      title: const Text("Xác nhận xóa"),
-                                      content: const Text(
-                                        "Bạn có chắc muốn xóa nhân viên này không?",
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed:
-                                              () => Navigator.pop(context),
-                                          child: const Text("Hủy"),
+                child: Consumer<ShopStaffViewmodel>(
+                  builder: (context, vm, _) {
+                    if (vm.isLoading && vm.staffs.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (vm.staffs.isEmpty) {
+                      return const Center(child: Text('Không có nhân viên'));
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      itemCount: vm.staffs.length,
+                      itemBuilder: (context, index) {
+                        final staff = vm.staffs[index];
+                        return Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.blue.shade100,
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.blue,
+                              ),
+                            ),
+                            title: Text(
+                              staff.fullName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Chức vụ : ${_getRoleName(context, staff.roleIds)}',
+                            ),
+                            trailing: PopupMenuButton<String>(
+                              icon: const Icon(LucideIcons.moreHorizontal),
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  showDialog(
+                                    context: context,
+                                    builder:
+                                        (_) => ShopUpdatestaffScreen(
+                                          staffToEdit: staff,
                                         ),
-                                        TextButton(
-                                          onPressed: () {
-                                            // Xử lý xóa ở đây
-                                            Navigator.pop(context);
-                                          },
-                                          child: const Text(
-                                            "Xóa",
-                                            style: TextStyle(color: Colors.red),
+                                  );
+                                } else if (value == 'delete') {
+                                  showDialog(
+                                    context: context,
+                                    builder:
+                                        (context) => AlertDialog(
+                                          title: const Text('Xác nhận xóa'),
+                                          content: Text(
+                                            'Bạn có chắc muốn xóa nhân viên "${staff.fullName}" không?',
                                           ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed:
+                                                  () => Navigator.pop(context),
+                                              child: const Text('Hủy'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child: const Text(
+                                                'Xóa',
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
+                                  );
+                                }
+                              },
+                              itemBuilder:
+                                  (context) => const [
+                                    PopupMenuItem(
+                                      value: 'edit',
+                                      child: Text('Chỉnh sửa'),
                                     ),
-                              );
-                            }
-                          },
-                          itemBuilder:
-                              (context) => [
-                                const PopupMenuItem(
-                                  value: "edit",
-                                  child: Text("Chỉnh sửa"),
-                                ),
-                                const PopupMenuItem(
-                                  value: "delete",
-                                  child: Text(" Xóa"),
-                                ),
-                              ],
-                        ),
-                      ),
+                                    PopupMenuItem(
+                                      value: 'delete',
+                                      child: Text(' Xóa'),
+                                    ),
+                                  ],
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),

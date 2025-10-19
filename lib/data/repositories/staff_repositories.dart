@@ -6,8 +6,13 @@ class StaffRepositories {
   final StaffRemotesources _remoteDataSource = StaffRemotesources();
 
   Future<void> addStaff(ShopstaffModel staff) => _remoteDataSource.addStaff(staff);
+  Future<void> updateStaff(ShopstaffModel staff) => _remoteDataSource.updateStaff(staff);
 
   Future<List<ShopstaffModel>> getStaffs() => _remoteDataSource.getStaffs();
 
   Future<ShopstaffModel?> getStaffById(String employeeId) => _remoteDataSource.getStaffById(employeeId);
+
+  Future<List<ShopstaffModel>> getStaffsByShop(String shopId) => _remoteDataSource.getStaffsByShop(shopId);
+
+  Future<void> deleteStaff(String employeeId) => _remoteDataSource.deleteStaff(employeeId);
 }
