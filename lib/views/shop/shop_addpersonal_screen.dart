@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
-import 'package:fashion_app/data/models/shopstaff_model.dart';
-import 'package:fashion_app/viewmodels/rolestaff_viewmodel.dart';
-import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
+import 'package:fashion_app/data/models/storestaff_model.dart';
+import 'package:fashion_app/viewmodels/employee_role_viewmodel.dart';
+import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -29,7 +29,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-       final roleVm = Provider.of<RolestaffViewmodel>(context, listen: false);
+       final roleVm = Provider.of<EmployeeRoleViewmodel>(context, listen: false);
         roleVm.fetchRoles();
 
     });
@@ -143,7 +143,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
 
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: Consumer<RolestaffViewmodel>(
+                child: Consumer<EmployeeRoleViewmodel>(
                   builder: (context, sfroles, _) {
                     return Row(
                       children: sfroles.roles
@@ -184,7 +184,6 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                   const SizedBox(width: 10),
                   SizedBox(
                     width: MediaQuery.of(context).size.width * 0.30,
-
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
@@ -196,7 +195,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                       onPressed: () async {
                         if (!validatEmploy()) return;
 
-                        final staffVm = Provider.of<ShopStaffViewmodel>(context, listen: false);
+                        final staffVm = Provider.of<StorestaffViewmodel>(context, listen: false);
                         final shopVm = Provider.of<ShopViewModel>(context, listen: false);
                         final shopId = shopVm.currentShop?.shopId;
                         if (shopId == null || shopId.isEmpty) {
@@ -204,7 +203,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                           return;
                         }
 
-                        final model = ShopstaffModel(
+                        final model = StorestaffModel(
                           employeeId: '', // let viewmodel generate id
                           shopId: shopId,
                           fullName: nameController.text.trim(),
@@ -221,7 +220,6 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                           await staffVm.saveStaff(model, front: frontID, back: backID);
                           if (!mounted) return;
                           Navigator.of(context).pop();
-                          print("  Thêm nhân viên thành công");
                         } catch (e) {
                           if (!mounted) return;
                         print("  Lưu thất bại: $e");

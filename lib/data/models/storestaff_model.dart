@@ -1,4 +1,4 @@
-class ShopstaffModel {
+class StorestaffModel {
   final String employeeId;
   final String shopId;
   final String fullName;
@@ -11,7 +11,7 @@ class ShopstaffModel {
   final String? nationalIdBack; // mặt sau căn cước công dân
   final DateTime createdAt;
 
-  ShopstaffModel({
+  StorestaffModel({
     required this.employeeId,
     required this.shopId,
     required this.fullName,
@@ -25,8 +25,8 @@ class ShopstaffModel {
     required this.createdAt,
   });
 
-  factory ShopstaffModel.fromMap(Map<String, dynamic> map) {
-    return ShopstaffModel(
+  factory StorestaffModel.fromMap(Map<String, dynamic> map) {
+    return StorestaffModel(
       employeeId: map['employeeId'],
       shopId: map['shopId'],
       fullName: map['fullName'],

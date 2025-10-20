@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:fashion_app/data/models/rolestaff_model.dart';
-import 'package:fashion_app/data/repositories/rolestaff_repositories.dart';
+import 'package:fashion_app/data/models/employeerole_model.dart';
+import 'package:fashion_app/data/repositories/employeerole_repositories.dart';
 
-class RolestaffViewmodel extends ChangeNotifier {
-  final RolestaffRepositories _repositories = RolestaffRepositories();
-  List<RolestaffModel> _roles = [];
+class EmployeeRoleViewmodel extends ChangeNotifier {
+  final EmployeeroleRepositories _repositories = EmployeeroleRepositories();
+  List<EmployeeroleModel> _roles = [];
   bool _isLoading = false;
 
-  List<RolestaffModel> get roles => _roles;
+  List<EmployeeroleModel> get roles => _roles;
   bool get isLoading => _isLoading;
 
   Future<void> fetchRoles({bool force = false}) async {
@@ -29,7 +29,7 @@ class RolestaffViewmodel extends ChangeNotifier {
     if (_roles.isEmpty) return fallback;
     final role = _roles.firstWhere(
       (r) => r.roleId == roleId,
-      orElse: () => RolestaffModel(roleId: roleId, roleName: fallback),
+      orElse: () => EmployeeroleModel(roleId: roleId, roleName: fallback),
     );
     return role.roleName;
   }

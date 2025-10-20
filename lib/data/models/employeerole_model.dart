@@ -1,14 +1,14 @@
-class RolestaffModel {
+class EmployeeroleModel {
   final String roleId;
   final String roleName;
 
-  RolestaffModel({
+  EmployeeroleModel({
     required this.roleId,
     required this.roleName,
   });
 
-  factory RolestaffModel.fromMap(Map<String, dynamic> map) {
-    return RolestaffModel(
+  factory EmployeeroleModel.fromMap(Map<String, dynamic> map) {
+    return EmployeeroleModel(
       roleId: map['roleId'],
       roleName: map['roleName'],
     );

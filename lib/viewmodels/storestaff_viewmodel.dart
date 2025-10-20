@@ -1,25 +1,24 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
-import 'package:fashion_app/data/models/shopstaff_model.dart';
-import 'package:fashion_app/data/repositories/staff_repositories.dart';
+import 'package:fashion_app/data/models/storestaff_model.dart';
+import 'package:fashion_app/data/repositories/storestaffs_repositories.dart';
 import 'package:flutter/material.dart';
 
-class ShopStaffViewmodel extends ChangeNotifier {
-  final StaffRepositories _repo = StaffRepositories();
-  List<ShopstaffModel> staffs = [];
-  ShopstaffModel? currentStaff;
+class StorestaffViewmodel extends ChangeNotifier {
+ final StorestaffsRepositories _repo = StorestaffsRepositories();
+  List<StorestaffModel> staffs = [];
+  StorestaffModel? currentStaff;
 
   bool isLoading = false;
 
-  Future<void> addNewStaff(ShopstaffModel staff) async {
+  Future<void> addNewStaff(StorestaffModel staff) async {
     await _repo.addStaff(staff);
     staffs.add(staff);
     notifyListeners();
   }
 
-  Future<void> updateStaff(ShopstaffModel staff) async {
+  Future<void> updateStaff(StorestaffModel staff) async {
     await _repo.updateStaff(staff);
 
     final update = staffs.indexWhere((s) => s.employeeId == staff.employeeId);
@@ -29,7 +28,7 @@ class ShopStaffViewmodel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchStaffs(ShopstaffModel staff) async {
+  Future<void> fetchStaffs(StorestaffModel staff) async {
     isLoading = true;
     notifyListeners();
 
@@ -82,8 +81,8 @@ class ShopStaffViewmodel extends ChangeNotifier {
     }
   }
 
-  Future<ShopstaffModel> saveStaff(
-    ShopstaffModel model, {
+  Future<StorestaffModel> saveStaff(
+    StorestaffModel model, {
     File? front,
     File? back,
   }) async {
@@ -97,7 +96,7 @@ class ShopStaffViewmodel extends ChangeNotifier {
       // generate Firestore auto-id if employeeId not provided
       String employeeId = model.employeeId;
       if (employeeId.isEmpty) {
-        employeeId = FirebaseFirestore.instance.collection('shopstaffs').doc().id;
+        employeeId = FirebaseFirestore.instance.collection('storestaffs').doc().id;
       }
 
       if (front != null) {
@@ -113,7 +112,7 @@ class ShopStaffViewmodel extends ChangeNotifier {
         );
       }
 
-      final updated = ShopstaffModel(
+      final updated = StorestaffModel(
         employeeId: employeeId,
         shopId: model.shopId,
         fullName: model.fullName,

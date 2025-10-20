@@ -65,6 +65,5 @@ class ShopModel {
     };
   }
 
-  void addShop(ShopModel newShop) {}
 }
 

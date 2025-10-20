@@ -1,12 +1,11 @@
-import 'package:fashion_app/viewmodels/rolestaff_viewmodel.dart';
+import 'package:fashion_app/viewmodels/employee_role_viewmodel.dart';
+import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/views/shop/shop_addpersonal_screen.dart';
-import 'package:fashion_app/views/shop/shop_updatestaff_screen.dart';
+import 'package:fashion_app/views/shop/shop_updatepersonnal_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
-import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
 
 class ShopPersonnalScreen extends StatefulWidget {
   const ShopPersonnalScreen({super.key});
@@ -22,10 +21,10 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final roleVm = Provider.of<RolestaffViewmodel>(context, listen: false);
+      final roleVm = Provider.of<EmployeeRoleViewmodel>(context, listen: false);
       roleVm.fetchRoles().catchError((e, st) => debugPrint('role error $e\n$st'));
 
-      final staffVm = Provider.of<ShopStaffViewmodel>(context, listen: false);
+      final staffVm = Provider.of<StorestaffViewmodel>(context, listen: false);
       final shopVm = Provider.of<ShopViewModel>(context, listen: false);
       final shopId = shopVm.currentShop?.shopId;
       if (shopId != null && shopId.isNotEmpty) {
@@ -35,7 +34,7 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
   }
 
   String _getRoleName(BuildContext context, String roleId) {
-    final roleVm = Provider.of<RolestaffViewmodel>(context, listen: false);
+    final roleVm = Provider.of<EmployeeRoleViewmodel>(context, listen: false);
     
     if(!mounted) return '';
     return roleVm.getRoleName(roleId, fallback: 'Chưa xác định');
@@ -94,7 +93,7 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
                 ),
               ),
 
-              Consumer<ShopStaffViewmodel>(
+              Consumer<StorestaffViewmodel>(
                 builder: (context, vm, _) {
           final shopId = Provider.of<ShopViewModel>(context, listen: false).currentShop?.shopId ?? '';
           final staffinShop = vm.staffs.where((s) => s.shopId == shopId).toList();
@@ -115,7 +114,7 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
               ),
 
               Expanded(
-                child: Consumer<ShopStaffViewmodel>(
+                child: Consumer<StorestaffViewmodel>(
                   builder: (context, vm, _) {
                     if (vm.isLoading && vm.staffs.isEmpty) {
                       return const Center(child: CircularProgressIndicator());
@@ -182,7 +181,7 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
                                                 // close the dialog first
                                                 Navigator.pop(context);
                                                 try {
-                                                  final staffVm = Provider.of<ShopStaffViewmodel>(context, listen: false);
+                                                  final staffVm = Provider.of<StorestaffViewmodel>(context, listen: false);
                                                   await staffVm.deleteStaff(staff.employeeId);
                                                   if (!mounted) return;
                                                   // context.showSuccess('Xóa nhân viên thành công');
