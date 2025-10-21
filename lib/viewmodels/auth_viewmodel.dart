@@ -1,60 +1,130 @@
-import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../data/models/User.dart';
 import '../data/repositories/user_repository.dart';
 
-class AuthViewModel extends ChangeNotifier {
-  final UserRepository _userRepository;
+class AuthViewModel {
+  final UserRepository _userRepository = UserRepository();
 
-  bool _isLoading = false;
-  String? _errorMessage;
+  bool isLoading = false;
+  String? message;
+  User? currentUser;
 
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-
-  AuthViewModel(this._userRepository);
-
-  Future<String> register({
-    required String username,
-    required String phone,
+  /// Đăng ký tài khoản (Auth + Firestore)
+  Future<bool> registerUser({
+    required String email,
     required String password,
-    required String confirmPassword,
+    required String phone,
   }) async {
-    if (username.trim().isEmpty || phone.trim().isEmpty || password.isEmpty) {
-      return 'Please fill in all required fields';
-    }
-
-    if (password != confirmPassword) {
-      return 'Passwords do not match';
-    }
-
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
     try {
-      final user = User(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        username: username.trim(),
-        password: password.trim(),
-        email: null, // không dùng email cho local
+      isLoading = true;
+      message = null;
+
+      final newUser = User(
+        id: const Uuid().v4(), // tạm thời, sẽ thay bằng UID của Firebase Auth
+        name: null,
+        email: email,
+        password: password,
         avatar: null,
-        phoneNumbers: [phone.trim()],
+        phoneNumbers: [phone],
         addresses: [],
-        loginMethodId: "local", // hoặc 'google' / 'facebook'
-        roleId: "customer",
+        loginMethodId: 'local',
+        roleId: 'customer',
       );
 
-      final result = await _userRepository.registerUser(user);
-
-      _isLoading = false;
-      notifyListeners();
-
-      return result;
+      await _userRepository.registerUser(newUser, password);
+      message = 'Đăng ký thành công!';
+      return true;
     } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString();
-      notifyListeners();
-      return 'Registration failed: $_errorMessage';
+      message = 'Đăng ký thất bại: $e';
+      return false;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  /// Đăng nhập
+  Future<bool> login({required String email, required String password}) async {
+    try {
+      isLoading = true;
+      message = null;
+
+      final user = await _userRepository.login(email, password);
+      if (user != null) {
+        currentUser = user;
+        message = 'Đăng nhập thành công!';
+        return true;
+      } else {
+        message = 'Email hoặc mật khẩu không chính xác.';
+        return false;
+      }
+    } catch (e) {
+      message = 'Lỗi đăng nhập: $e';
+      return false;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  // 🔹 Login Google
+  Future<bool> loginWithGoogle() async {
+    try {
+      isLoading = true;
+      message = null;
+      final user = await _userRepository.loginWithGoogle();
+      if (user != null) {
+        message = 'Đăng nhập Google thành công!';
+        print("huy ${user.email} ");
+
+        return true;
+      } else {
+        message = 'Không thể đăng nhập bằng Google.';
+        return false;
+      }
+    } catch (e) {
+      message = 'Lỗi: $e';
+      return false;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  // 🔹 Login Facebook
+  Future<bool> loginWithFacebook() async {
+    try {
+      isLoading = true;
+      message = null;
+      final user = await _userRepository.loginWithFacebook();
+      if (user != null) {
+        message = 'Đăng nhập Facebook thành công!';
+        return true;
+      } else {
+        message = 'Không thể đăng nhập bằng Facebook.';
+        return false;
+      }
+    } catch (e) {
+      message = 'Lỗi: $e';
+      return false;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  /// Đăng xuất
+  Future<void> logout() async {
+    try {
+      await _userRepository.logout();
+      currentUser = null;
+      message = 'Đã đăng xuất.';
+    } catch (e) {
+      message = 'Lỗi khi đăng xuất: $e';
+    }
+  }
+
+  /// Kiểm tra người dùng hiện tại (nếu cần auto-login)
+  Future<void> checkCurrentUser() async {
+    final fbUser = _userRepository.currentUser;
+    if (fbUser != null) {
+      currentUser = await _userRepository.getUserById(fbUser.uid);
     }
   }
 }
