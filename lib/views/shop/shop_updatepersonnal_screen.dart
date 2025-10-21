@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
-import 'package:fashion_app/data/models/shopstaff_model.dart';
-import 'package:fashion_app/viewmodels/rolestaff_viewmodel.dart';
-import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
+import 'package:fashion_app/data/models/storestaff_model.dart';
+import 'package:fashion_app/viewmodels/employee_role_viewmodel.dart';
+import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -11,7 +11,7 @@ import 'package:provider/provider.dart';
 class ShopUpdatestaffScreen extends StatefulWidget {
   const ShopUpdatestaffScreen({super.key, this.staffToEdit});
 
-  final ShopstaffModel? staffToEdit;
+  final StorestaffModel? staffToEdit;
 
   @override
   State<ShopUpdatestaffScreen> createState() => _ShopUpdatestaffScreenState();
@@ -33,7 +33,7 @@ class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
     final s = widget.staffToEdit;
     if (s != null) {
       nameController.text = s.fullName;
-      acountController.text = s.nameaccount;
+      acountController.text = s.email;
       passwordController.text = s.password;
       cccdControler.text = s.nationalId ?? '';
       selectedRole = s.roleIds;
@@ -41,7 +41,7 @@ class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
 
     // tải danh sách vai trò nhân viên
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final roleVM = Provider.of<RolestaffViewmodel>(context, listen: false);
+      final roleVM = Provider.of<EmployeeRoleViewmodel>(context, listen: false);
       roleVM.fetchRoles();
     });
   }
@@ -87,7 +87,7 @@ class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final shopVm = Provider.of<ShopStaffViewmodel>(context, listen: false);
+    final shopVm = Provider.of<StorestaffViewmodel>(context, listen: false);
     final isEditing = widget.staffToEdit != null;
 
     return Dialog(
@@ -114,11 +114,19 @@ class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
                 prefixIcon: Icons.person,
               ),
               _buildInputField(
+                "Email",
+                acountController,
+                hintText: "Nhập vào email",
+                prefixIcon: Icons.email,
+                
+              ),
+              _buildInputField(
                 'Căn cước công dân',
                 cccdControler,
                 hintText: 'Nhập vào 12 số CCCD',
                 prefixIcon: Icons.badge,
                 keyboardType: TextInputType.number,
+                
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(12),
@@ -152,7 +160,7 @@ class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
               const SizedBox(height: 10),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: Consumer<RolestaffViewmodel>(
+                child: Consumer<EmployeeRoleViewmodel>(
                   builder: (context, sfroles, _) {
                     return Row(
                       children: sfroles.roles
@@ -192,23 +200,27 @@ class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
                         if (!_validateEmployee()) return;
 
                         final base = widget.staffToEdit;
-                        final model = ShopstaffModel(
+
+                        
+
+                        final model = StorestaffModel(
                           employeeId: base?.employeeId ?? DateTime.now().millisecondsSinceEpoch.toString(),
-                          shopId: base?.shopId ?? '123', 
+                          shopId: base?.shopId ?? '', 
                           fullName: nameController.text.trim(),
                           password: passwordController.text.trim(),
-                          nameaccount: acountController.text.trim(),
+                          email: base?.email ?? acountController.text.trim(),
                           nationalId: cccdControler.text.trim(),
                           nationalIdFront: base?.nationalIdFront,
                           nationalIdBack: base?.nationalIdBack,
                           roleIds: selectedRole,
                           createdAt: base?.createdAt ?? DateTime.now(),
+                          uid: base?.uid,
                         );
 
                         try {
-                          await shopVm.saveStaff(model, front: frontID, back: backID);
+                          await shopVm.saveStaffWithAuth(model, front: frontID, back: backID);
                           if (!mounted) return;
-                          Navigator.of(context).pop();
+                          Navigator.pop(context, true);
                         } catch (e) {
                           if (!mounted) return;
                           context.showError('Lưu thất bại: $e');

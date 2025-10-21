@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
-import 'package:fashion_app/data/models/shopstaff_model.dart';
-import 'package:fashion_app/viewmodels/rolestaff_viewmodel.dart';
-import 'package:fashion_app/viewmodels/shopstaff_viewmodel.dart';
+import 'package:fashion_app/data/models/storestaff_model.dart';
+import 'package:fashion_app/viewmodels/employee_role_viewmodel.dart';
+import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -29,7 +29,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-       final roleVm = Provider.of<RolestaffViewmodel>(context, listen: false);
+       final roleVm = Provider.of<EmployeeRoleViewmodel>(context, listen: false);
         roleVm.fetchRoles();
 
     });
@@ -52,7 +52,6 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     context.showSuccess('Thêm nhân viên thành công');
     return true;
   }
-
   Future<void> pickImage(bool isFront) async {
     final File? image = await GalleryUtil.pickImageFromGallery();
     if (image != null) {
@@ -92,10 +91,10 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                 prefixIcon: Icons.person,
               ),
               _buildInputField(
-                "Tài khoản",
+                "Email",
                 acountController,
-                hintText: "Nhập vào tài khoản",
-                prefixIcon: Icons.person,
+                hintText: "Nhập vào email",
+                prefixIcon: Icons.email,
               ),
               _buildInputField(
                 "Mật khẩu ",
@@ -143,7 +142,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
 
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: Consumer<RolestaffViewmodel>(
+                child: Consumer<EmployeeRoleViewmodel>(
                   builder: (context, sfroles, _) {
                     return Row(
                       children: sfroles.roles
@@ -184,7 +183,6 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                   const SizedBox(width: 10),
                   SizedBox(
                     width: MediaQuery.of(context).size.width * 0.30,
-
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
@@ -196,32 +194,31 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                       onPressed: () async {
                         if (!validatEmploy()) return;
 
-                        final staffVm = Provider.of<ShopStaffViewmodel>(context, listen: false);
+                        final staffVm = Provider.of<StorestaffViewmodel>(context, listen: false);
                         final shopVm = Provider.of<ShopViewModel>(context, listen: false);
                         final shopId = shopVm.currentShop?.shopId;
                         if (shopId == null || shopId.isEmpty) {
                           context.showError('Không có cửa hàng đang được chọn. Vui lòng tạo hoặc chọn cửa hàng.');
                           return;
                         }
-
-                        final model = ShopstaffModel(
-                          employeeId: '', // let viewmodel generate id
+                        
+                        final model = StorestaffModel(
+                          employeeId: '',
                           shopId: shopId,
                           fullName: nameController.text.trim(),
                           password: passwordController.text.trim(),
-                          nameaccount: acountController.text.trim(),
+                          email: acountController.text.trim(),
                           nationalId: cccdControler.text.trim(),
                           nationalIdFront: null,
                           nationalIdBack: null,
                           roleIds: selectedRole,
                           createdAt: DateTime.now(),
+                          uid: '', 
                         );
-
                         try {
-                          await staffVm.saveStaff(model, front: frontID, back: backID);
+                          await staffVm.saveStaffWithAuth(model, front: frontID, back: backID);
                           if (!mounted) return;
-                          Navigator.of(context).pop();
-                          print("  Thêm nhân viên thành công");
+                          Navigator.pop(context, true);
                         } catch (e) {
                           if (!mounted) return;
                         print("  Lưu thất bại: $e");

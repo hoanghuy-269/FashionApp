@@ -2,14 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RolesRemoteSources {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final String collectionPath = 'staffroles';
+  final String collectionPath = 'storeroles';
 
   // 
  Future<Map<String, Map<String, dynamic>>> getRolesByIds(List<String> ids) async {
     final result = <String, Map<String, dynamic>>{};
     if (ids.isEmpty) return result;
 
-    const chunkSize = 10; // Firestore whereIn limit
+    const chunkSize = 10; 
     for (var i = 0; i < ids.length; i += chunkSize) {
       final chunk = ids.sublist(i, (i + chunkSize).clamp(0, ids.length));
       final qs = await _db
@@ -22,6 +22,5 @@ class RolesRemoteSources {
     }
     return result;
  }
-
  
 }

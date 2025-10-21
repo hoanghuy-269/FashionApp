@@ -25,7 +25,6 @@ class ShopRemoteSources {
           nextVal = (data['last'] as int) + 1;
           tx.update(counterRef, {'last': nextVal});
         } else {
-          // If last not present or invalid, reset to 1
           nextVal = 1;
           tx.set(counterRef, {'last': nextVal});
         }

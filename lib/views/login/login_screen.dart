@@ -1,3 +1,4 @@
+import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:flutter/material.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import './enter_phonenumber_screen.dart';
@@ -184,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const OtpRequestScreen(),
+                          builder: (_) => const ShopScreen(),
                         ),
                       );
                     } else {
