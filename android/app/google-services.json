@@ -1,0 +1,62 @@
+{
+  "project_info": {
+    "project_number": "314949258585",
+    "project_id": "fashional-app",
+    "storage_bucket": "fashional-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:314949258585:android:720eb557102781a9ec9048",
+        "android_client_info": {
+          "package_name": "com.example.fashion_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "314949258585-5dlc4919ema9qubn4n07qhvbr1fn1c7n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fashion_app",
+            "certificate_hash": "d87d86bb447312023cda850e83d3030f1dd00e5a"
+          }
+        },
+        {
+          "client_id": "314949258585-pgmvh9l4fo737speps8hnrl49ukeqarr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fashion_app",
+            "certificate_hash": "166fbeac742b859a0c026fdf813a49f4770b4a86"
+          }
+        },
+        {
+          "client_id": "314949258585-k94omgooln61sors59b69dnphiimlqkb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCky5R4UUm0MCHlX130aAIfKqTWTufXN3M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "314949258585-k94omgooln61sors59b69dnphiimlqkb.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "314949258585-ri6c1cidsirojuj06p7bknk4pu618b3a.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fashionApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
