@@ -1,6 +1,4 @@
-import 'package:fashion_app/data/models/employeerole_model.dart';
 import 'package:fashion_app/data/models/shop_model.dart';
-import 'package:fashion_app/data/repositories/employeerole_repositories.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -157,11 +155,6 @@ class _RegisterShopFormState extends State<_RegisterShopForm> {
                     },
                     child: const Text("Đăng ký Shop"),
                   ),
-                  const SizedBox(height: 20), 
-                ElevatedButton(onPressed: ()async{
-                  final repo = EmployeeroleRepositories();
-                  await repo.addSampleRoles();
-                }, child: const Text("Quay lại đăng nhập"))
           ],
         ),
       ),

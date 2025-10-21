@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fashion_app/data/models/employeerole_model.dart';
 
 class RolesRemoteSources {
   final FirebaseFirestore _db = FirebaseFirestore.instance;

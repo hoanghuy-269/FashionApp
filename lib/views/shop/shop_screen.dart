@@ -1,6 +1,7 @@
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:fashion_app/views/shop/shop_personnal_screen.dart';
 import 'package:fashion_app/views/shop/shop_profile_screen.dart';
+import 'package:fashion_app/views/shop/storerevenue_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -14,7 +15,6 @@ class ShopScreen extends StatefulWidget {
 }
 
 class _ShopScreenState extends State<ShopScreen> {
-  String selectedTab = "Doanh thu";
   
   @override
   void initState() {
@@ -27,6 +27,7 @@ class _ShopScreenState extends State<ShopScreen> {
       ),
     );
     WidgetsBinding.instance.addPostFrameCallback((_){
+      if (!mounted) return;
       final vm = Provider.of<ShopViewModel>(context, listen: false);
       () async {
         try {
@@ -40,7 +41,6 @@ class _ShopScreenState extends State<ShopScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = Provider.of<ShopViewModel>(context);
     final size = MediaQuery.of(context).size;
     final width = size.width;
     final height = size.height;
@@ -75,13 +75,18 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                       ),
                       SizedBox(width: width * 0.03),
-                      Text(
-                         vm.currentShop?.shopName ?? "Tên cửa hàng",
-                        style: TextStyle(
-                          fontSize: width * 0.045,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
+                      
+                      Consumer<ShopViewModel>(
+                        builder: (context, vm, _) {
+                          return Text(
+                            vm.currentShop?.shopName ?? "Tên cửa hàng",
+                            style: TextStyle(
+                              fontSize: width * 0.045,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -106,19 +111,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 ),
               ),
               SizedBox(height: height * 0.015),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildTabButton("Doanh thu"),
-                  _buildTabButton("Lợi nhuận"),
-                  _buildTabButton("Đơn hàng"),
-                ],
-              ),
-              // chi tiết theo ngày
-              SizedBox(height: height * 0.03),
-              _buildTabContent(),
-
+              _buildRevenueCard(),
               // danh sách các chức năng
               SizedBox(height: height * 0.04),
               Text(
@@ -183,153 +176,53 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  Widget _buildTabButton(String title) {
-    final isSelected = selectedTab == title;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => selectedTab = title),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.blue.shade600 : Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(12),
+  Widget _buildRevenueCard() {
+    return GestureDetector(
+      onTap: (){
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const StorerevenueDetailScreen(),
           ),
-          child: Center(
-            child: Text(
-              title,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade300,
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text(
+              "Doanh thu hôm nay",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "5.200.000 ₫",
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black87,
-                fontWeight: FontWeight.w600,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildTabContent() {
-    if (selectedTab == "Doanh thu") {
-      return _buildRevenueCard();
-    } else if (selectedTab == "Lợi nhuận") {
-      return _buildProfitCard();
-    } else {
-      return _buildOrderCard();
-    }
-  }
+  
 
-  Widget _buildRevenueCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
-            "Tổng doanh thu hôm nay",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-          SizedBox(height: 8),
-          Text(
-            "5.200.000 ₫",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfitCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
-            "Lợi nhuận hôm nay",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-          SizedBox(height: 8),
-          Text(
-            "1.200.000 ₫",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.green,
-            ),
-          ),
-          SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOrderCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
-            "Tổng đơn hàng hôm nay",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-          SizedBox(height: 8),
-          Text(
-            "13 đơn",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.orange,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            "12 hoàn tất, 1 huỷ",
-            style: TextStyle(fontSize: 14, color: Colors.black54),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildGridItem(
     String title,

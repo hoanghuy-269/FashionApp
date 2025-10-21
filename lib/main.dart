@@ -1,5 +1,6 @@
 import 'package:fashion_app/viewmodels/employee_role_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
+import 'package:fashion_app/views/shop/test_login.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:fashion_app/views/admin_confirm_screen.dart';
 import 'package:fashion_app/views/admin_home_screen.dart';
@@ -8,7 +9,6 @@ import 'package:fashion_app/views/admin_shopAccount_screeen.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:fashion_app/views/register_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
-import 'package:fashion_app/views/shop/test_login.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -60,7 +60,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-     return Scaffold(body: Center(child: TestLogin()));
+     return Scaffold(body: Center(child: ShopScreen()));
     //return Scaffold(body: Center(child: AdminHomeScreen()));
   }
 }

@@ -52,7 +52,6 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     context.showSuccess('Thêm nhân viên thành công');
     return true;
   }
-
   Future<void> pickImage(bool isFront) async {
     final File? image = await GalleryUtil.pickImageFromGallery();
     if (image != null) {
@@ -92,10 +91,10 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                 prefixIcon: Icons.person,
               ),
               _buildInputField(
-                "Tài khoản",
+                "Email",
                 acountController,
-                hintText: "Nhập vào tài khoản",
-                prefixIcon: Icons.person,
+                hintText: "Nhập vào email",
+                prefixIcon: Icons.email,
               ),
               _buildInputField(
                 "Mật khẩu ",
@@ -202,24 +201,24 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                           context.showError('Không có cửa hàng đang được chọn. Vui lòng tạo hoặc chọn cửa hàng.');
                           return;
                         }
-
+                        
                         final model = StorestaffModel(
-                          employeeId: '', // let viewmodel generate id
+                          employeeId: '',
                           shopId: shopId,
                           fullName: nameController.text.trim(),
                           password: passwordController.text.trim(),
-                          nameaccount: acountController.text.trim(),
+                          email: acountController.text.trim(),
                           nationalId: cccdControler.text.trim(),
                           nationalIdFront: null,
                           nationalIdBack: null,
                           roleIds: selectedRole,
                           createdAt: DateTime.now(),
+                          uid: '', 
                         );
-
                         try {
-                          await staffVm.saveStaff(model, front: frontID, back: backID);
+                          await staffVm.saveStaffWithAuth(model, front: frontID, back: backID);
                           if (!mounted) return;
-                          Navigator.of(context).pop();
+                          Navigator.pop(context, true);
                         } catch (e) {
                           if (!mounted) return;
                         print("  Lưu thất bại: $e");

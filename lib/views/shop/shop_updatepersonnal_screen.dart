@@ -33,7 +33,7 @@ class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
     final s = widget.staffToEdit;
     if (s != null) {
       nameController.text = s.fullName;
-      acountController.text = s.nameaccount;
+      acountController.text = s.email;
       passwordController.text = s.password;
       cccdControler.text = s.nationalId ?? '';
       selectedRole = s.roleIds;
@@ -114,11 +114,19 @@ class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
                 prefixIcon: Icons.person,
               ),
               _buildInputField(
+                "Email",
+                acountController,
+                hintText: "Nhập vào email",
+                prefixIcon: Icons.email,
+                
+              ),
+              _buildInputField(
                 'Căn cước công dân',
                 cccdControler,
                 hintText: 'Nhập vào 12 số CCCD',
                 prefixIcon: Icons.badge,
                 keyboardType: TextInputType.number,
+                
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(12),
@@ -192,23 +200,27 @@ class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
                         if (!_validateEmployee()) return;
 
                         final base = widget.staffToEdit;
+
+                        
+
                         final model = StorestaffModel(
                           employeeId: base?.employeeId ?? DateTime.now().millisecondsSinceEpoch.toString(),
                           shopId: base?.shopId ?? '', 
                           fullName: nameController.text.trim(),
                           password: passwordController.text.trim(),
-                          nameaccount: acountController.text.trim(),
+                          email: base?.email ?? acountController.text.trim(),
                           nationalId: cccdControler.text.trim(),
                           nationalIdFront: base?.nationalIdFront,
                           nationalIdBack: base?.nationalIdBack,
                           roleIds: selectedRole,
                           createdAt: base?.createdAt ?? DateTime.now(),
+                          uid: base?.uid,
                         );
 
                         try {
-                          await shopVm.saveStaff(model, front: frontID, back: backID);
+                          await shopVm.saveStaffWithAuth(model, front: frontID, back: backID);
                           if (!mounted) return;
-                          Navigator.of(context).pop();
+                          Navigator.pop(context, true);
                         } catch (e) {
                           if (!mounted) return;
                           context.showError('Lưu thất bại: $e');
