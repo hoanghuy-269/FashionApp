@@ -1,127 +1,142 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class AdminManageshopScreen extends StatefulWidget {
   const AdminManageshopScreen({super.key});
+
   @override
   State<AdminManageshopScreen> createState() => _AdminManageshopScreenState();
 }
 
 class _AdminManageshopScreenState extends State<AdminManageshopScreen> {
-  final List<Map<String, String>> shopList = [
-    {'code': 'S001', 'name': 'Shop Hoa Tươi'},
-    {'code': 'S002', 'name': 'Shop Quần Áo'},
-    {'code': 'S003', 'name': 'Shop Mỹ Phẩm'},
-    {'code': 'S004', 'name': 'Shop Điện Tử'},
-    {'code': 'S005', 'name': 'Shop Đồ Ăn'},
-  ];
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> _editDialog(int index) async {
-    final s = shopList[index];
-    final key = GlobalKey<FormState>();
-    final codeCtl = TextEditingController(text: s['code']);
-    final nameCtl = TextEditingController(text: s['name']);
+  bool _isDialogOpen = false; // 🔒 chốt chống mở nhiều dialog
 
-    await showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Form(
-            key: key,
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Row(children: [
-                _IconBadge(icon: Icons.store_mall_directory_outlined),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Chỉnh sửa thông tin Shop',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                      SizedBox(height: 2),
-                      Text('Cập nhật mã và tên shop (mã nên viết hoa, ngắn gọn).',
-                          style: TextStyle(color: Colors.black54)),
-                    ],
-                  ),
-                ),
-              ]),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: codeCtl,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: 'Mã Shop',
-                  hintText: 'VD: S001',
-                  prefixIcon: Icon(Icons.tag_outlined),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Vui lòng nhập mã'
-                    : (!RegExp(r'^[A-Za-z0-9\-]+$').hasMatch(v.trim()))
-                        ? 'Chỉ cho phép chữ/số/gạch'
-                        : null,
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: nameCtl,
-                decoration: const InputDecoration(
-                  labelText: 'Tên Shop',
-                  hintText: 'VD: Shop Điện Tử',
-                  prefixIcon: Icon(Icons.storefront_outlined),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập tên' : null,
-              ),
-              const SizedBox(height: 12),
-              Row(children: [
-                const Spacer(),
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
-                const SizedBox(width: 6),
-                FilledButton.icon(
-                  icon: const Icon(Icons.save_outlined),
-                  label: const Text('Lưu'),
-                  onPressed: () {
-                    if (!key.currentState!.validate()) return;
-                    setState(() => shopList[index] = {
-                          'code': codeCtl.text.trim().toUpperCase(),
-                          'name': nameCtl.text.trim(),
-                        });
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(const SnackBar(content: Text('Cập nhật thành công!')));
-                  },
-                ),
-              ]),
-            ]),
-          ),
-        ),
-      ),
-    );
+  // Helper: mở dialog chỉ-1-lần
+  Future<T?> _openDialogOnce<T>(Future<T?> Function() open) async {
+    if (_isDialogOpen) return null;         // nếu đang mở -> bỏ qua
+    _isDialogOpen = true;
+    try {
+      final res = await open();             // mở dialog
+      return res;
+    } finally {
+      _isDialogOpen = false;                // đóng xong mới được mở lại
+    }
   }
 
-  Future<void> _confirmDelete(int index) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text('Xác nhận xóa'),
-        content: Text('Xóa “${shopList[index]['name']}”?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
-          FilledButton.tonal(onPressed: () => Navigator.pop(context, true), child: const Text('Xóa')),
-        ],
-      ),
-    );
-    if (ok == true) {
-      setState(() => shopList.removeAt(index));
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xóa shop')));
+  // Fetch all shops from Firestore
+  Future<List<Map<String, dynamic>>> fetchShops() async {
+    final snapshot = await _firestore.collection('shops').get();
+    return snapshot.docs.map((doc) {
+      final m = doc.data();
+      m['shopId'] = m['shopId'] ?? doc.id;  // đảm bảo có id
+      return m;
+    }).toList();
+  }
+
+  // Show shop details (1 lần duy nhất cho mỗi lần nhấn)
+  Future<void> _viewShopDetailsDialog(String shopId) async {
+    if (_isDialogOpen) return;
+    await _openDialogOnce(() async {
+      final shopSnapshot = await _firestore.collection('shops').doc(shopId).get();
+      final shopData = shopSnapshot.data();
+      if (shopData == null) return null;
+
+      return showDialog(
+        context: context,
+        barrierDismissible: false, // tránh bấm nền để mở nhanh dialog khác
+        builder: (context) => AlertDialog(
+          title: const Text('Thông tin shop'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Tên Shop: ${shopData['shopName'] ?? '—'}'),
+              Text('Số điện thoại: ${shopData['phoneNumber'] ?? '—'}'),
+              Text('Địa chỉ: ${shopData['address'] ?? '—'}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context); // đóng dialog hiện tại
+                // đợi 1 tick để _isDialogOpen được reset trong finally
+                await Future.delayed(const Duration(milliseconds: 10));
+                _editShopDialog(shopId); // mở dialog chỉnh sửa (cũng được chốt 1 lần)
+              },
+              child: const Text('Chỉnh sửa'),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  // Edit shop dialog (cũng khóa mở nhiều lần)
+  Future<void> _editShopDialog(String shopId) async {
+    if (_isDialogOpen) return;
+    await _openDialogOnce(() async {
+      final shopSnapshot = await _firestore.collection('shops').doc(shopId).get();
+      final shopData = shopSnapshot.data();
+      if (shopData == null) return null;
+
+      final nameController = TextEditingController(text: shopData['shopName']);
+      final phoneController = TextEditingController(text: shopData['phoneNumber'].toString());
+
+      final addressController = TextEditingController(text: shopData['address']);
+
+      return showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Chỉnh sửa thông tin shop'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Tên Shop')),
+              TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Số điện thoại')),
+              TextField(controller: addressController, decoration: const InputDecoration(labelText: 'Địa chỉ')),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+            TextButton(
+              onPressed: () async {
+                await _firestore.collection('shops').doc(shopId).update({
+                  'shopName': nameController.text.trim(),
+                  'phoneNumber': phoneController.text.trim(),
+                  'address': addressController.text.trim(),
+                });
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cập nhật thành công!')));
+                }
+                if (context.mounted) Navigator.pop(context);
+                setState(() {}); // refresh
+              },
+              child: const Text('Lưu'),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  // Delete shop
+  Future<void> _deleteShop(String shopId) async {
+    await _firestore.collection('shops').doc(shopId).delete();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shop đã bị xóa')));
+      setState(() {});
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final titleSize = context.sx(18);
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F7),
       appBar: AppBar(
@@ -134,106 +149,128 @@ class _AdminManageshopScreenState extends State<AdminManageshopScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Quản lý shop',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: titleSize, letterSpacing: .2)),
+        title: const Text('Quản lý shop', style: TextStyle(fontWeight: FontWeight.w700)),
       ),
-      body: ListView.builder(
-        padding: context.pagePadding,
-        itemCount: shopList.length,
-        itemBuilder: (_, i) => ShopCard(
-          name: shopList[i]['name']!,
-          code: shopList[i]['code']!,
-          onEdit: () => _editDialog(i),
-          onDelete: () => _confirmDelete(i),
-        ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: fetchShops(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return const Center(child: Text('Lỗi khi lấy dữ liệu'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('Không có shop nào'));
+          }
+
+          final shops = snapshot.data!;
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: shops.length,
+            itemBuilder: (_, index) {
+              final shop = shops[index];
+              final id = shop['shopId']?.toString() ?? '';
+              return ShopCard(
+                name: shop['shopName'] ?? 'Không có tên',
+                code: id.isEmpty ? 'Không có mã' : id,
+                onView: () => _viewShopDetailsDialog(id),
+                onDelete: () => _deleteShop(id),
+              );
+            },
+          );
+        },
       ),
     );
   }
 }
 
 // ===== ITEM CARD =====
-class ShopCard extends StatefulWidget {
-  const ShopCard({super.key, required this.name, required this.code, required this.onEdit, required this.onDelete});
+class ShopCard extends StatelessWidget {
+  const ShopCard({
+    super.key,
+    required this.name,
+    required this.code,
+    required this.onView,
+    required this.onDelete,
+  });
+
   final String name, code;
-  final VoidCallback onEdit, onDelete;
-
-  @override
-  State<ShopCard> createState() => _ShopCardState();
-}
-
-class _ShopCardState extends State<ShopCard> {
-  bool _hover = false;
+  final VoidCallback onView, onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final sx = context.sx;
     return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
+      onEnter: (_) {},
+      onExit: (_) {},
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        margin: EdgeInsets.only(bottom: sx(12)),
+        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(sx(16)),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFE8ECF2)),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(_hover ? .08 : .04), blurRadius: sx(10), offset: const Offset(0, 4))
-          ],
         ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(sx(16)),
-          onTap: widget.onEdit,
+          borderRadius: BorderRadius.circular(16),
+          onTap: onView, // nhấn -> mở dialog (đã chốt 1 lần trong màn hình)
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: sx(14), vertical: sx(12)),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 Container(
-                  width: sx(5),
-                  height: sx(56),
+                  width: 5,
+                  height: 56,
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primary.withOpacity(.9),
-                    borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(sx(16)), bottomLeft: Radius.circular(sx(16))),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16), bottomLeft: Radius.circular(16),
+                    ),
                   ),
                 ),
-                SizedBox(width: sx(12)),
+                const SizedBox(width: 12),
                 CircleAvatar(
-                  radius: sx(22),
+                  radius: 22,
                   backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(.12),
-                  child: Text(widget.name.initials,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: sx(14),
-                          color: Theme.of(context).colorScheme.primary)),
+                  child: Text(
+                    name.initials,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
                 ),
-                SizedBox(width: sx(12)),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Row(
                     children: [
                       Expanded(
-                        child: Text(widget.name,
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: sx(16)),
-                            overflow: TextOverflow.ellipsis),
+                        child: Text(name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16), overflow: TextOverflow.ellipsis),
                       ),
-                      SizedBox(width: sx(8)),
+                      const SizedBox(width: 8),
                       Chip(
-                        label: Text('Mã: ${widget.code}', style: TextStyle(fontSize: sx(12.5))),
+                        label: Text('Mã: $code', style: const TextStyle(fontSize: 12.5)),
                         side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        padding: EdgeInsets.symmetric(horizontal: sx(6)),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
                       ),
                     ],
                   ),
                 ),
                 PopupMenuButton<String>(
                   tooltip: 'Tùy chọn',
-                  onSelected: (v) => v == 'edit' ? widget.onEdit() : widget.onDelete(),
+                  onSelected: (value) {
+                    if (value == 'delete') onDelete();
+                  },
                   itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('Chỉnh sửa')])),
-                    PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 18), SizedBox(width: 8), Text('Xóa')])),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(children: [Icon(Icons.delete, size: 18), SizedBox(width: 8), Text('Xóa')]),
+                    ),
                   ],
-                  child: Padding(padding: EdgeInsets.all(sx(6)), child: Icon(Icons.more_vert, color: Colors.black54, size: sx(22))),
+                  child: const Padding(
+                    padding: EdgeInsets.all(6),
+                    child: Icon(Icons.more_vert, color: Colors.black54, size: 22),
+                  ),
                 ),
               ],
             ),
@@ -242,35 +279,6 @@ class _ShopCardState extends State<ShopCard> {
       ),
     );
   }
-}
-
-// ===== Tiện ích =====
-extension _CtxX on BuildContext {
-  double get _w => MediaQuery.of(this).size.width;
-  double sx(double base) {
-    final factor = (_w / 390).clamp(0.85, 1.25);
-    return base * ((_w >= 1024) ? 1.05 : 1.0) * factor;
-  }
-
-  EdgeInsets get pagePadding => _w >= 1024
-      ? const EdgeInsets.symmetric(horizontal: 32, vertical: 16)
-      : _w >= 600
-          ? const EdgeInsets.symmetric(horizontal: 20, vertical: 12)
-          : const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
-}
-
-class _IconBadge extends StatelessWidget {
-  const _IconBadge({required this.icon});
-  final IconData icon;
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withOpacity(.08),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: Theme.of(context).colorScheme.primary),
-      );
 }
 
 extension _Initials on String {
