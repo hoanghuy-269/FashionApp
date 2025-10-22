@@ -1,7 +1,7 @@
 import 'package:fashion_app/data/models/storestaff_model.dart';
 import 'package:fashion_app/data/sources/staff_remotesources.dart';
 
-class StaffRepositories {
+class StorestaffsRepositories {
 
   final StaffRemotesources _remoteDataSource = StaffRemotesources();
 

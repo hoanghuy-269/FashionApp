@@ -6,6 +6,7 @@ class ShopModel {
   final String? logo;
   final int? phoneNumber;
   final String? address;
+  final String? ownerEmail;
   final int totalProducts;
   final int totalOrders;
   final double revenue;
@@ -25,6 +26,7 @@ class ShopModel {
     this.revenue = 0.0,
     DateTime? createdAt,
     required this.activityStatusId,
+      this.ownerEmail,
   }) : createdAt = createdAt ?? DateTime.now();
 
   factory ShopModel.fromtoMap(Map<String, dynamic> json) {
@@ -36,10 +38,11 @@ class ShopModel {
       logo: json['logo'],
       phoneNumber: json['phoneNumber'],
       address: json['address'],
+      ownerEmail: json['ownerEmail'],
       totalProducts: json['totalProducts'] ?? 0,
       totalOrders: json['totalOrders'] ?? 0,
       revenue: (json['revenue'] ?? 0).toDouble(),
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       activityStatusId: json['activityStatusId'],
     );
   }
@@ -53,6 +56,7 @@ class ShopModel {
       'logo': logo,
       'phoneNumber': phoneNumber,
       'address': address,
+      'ownerEmail': ownerEmail,
       'totalProducts': totalProducts,
       'totalOrders': totalOrders,
       'revenue': revenue,
@@ -61,6 +65,5 @@ class ShopModel {
     };
   }
 
-  void addShop(ShopModel newShop) {}
 }
 

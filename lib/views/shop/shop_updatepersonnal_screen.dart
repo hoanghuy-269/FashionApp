@@ -4,19 +4,20 @@ import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/data/models/storestaff_model.dart';
 import 'package:fashion_app/viewmodels/employee_role_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
-import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-class ShopAddemployCreen extends StatefulWidget {
-  const ShopAddemployCreen({super.key});
+class ShopUpdatestaffScreen extends StatefulWidget {
+  const ShopUpdatestaffScreen({super.key, this.staffToEdit});
+
+  final StorestaffModel? staffToEdit;
 
   @override
-  State<ShopAddemployCreen> createState() => _ShopAddemployCreenState();
+  State<ShopUpdatestaffScreen> createState() => _ShopUpdatestaffScreenState();
 }
 
-class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
+class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController acountController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -28,30 +29,49 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-       final roleVm = Provider.of<EmployeeRoleViewmodel>(context, listen: false);
-        roleVm.fetchRoles();
 
+    final s = widget.staffToEdit;
+    if (s != null) {
+      nameController.text = s.fullName;
+      acountController.text = s.email;
+      passwordController.text = s.password;
+      cccdControler.text = s.nationalId ?? '';
+      selectedRole = s.roleIds;
+    }
+
+    // tải danh sách vai trò nhân viên
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final roleVM = Provider.of<EmployeeRoleViewmodel>(context, listen: false);
+      roleVM.fetchRoles();
     });
   }
 
-  bool validatEmploy() {
+  bool _validateEmployee() {
     if (nameController.text.trim().isEmpty ||
         acountController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty ||
-        cccdControler.text.trim().isEmpty ||
-        frontID == null ||
-        backID == null) {
+        cccdControler.text.trim().isEmpty) {
       context.showError('Vui lòng điền đầy đủ thông tin');
       return false;
     }
+
+    // Kiểm tra ảnh: có file mới HOẶC có URL từ data cũ
+    final hasFront = frontID != null || widget.staffToEdit?.nationalIdFront != null;
+    final hasBack = backID != null || widget.staffToEdit?.nationalIdBack != null;
+    
+    if (!hasFront || !hasBack) {
+      context.showError('Vui lòng tải đầy đủ hình ảnh CCCD (mặt trước và mặt sau)');
+      return false;
+    }
+
     if (selectedRole.isEmpty) {
       context.showError('Vui lòng chọn chức vụ');
       return false;
     }
-    context.showSuccess('Thêm nhân viên thành công');
+
     return true;
   }
+
   Future<void> pickImage(bool isFront) async {
     final File? image = await GalleryUtil.pickImageFromGallery();
     if (image != null) {
@@ -67,6 +87,9 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
 
   @override
   Widget build(BuildContext context) {
+    final shopVm = Provider.of<StorestaffViewmodel>(context, listen: false);
+    final isEditing = widget.staffToEdit != null;
+
     return Dialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -78,16 +101,16 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Center(
-                child: const Text(
-                  "Thêm nhân viên ",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                child: Text(
+                  isEditing ? 'Cập nhật nhân viên' : 'Thêm nhân viên',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 16),
               _buildInputField(
                 "Tên nhân viên",
                 nameController,
-                hintText: "Nhập vào tên đầy dủ",
+                hintText: "Nhập vào tên đầy đủ",
                 prefixIcon: Icons.person,
               ),
               _buildInputField(
@@ -95,22 +118,15 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                 acountController,
                 hintText: "Nhập vào email",
                 prefixIcon: Icons.email,
+                
               ),
-              _buildInputField(
-                "Mật khẩu ",
-                passwordController,
-                hintText: "Nhập vào mật khẩu ",
-                prefixIcon: Icons.lock_outline,
-                obscureText: true,
-              ),
-
-              const SizedBox(height: 5),
               _buildInputField(
                 'Căn cước công dân',
                 cccdControler,
                 hintText: 'Nhập vào 12 số CCCD',
                 prefixIcon: Icons.badge,
                 keyboardType: TextInputType.number,
+                
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(12),
@@ -120,26 +136,28 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  buildImageBox(
+                  _buildImageBox(
                     "Mặt trước",
-                    frontID,
+                    file: frontID,
+                    imageUrl: widget.staffToEdit?.nationalIdFront,
                     onTap: () => pickImage(true),
+                    onDelete: () => setState(() => frontID = null),
                   ),
-                  buildImageBox(
+                  _buildImageBox(
                     "Mặt sau",
-                    backID,
+                    file: backID,
+                    imageUrl: widget.staffToEdit?.nationalIdBack,
                     onTap: () => pickImage(false),
+                    onDelete: () => setState(() => backID = null),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-
               const Text(
-                "Chức vụ ",
+                "Chức vụ",
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
               ),
               const SizedBox(height: 10),
-
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Consumer<EmployeeRoleViewmodel>(
@@ -153,84 +171,64 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.30,
+                  Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         padding: const EdgeInsets.all(10),
                       ),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: Text(
-                        " Hủy ",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text(
+                        "Hủy",
+                        style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
                   const SizedBox(width: 10),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.30,
+                  Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         padding: const EdgeInsets.all(10),
                       ),
                       onPressed: () async {
-                        if (!validatEmploy()) return;
+                        if (!_validateEmployee()) return;
 
-                        final staffVm = Provider.of<StorestaffViewmodel>(context, listen: false);
-                        final shopVm = Provider.of<ShopViewModel>(context, listen: false);
-                        final shopId = shopVm.currentShop?.shopId;
-                        if (shopId == null || shopId.isEmpty) {
-                          context.showError('Không có cửa hàng đang được chọn. Vui lòng tạo hoặc chọn cửa hàng.');
-                          return;
-                        }
+                        final base = widget.staffToEdit;
+
                         
+
                         final model = StorestaffModel(
-                          employeeId: '',
-                          shopId: shopId,
+                          employeeId: base?.employeeId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+                          shopId: base?.shopId ?? '', 
                           fullName: nameController.text.trim(),
                           password: passwordController.text.trim(),
-                          email: acountController.text.trim(),
+                          email: base?.email ?? acountController.text.trim(),
                           nationalId: cccdControler.text.trim(),
-                          nationalIdFront: null,
-                          nationalIdBack: null,
+                          nationalIdFront: base?.nationalIdFront,
+                          nationalIdBack: base?.nationalIdBack,
                           roleIds: selectedRole,
-                          createdAt: DateTime.now(),
-                          uid: '', 
+                          createdAt: base?.createdAt ?? DateTime.now(),
+                          uid: base?.uid,
                         );
+
                         try {
-                          await staffVm.saveStaffWithAuth(model, front: frontID, back: backID);
+                          await shopVm.saveStaffWithAuth(model, front: frontID, back: backID);
                           if (!mounted) return;
                           Navigator.pop(context, true);
                         } catch (e) {
                           if (!mounted) return;
-                        print("  Lưu thất bại: $e");
+                          context.showError('Lưu thất bại: $e');
                         }
                       },
                       child: Text(
-                        "Thêm",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        isEditing ? "Cập nhật" : "Thêm mới",
+                        style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -243,13 +241,15 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     );
   }
 
-  // giao diện cccd 2 ảnh
-
-  Widget buildImageBox(
-    String label,
-    File? file, {
+  Widget _buildImageBox(
+    String label, {
+    File? file,
+    String? imageUrl,
     required VoidCallback onTap,
+    required VoidCallback onDelete,
   }) {
+    final hasImage = file != null || (imageUrl != null && imageUrl.isNotEmpty);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -258,75 +258,63 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: file != null ? Colors.blue.shade300 : Colors.grey.shade300,
+            color: hasImage ? Colors.blue.shade300 : Colors.grey.shade300,
             width: 1.3,
           ),
-          image:
-              file != null
-                  ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
-                  : null,
           color: Colors.white,
         ),
-        child:
-            file == null
-                ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.add_a_photo, color: Colors.grey, size: 28),
-                    const SizedBox(height: 8),
-                    Text(label, style: const TextStyle(color: Colors.grey)),
-                  ],
-                )
-                : Stack(
-                  children: [
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: InkWell(
-                        onTap:
-                            () => setState(() {
-                              if (label.contains("trước")) frontID = null;
-                              if (label.contains("sau")) backID = null;
-                            }),
-                        child: const CircleAvatar(
-                          radius: 14,
-                          backgroundColor: Colors.black54,
-                          child: Icon(
-                            Icons.close,
-                            size: 16,
-                            color: Colors.white,
-                          ),
-                        ),
+        child: hasImage
+            ? Stack(
+                children: [
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: file != null
+                          ? Image.file(file, fit: BoxFit.cover)
+                          : Image.network(imageUrl!, fit: BoxFit.cover),
+                    ),
+                  ),
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: InkWell(
+                      onTap: onDelete,
+                      child: const CircleAvatar(
+                        radius: 14,
+                        backgroundColor: Colors.black54,
+                        child: Icon(Icons.close, size: 16, color: Colors.white),
                       ),
                     ),
-                    Positioned(
-                      left: 6,
-                      bottom: 6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black45,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          label,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
+                  ),
+                  Positioned(
+                    left: 6,
+                    bottom: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        label,
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add_a_photo, color: Colors.grey, size: 28),
+                  const SizedBox(height: 8),
+                  Text(label, style: const TextStyle(color: Colors.grey)),
+                ],
+              ),
       ),
     );
   }
 
-  // thêm nhân viên
   Widget _buildInputField(
     String label,
     TextEditingController controller, {
@@ -335,7 +323,6 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     IconData? prefixIcon,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
-    String? Function(String?)? validator,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -344,11 +331,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-              color: Colors.black87,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.black87),
           ),
           const SizedBox(height: 8),
           TextFormField(
@@ -356,28 +339,21 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
             obscureText: obscureText,
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,
-            validator: validator,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
-              prefixIcon:
-                  prefixIcon != null
-                      ? Icon(prefixIcon, color: Colors.blue)
-                      : null,
+              prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.blue) : null,
               hintText: hintText,
               hintStyle: TextStyle(color: Colors.grey.shade500),
               filled: true,
               fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 14,
-                horizontal: 14,
-              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.black, width: 1),
+                borderSide: const BorderSide(color: Colors.black, width: 1),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.black, width: 1),
+                borderSide: const BorderSide(color: Colors.black, width: 1),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -390,17 +366,11 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     );
   }
 
-  Widget _buildRoleOption(
-    String roleName,
-    String roleId, {
-    VoidCallback? onTap,
-    VoidCallback? onLongPress,
-  }) {
+  Widget _buildRoleOption(String roleName, String roleId) {
     final isSelected = selectedRole == roleId;
 
     return GestureDetector(
-      onTap: onTap ?? () => setState(() => selectedRole = roleId),
-      onLongPress: onLongPress,
+      onTap: () => setState(() => selectedRole = roleId),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
