@@ -22,6 +22,8 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController cccdControler = TextEditingController();
   String selectedRole = "";
+  bool isLoading = false;
+
   File? frontID;
   File? backID;
 
@@ -49,7 +51,6 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
       context.showError('Vui lòng chọn chức vụ');
       return false;
     }
-    context.showSuccess('Thêm nhân viên thành công');
     return true;
   }
   Future<void> pickImage(bool isFront) async {
@@ -215,13 +216,18 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                           createdAt: DateTime.now(),
                           uid: '', 
                         );
+                        setState(() => isLoading = true);
+                          
+                        
                         try {
                           await staffVm.saveStaffWithAuth(model, front: frontID, back: backID);
                           if (!mounted) return;
-                          Navigator.pop(context, true);
+                          context.showSuccess('Thêm nhân viên thành công');
                         } catch (e) {
                           if (!mounted) return;
-                        print("  Lưu thất bại: $e");
+                          context.showError('Lỗi khi thêm nhân viên: $e');
+                        } finally {
+                          setState(() => isLoading = false);
                         }
                       },
                       child: Text(
@@ -252,76 +258,81 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 120,
-        height: 120,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: file != null ? Colors.blue.shade300 : Colors.grey.shade300,
-            width: 1.3,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          Container(
+            width: MediaQuery.of(context).size.width * 0.30,
+            height: MediaQuery.of(context).size.width * 0.30,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: file != null ? Colors.blue.shade300 : Colors.grey.shade300,
+                width: 1.5,
+              ),
+              image:
+                  file != null
+                      ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
+                      : null,
+              color: Colors.white,
+            ),
+            child:
+                file == null
+                    ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.add_a_photo, color: Colors.grey, size: 28),
+                        const SizedBox(height: 8),
+                        Text(label, style: const TextStyle(color: Colors.grey)),
+                      ],
+                    )
+                    : Stack(
+                      children: [
+                        Positioned(
+                          right: 6,
+                          top: 6,
+                          child: InkWell(
+                            onTap:
+                                () => setState(() {
+                                  if (label.contains("trước")) frontID = null;
+                                  if (label.contains("sau")) backID = null;
+                                }),
+                            child: const CircleAvatar(
+                              radius: 14,
+                              backgroundColor: Colors.black54,
+                              child: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: 6,
+                          bottom: 6,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black45,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              label,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
           ),
-          image:
-              file != null
-                  ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
-                  : null,
-          color: Colors.white,
-        ),
-        child:
-            file == null
-                ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.add_a_photo, color: Colors.grey, size: 28),
-                    const SizedBox(height: 8),
-                    Text(label, style: const TextStyle(color: Colors.grey)),
-                  ],
-                )
-                : Stack(
-                  children: [
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: InkWell(
-                        onTap:
-                            () => setState(() {
-                              if (label.contains("trước")) frontID = null;
-                              if (label.contains("sau")) backID = null;
-                            }),
-                        child: const CircleAvatar(
-                          radius: 14,
-                          backgroundColor: Colors.black54,
-                          child: Icon(
-                            Icons.close,
-                            size: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 6,
-                      bottom: 6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black45,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          label,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+        ],
       ),
     );
   }

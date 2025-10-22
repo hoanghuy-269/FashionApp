@@ -1,8 +1,11 @@
 import 'dart:io';
 
 import 'package:fashion_app/core/utils/gallery_util.dart';
+import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
+import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 class ShopProfileScreen extends StatefulWidget {
   const ShopProfileScreen({super.key});
@@ -16,10 +19,62 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
   final TextEditingController phoneControler = TextEditingController();
   final TextEditingController cccdControler = TextEditingController();
   final TextEditingController addressControler = TextEditingController();
-
+  final GalleryUtil galleryUti = GalleryUtil();
+  bool inited = false;
   File? frontID;
   File? backID;
   File? license;
+  String? frontUrl;
+  String? backUrl;
+  String? licenseUrl;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (inited) return;
+
+    final shopVm = Provider.of<ShopViewModel>(context, listen: false);
+    final requestVm = Provider.of<RequestToOpenShopViewModel>(
+      context,
+      listen: false,
+    );
+    final shop = shopVm.currentShop;
+
+    if (shop != null) {
+      nameController.text = shop.shopName;
+      phoneControler.text = shop.phoneNumber?.toString() ?? '';
+      addressControler.text = shop.address ?? '';
+
+      final requestId = shop.requestId;
+      if (requestId != null && requestId.isNotEmpty) {
+        if (!mounted) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          final request = await requestVm.fetchRequestById(requestId);
+          if (!mounted || request == null) return;
+
+          setState(() {
+            cccdControler.text = request.nationalId;
+            frontUrl =
+                "${request.idnationFront}?ts=${DateTime.now().millisecondsSinceEpoch}";
+            backUrl =
+                "${request.idnationBack}?ts=${DateTime.now().millisecondsSinceEpoch}";
+            licenseUrl = null;
+          });
+        });
+      }
+    }
+
+    inited = true;
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    phoneControler.dispose();
+    cccdControler.dispose();
+    addressControler.dispose();
+    super.dispose();
+  }
 
   Future<void> pickImage(bool isFront, {bool isLiscense = false}) async {
     final File? image = await GalleryUtil.pickImageFromGallery();
@@ -147,12 +202,14 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                 children: [
                   buildImageBox(
                     "Mặt trước",
-                    frontID,
+                    file: frontID,
+                    url: frontUrl,
                     onTap: () => pickImage(true),
                   ),
                   buildImageBox(
                     "Mặt sau",
-                    backID,
+                    file: backID,
+                    url: backUrl,
                     onTap: () => pickImage(false),
                   ),
                 ],
@@ -169,7 +226,8 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
               const SizedBox(height: 10),
               buildImageBox(
                 "Giấ phép kinh doanh ",
-                license,
+                file: license,
+                url: licenseUrl,
                 onTap: () => pickImage(true, isLiscense: true),
                 width: double.infinity,
               ),
@@ -199,7 +257,64 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () async {
+                    final shopVm = Provider.of<ShopViewModel>(
+                      context,
+                      listen: false,
+                    );
+                    final requestVm = Provider.of<RequestToOpenShopViewModel>(
+                      context,
+                      listen: false,
+                    );
+                    if (shopVm.currentShop == null) return;
+
+                    final updateShop = shopVm.currentShop!.copyWith(
+                      shopName: nameController.text,
+                      phoneNumber: int.tryParse(phoneControler.text.trim()),
+                      address: addressControler.text,
+                    );
+                    await shopVm.updateShop(updateShop);
+
+                    if (shopVm.currentShop!.requestId != null) {
+                      final requestId = shopVm.currentShop!.requestId!;
+                      final currentRequest = requestVm.currentUserRequest;
+
+                      if (currentRequest != null &&
+                          currentRequest.requestId == requestId) {
+                        String frontUrl = currentRequest.idnationFront;
+                        String backUrl = currentRequest.idnationBack;
+
+                        /// Upload ảnh mới nếu có
+                        if (frontID != null) {
+                          final uploadedFront =
+                              await GalleryUtil.uploadImageToFirebase(frontID!);
+                          if (uploadedFront != null) frontUrl = uploadedFront;
+                        }
+
+                        if (backID != null) {
+                          final uploadedBack =
+                              await GalleryUtil.uploadImageToFirebase(backID!);
+                          if (uploadedBack != null) backUrl = uploadedBack;
+                        }
+
+                        /// 3. Update request lên Firestore
+                        final updateRequest = currentRequest.copyWith(
+                          shopName: nameController.text,
+                          nationalId: cccdControler.text,
+                          idnationFront: frontUrl,
+                          idnationBack: backUrl,
+                        );
+
+                        await requestVm.updateRequest(updateRequest);
+                      }
+                    }
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Cập nhật thông tin thành công"),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     backgroundColor: Colors.blue,
@@ -211,10 +326,8 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
-                  
                   ),
                 ),
-                
               ),
             ],
           ),
@@ -224,8 +337,9 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
   }
 
   Widget buildImageBox(
-    String label,
-    File? file, {
+    String label, {
+    File? file,
+    String? url,
     required VoidCallback onTap,
     double width = 150,
   }) {
@@ -240,10 +354,15 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
           image:
               file != null
                   ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
-                  : null,
+                  : (url != null
+                      ? DecorationImage(
+                        image: NetworkImage(url),
+                        fit: BoxFit.cover,
+                      )
+                      : null),
         ),
         child:
-            file == null
+            (file == null && url == null)
                 ? Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -258,12 +377,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                       right: 5,
                       top: 5,
                       child: InkWell(
-                        onTap:
-                            () => setState(() {
-                              if (label.contains("trước")) frontID = null;
-                              if (label.contains("sau")) backID = null;
-                              if (label.contains("phép")) license = null;
-                            }),
+                        onTap: onTap,
                         child: const CircleAvatar(
                           radius: 12,
                           backgroundColor: Colors.black,
