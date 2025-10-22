@@ -1,100 +1,189 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/User.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import '../models/User.dart' as model;
 
 class FirebaseService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final _firestore = FirebaseFirestore.instance;
+  final _auth = fb_auth.FirebaseAuth.instance;
+  final _collection = 'users';
 
-  CollectionReference<Map<String, dynamic>> get _userCollection =>
-      _firestore.collection('users');
+  /// 🟢 Thêm user vào Firestore
+  Future<void> addUser(model.User user) async {
+    await _firestore
+        .collection(_collection)
+        .doc(user.id)
+        .set(user.toFirestore());
+  }
 
-  /// Tạo user mới
-  Future<void> createUser(User user) async {
+  /// 🔵 Lấy tất cả user
+  Future<List<model.User>> getAllUsers() async {
+    final snapshot = await _firestore.collection(_collection).get();
+    return snapshot.docs.map((doc) => model.User.fromFirestore(doc)).toList();
+  }
+
+  /// 🟡 Lấy user theo ID
+  Future<model.User?> getUserById(String id) async {
+    final doc = await _firestore.collection(_collection).doc(id).get();
+    if (!doc.exists) return null;
+    return model.User.fromFirestore(doc);
+  }
+
+  /// 🟠 Cập nhật user
+  Future<void> updateUser(String id, Map<String, dynamic> data) async {
+    await _firestore.collection(_collection).doc(id).update(data);
+  }
+
+  /// 🔴 Xóa user
+  Future<void> deleteUser(String id) async {
+    await _firestore.collection(_collection).doc(id).delete();
+  }
+
+  // ---------------------------------------------------------------------------
+  // 🔐 Đăng ký bằng email & mật khẩu
+  Future<void> registerUser(model.User user, String password) async {
+    final credential = await _auth.createUserWithEmailAndPassword(
+      email: user.email ?? "",
+      password: password,
+    );
+
+    final firebaseUser = credential.user!;
+    final newUser = model.User(
+      id: firebaseUser.uid,
+      name: user.name,
+      email: user.email,
+      password: password,
+      avatar: user.avatar,
+      phoneNumbers: user.phoneNumbers,
+      addresses: user.addresses,
+      loginMethodId: 'local',
+      roleId: 'customer',
+    );
+
+    await addUser(newUser);
+  }
+
+  /// 🔐 Đăng nhập bằng email & mật khẩu
+  Future<model.User?> signInWithEmail(String email, String password) async {
     try {
-      print('FirebaseService.createUser: start for ${user.username}');
-      await _userCollection.doc(user.id).set(user.toFirestore());
-      print('FirebaseService.createUser: SUCCESS');
-    } catch (e, st) {
-      print('FirebaseService.createUser ERROR: $e');
-      print(st);
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final uid = credential.user!.uid;
+      final user = await getUserById(uid);
+      return user;
+    } on fb_auth.FirebaseAuthException catch (e) {
+      print("⚠️ Lỗi đăng nhập Firebase Auth: ${e.message}");
+      rethrow;
+    } catch (e) {
+      print("⚠️ Lỗi không xác định khi đăng nhập: $e");
       rethrow;
     }
   }
 
-  /// Kiểm tra user tồn tại (username hoặc email)
-  Future<bool> checkUserExists(String usernameOrEmail) async {
-    try {
-      final usernameQuery =
-          await _userCollection
-              .where('username', isEqualTo: usernameOrEmail)
-              .limit(1)
-              .get();
-      if (usernameQuery.docs.isNotEmpty) return true;
+  // ---------------------------------------------------------------------------
+  // 🔹 Đăng nhập Google
+  Future<model.User?> signInWithGoogle() async {
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    if (googleUser == null) return null;
 
-      final emailQuery =
-          await _userCollection
-              .where('email', isEqualTo: usernameOrEmail)
-              .limit(1)
-              .get();
-      return emailQuery.docs.isNotEmpty;
-    } catch (e, st) {
-      print('checkUserExists ERROR: $e');
-      print(st);
-      rethrow;
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
+    final credential = fb_auth.GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    final userCredential = await _auth.signInWithCredential(credential);
+    final firebaseUser = userCredential.user;
+    if (firebaseUser == null) return null;
+
+    // 🔹 Kiểm tra xem user có tồn tại trong Firestore chưa
+    final userDoc =
+        await _firestore.collection(_collection).doc(firebaseUser.uid).get();
+    if (!userDoc.exists) {
+      final newUser = model.User(
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName,
+        email: firebaseUser.email ?? '',
+        password: '',
+        avatar: firebaseUser.photoURL,
+        phoneNumbers: [firebaseUser.phoneNumber ?? ''],
+        addresses: [],
+        loginMethodId: 'google',
+        roleId: 'customer',
+      );
+      await addUser(newUser);
     }
+
+    // ✅ Dùng fromMap thay vì fromFirestore
+    return model.User.fromMap({
+      'id': firebaseUser.uid,
+      'name': firebaseUser.displayName,
+      'email': firebaseUser.email,
+      'avatar': firebaseUser.photoURL,
+      'loginMethodId': 'google',
+      'phoneNumbers': [firebaseUser.phoneNumber ?? ''],
+      'addresses': [],
+      'roleId': 'customer',
+    });
   }
 
-  /// Lấy user theo username hoặc email
-  Future<User?> getUserByAccount(String usernameOrEmail) async {
-    try {
-      var snapshot =
-          await _userCollection
-              .where('username', isEqualTo: usernameOrEmail)
-              .limit(1)
-              .get();
+  // ---------------------------------------------------------------------------
+  // 🔹 Đăng nhập Facebook
+  Future<model.User?> signInWithFacebook() async {
+    final LoginResult result = await FacebookAuth.instance.login(
+      permissions: ['', 'public_profile'],
+    );
 
-      if (snapshot.docs.isNotEmpty) {
-        return User.fromFirestore(snapshot.docs.first);
+    if (result.status == LoginStatus.success) {
+      final credential = fb_auth.FacebookAuthProvider.credential(
+        result.accessToken!.tokenString,
+      );
+      final userCredential = await _auth.signInWithCredential(credential);
+      final firebaseUser = userCredential.user;
+      if (firebaseUser == null) return null;
+
+      final userDoc =
+          await _firestore.collection(_collection).doc(firebaseUser.uid).get();
+      if (!userDoc.exists) {
+        final newUser = model.User(
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName,
+          email: firebaseUser.email ?? '',
+          password: '',
+          avatar: firebaseUser.photoURL,
+          phoneNumbers: [firebaseUser.phoneNumber ?? ''],
+          addresses: [],
+          loginMethodId: 'facebook',
+          roleId: 'customer',
+        );
+        await addUser(newUser);
       }
 
-      snapshot =
-          await _userCollection
-              .where('email', isEqualTo: usernameOrEmail)
-              .limit(1)
-              .get();
-
-      if (snapshot.docs.isNotEmpty) {
-        return User.fromFirestore(snapshot.docs.first);
-      }
-
-      return null;
-    } catch (e, st) {
-      print('getUserByAccount ERROR: $e');
-      print(st);
-      rethrow;
+      // 🔹 Trả về user từ dữ liệu Auth (Map)
+      return model.User.fromMap({
+        'id': firebaseUser.uid,
+        'name': firebaseUser.displayName,
+        'email': firebaseUser.email,
+        'avatar': firebaseUser.photoURL,
+        'loginMethodId': 'facebook',
+        'phoneNumbers': [firebaseUser.phoneNumber ?? ''],
+        'addresses': [],
+        'roleId': 'customer',
+      });
+    } else {
+      throw Exception('Facebook login failed: ${result.status}');
     }
   }
 
-  /// Cập nhật user
-  Future<void> updateUser(User user) async {
-    try {
-      await _userCollection.doc(user.id).update(user.toFirestore());
-      print('updateUser: SUCCESS for ${user.id}');
-    } catch (e, st) {
-      print('updateUser ERROR: $e');
-      print(st);
-      rethrow;
-    }
-  }
-
-  /// Xoá user
-  Future<void> deleteUser(String userId) async {
-    try {
-      await _userCollection.doc(userId).delete();
-      print('deleteUser: SUCCESS for $userId');
-    } catch (e, st) {
-      print('deleteUser ERROR: $e');
-      print(st);
-      rethrow;
-    }
+  /// 🚪 Đăng xuất
+  Future<void> signOut() async {
+    await _auth.signOut();
+    await GoogleSignIn().signOut();
+    await FacebookAuth.instance.logOut();
   }
 }

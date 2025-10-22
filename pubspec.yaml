@@ -43,8 +43,9 @@ dependencies:
   pin_code_fields: ^8.0.1
   firebase_auth: ^6.1.1
   firebase_database: ^12.0.3
-  
-
+  uuid: ^4.4.0
+  google_sign_in: ^6.2.1
+  flutter_facebook_auth: ^7.1.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -61,11 +62,15 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+
+  uses-material-design: true
+  
   assets:
   - assets/icons/
   - assets/images/
-  
-  uses-material-design: true
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
 
   #   - images/a_dot_ham.jpeg
 

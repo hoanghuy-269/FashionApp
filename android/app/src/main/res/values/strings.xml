@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">fashion_app</string>
+
+    <string name="facebook_app_id">840676461823133</string>
+    <string name="facebook_client_token">77e76f794d9493430da482cf0455bdb2</string>
+
+    <!-- ⚙️ Dòng này BẮT BUỘC PHẢI CÓ -->
+    <string name="fb_login_protocol_scheme">fb840676461823133</string>
+</resources>
