@@ -34,9 +34,13 @@ class ShopViewModel extends ChangeNotifier {
       final createdShop = ShopModel(
         shopId: generatedShopId,
         userId: ownerId,
-        yeuCauMoShopId: shop.yeuCauMoShopId,
+        requestId: shop.requestId,
         shopName: shop.shopName,
         logo: shop.logo,
+        businessLicense: shop.businessLicense,
+        nationalId: shop.nationalId,
+        idnationFront: shop.idnationFront,
+        idnationBack: shop.idnationBack,
         phoneNumber: shop.phoneNumber,
         address: shop.address,
         totalProducts: shop.totalProducts,
@@ -69,6 +73,35 @@ class ShopViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // update shop
+  Future<void> updateShop(ShopModel updatedShop) async {
+  isLoading = true;
+  notifyListeners();
+
+  try {
+    await _repo.updateShop(updatedShop);
+
+    // cập nhật dữ liệu trong RAM
+    final index = shops.indexWhere((s) => s.shopId == updatedShop.shopId);
+    if (index != -1) {
+      shops[index] = updatedShop;
+    }
+
+    if (currentShop?.shopId == updatedShop.shopId) {
+      currentShop = updatedShop;
+    }
+
+    notifyListeners();
+  } catch (e) {
+    debugPrint('Lỗi cập nhật shop: $e');
+    rethrow;
+  } finally {
+    isLoading = false;
+    notifyListeners();
+  }
+}
+
+
   // lấy theo id trên firebase
   Future<ShopModel?> fetchShopForCurrentUser() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -86,4 +119,23 @@ class ShopViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<ShopModel?> fetchShopByUserId(String userId) async {
+    if (userId.isEmpty) return null;
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final shop = await _repo.getShopByOwnerId(userId);
+      currentShop = shop;
+      return shop;
+    } catch (e) {
+      rethrow;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+  
 }
