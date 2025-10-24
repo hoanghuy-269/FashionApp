@@ -1,4 +1,6 @@
+import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
+import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:fashion_app/views/shop/shop_personnal_screen.dart';
 import 'package:fashion_app/views/shop/shop_profile_screen.dart';
 import 'package:fashion_app/views/shop/storerevenue_detail_screen.dart';
@@ -15,7 +17,7 @@ class ShopScreen extends StatefulWidget {
 }
 
 class _ShopScreenState extends State<ShopScreen> {
-  
+  final _auth_model = AuthViewModel();
   @override
   void initState() {
     super.initState();
@@ -26,7 +28,7 @@ class _ShopScreenState extends State<ShopScreen> {
         statusBarIconBrightness: Brightness.dark,
       ),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_){
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final vm = Provider.of<ShopViewModel>(context, listen: false);
       () async {
@@ -75,7 +77,7 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                       ),
                       SizedBox(width: width * 0.03),
-                      
+
                       Consumer<ShopViewModel>(
                         builder: (context, vm, _) {
                           return Text(
@@ -90,13 +92,34 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                     ],
                   ),
-                  CircleAvatar(
-                    radius: width * 0.05,
-                    backgroundColor: Colors.blue.shade50,
-                    child: const Icon(
-                      Icons.notifications_none,
-                      color: Colors.blue,
-                    ),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: width * 0.05,
+                        backgroundColor: Colors.blue.shade50,
+                        child: const Icon(
+                          Icons.notifications_none,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () async {
+                          await _auth_model.logout();
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                          );
+                        },
+                        child: CircleAvatar(
+                          radius: width * 0.05,
+                          backgroundColor: Colors.blue.shade50,
+                          child: const Icon(Icons.login, color: Colors.blue),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -178,7 +201,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Widget _buildRevenueCard() {
     return GestureDetector(
-      onTap: (){
+      onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -220,9 +243,6 @@ class _ShopScreenState extends State<ShopScreen> {
       ),
     );
   }
-
-  
-
 
   Widget _buildGridItem(
     String title,

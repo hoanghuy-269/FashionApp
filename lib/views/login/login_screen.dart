@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import './enter_phonenumber_screen.dart';
 import '.././login/register_screen.dart';
+import '.././login/forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -81,6 +82,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               TextField(
                 controller: _accountController,
+                keyboardType: TextInputType.emailAddress, // Bàn phím kiểu email
+                autofillHints: const [AutofillHints.email],
                 decoration: InputDecoration(
                   hintText: 'Nhập tài khoản...',
                   prefixIcon: const Icon(Icons.person),
@@ -141,14 +144,24 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  const Text(
-                    'Quên mật khẩu?',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                      decoration: TextDecoration.underline,
-                      decorationColor: Colors.red,
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ForgotPasswordScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Quên mật khẩu?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Colors.red,
+                      ),
                     ),
                   ),
                 ],
@@ -179,14 +192,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   setState(() => _authViewModel.isLoading = false);
 
                   if (user != null) {
-                    // ✅ Kiểm tra role
                     if (_authViewModel.currentUser?.roleId == 'r2') {
-                      // 👉 Nếu là shop
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const ShopScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const ShopScreen()),
                       );
                     } else {
                       // 👉 Nếu là khách hàng
@@ -361,13 +370,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Color.fromARGB(255, 82, 80, 80),
                       ),
                     ),
-
-                    const Text(
-                      ' Đăng ký',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.normal,
-                        color: Colors.blue,
+                    const SizedBox(width: 5),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Đăng ký',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.blue,
+                        ),
                       ),
                     ),
                   ],
