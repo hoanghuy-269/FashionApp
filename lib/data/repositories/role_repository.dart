@@ -1,14 +1,25 @@
-import 'package:fashion_app/data/models/role_model.dart';
 import 'package:fashion_app/data/sources/role_sources.dart';
-
+import '../models/role_model.dart';
 class RoleRepository {
-  final RoleRepository _remoteSource = RoleRepository();
+  final FirebaseRoleSource _source;
 
-  Future<List<RoleModel>> fetchRoles() async {
-    return await _remoteSource.fetchRoles();
+  RoleRepository(this._source);
+
+  Future<Role?> getRoleById(String roleId) async {
+    try {
+      return await _source.getRoleById(roleId);
+    } catch (e) {
+      print('Error fetching role: $e');
+      return null;
+    }
   }
 
-  Future<RoleModel?> getRoleById(String id) async {
-    return await _remoteSource.getRoleById(id);
+  Future<List<Role>> getAllRoles() async {
+    try {
+      return await _source.getAllRoles();
+    } catch (e) {
+      print('Error fetching all roles: $e');
+      return [];
+    }
   }
 }

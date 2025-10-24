@@ -1,22 +1,23 @@
-import 'package:fashion_app/data/models/role_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/role_model.dart';
 
-class RoleSources {
-  // Danh sách role cố định
-  final List<RoleModel> _roles = [
-    RoleModel(id: 'R1', name: 'Shop'),
-    RoleModel(id: 'R2', name: 'User'),
-  ];
+class FirebaseRoleSource {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Giả lập load từ server / Firestore
-  Future<List<RoleModel>> fetchRoles() async {
-    await Future.delayed(const Duration(milliseconds: 300)); // giả delay
-    return _roles;
+  /// Lấy Role theo ID
+  Future<Role?> getRoleById(String roleId) async {
+    final doc = await _firestore.collection('roles').doc(roleId).get();
+    if (doc.exists) {
+      return Role.fromFirestore(doc.data()!, doc.id);
+    }
+    return null;
   }
 
-  Future<RoleModel?> getRoleById(String id) async {
-    return _roles.firstWhere(
-      (role) => role.id == id,
-      orElse: () => RoleModel(id: '', name: ''),
-    );
+  /// Lấy tất cả Role
+  Future<List<Role>> getAllRoles() async {
+    final query = await _firestore.collection('roles').get();
+    return query.docs
+        .map((doc) => Role.fromFirestore(doc.data(), doc.id))
+        .toList();
   }
 }

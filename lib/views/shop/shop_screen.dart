@@ -9,15 +9,14 @@ import 'package:provider/provider.dart';
 
 class ShopScreen extends StatefulWidget {
   final String? idUser;
-  
-  const ShopScreen({super.key , this.idUser});
+
+  const ShopScreen({super.key, this.idUser});
 
   @override
   State<ShopScreen> createState() => _ShopScreenState();
 }
 
 class _ShopScreenState extends State<ShopScreen> {
-  
   @override
   void initState() {
     super.initState();
@@ -29,30 +28,28 @@ class _ShopScreenState extends State<ShopScreen> {
       ),
     );
     // khi màn hinh build xong fetch shop
-    WidgetsBinding.instance.addPostFrameCallback((_) async{
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final vm = Provider.of<ShopViewModel>(context, listen: false);
       try {
         // if có idUser truyền vào thì lấy shop của user đó
-        if(widget.idUser != null && widget.idUser!.isNotEmpty){
+        if (widget.idUser != null && widget.idUser!.isNotEmpty) {
           // tranhs fetch lại nếu đã có shop của user đó
-          if(vm.currentShop == null || vm.currentShop?.userId != widget.idUser){
+          if (vm.currentShop == null ||
+              vm.currentShop?.userId != widget.idUser) {
             await vm.fetchShopByUserId(widget.idUser!);
           }
-        }
-        else{
+        } else {
           // tranh fetch lại nếu đã có shop hiện tại
-          if(vm.currentShop == null){
+          if (vm.currentShop == null) {
             await vm.fetchShopForCurrentUser();
           }
         }
       } catch (e) {
         debugPrint('Lỗi lấy thông tin cửa hàng: $e');
-        if(mounted) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi lấy thông tin cửa hàng: $e'),
-            ),
+            SnackBar(content: Text('Lỗi lấy thông tin cửa hàng: $e')),
           );
         }
       }
@@ -79,55 +76,60 @@ class _ShopScreenState extends State<ShopScreen> {
                 children: [
                   Consumer<ShopViewModel>(
                     builder: (context, vm, _) {
-                     if(vm.isLoading){
+                      if (vm.isLoading) {
+                        return Row(
+                          children: [
+                            CircleAvatar(
+                              radius: width * 0.05,
+                              backgroundColor: Colors.grey.shade100,
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.blue,
+                              ),
+                            ),
+                            SizedBox(width: width * 0.03),
+                            const CircularProgressIndicator(),
+                          ],
+                        );
+                      }
+                      final shop = vm.currentShop;
                       return Row(
                         children: [
-                          CircleAvatar(
-                            radius: width * 0.05,
-                            backgroundColor: Colors.grey.shade100,
-                            child: const Icon(Icons.person,color: Colors.blue),
-                          ),
-                          SizedBox(width: width * 0.03),
-                          const CircularProgressIndicator(),
-                        ],
-                      );
-                     }
-                     final shop = vm.currentShop;
-                    return Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
+                          GestureDetector(
+                            onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => ShopProfileScreen(
-                                    
-                                  ),
+                                  builder: (context) => ShopProfileScreen(),
                                 ),
                               );
-                          },
-                          child: CircleAvatar(
-                            radius: width * 0.05,
-                            backgroundColor: Colors.grey.shade100,
-                            backgroundImage: shop?.logo != null
-                                ? NetworkImage(shop!.logo!)
-                                : null,
-                            child: shop?.logo == null
-                                ? const Icon(Icons.person, color: Colors.blue)
-                                : null,
+                            },
+                            child: CircleAvatar(
+                              radius: width * 0.05,
+                              backgroundColor: Colors.grey.shade100,
+                              backgroundImage:
+                                  shop?.logo != null
+                                      ? NetworkImage(shop!.logo!)
+                                      : null,
+                              child:
+                                  shop?.logo == null
+                                      ? const Icon(
+                                        Icons.person,
+                                        color: Colors.blue,
+                                      )
+                                      : null,
+                            ),
                           ),
-                        
-                        ),
-                        SizedBox(width: width * 0.03),
-                        Text(
-                          shop?.shopName ?? 'Cửa hàng',
-                          style: TextStyle(
-                            fontSize: width * 0.05,
-                            fontWeight: FontWeight.bold,
+                          SizedBox(width: width * 0.03),
+                          Text(
+                            shop?.shopName ?? 'Cửa hàng',
+                            style: TextStyle(
+                              fontSize: width * 0.05,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ],
-                    );
+                        ],
+                      );
                     },
                   ),
 
@@ -219,7 +221,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Widget _buildRevenueCard() {
     return GestureDetector(
-      onTap: (){
+      onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -262,9 +264,6 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  
-
-
   Widget _buildGridItem(
     String title,
     IconData icon,
@@ -304,7 +303,10 @@ class _ShopScreenState extends State<ShopScreen> {
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),

@@ -19,7 +19,6 @@ class UserRepository {
       id: uid,
       name: user.name,
       email: user.email,
-      password: user.password,
       avatar: user.avatar,
       phoneNumbers: user.phoneNumbers,
       addresses: user.addresses,
@@ -28,7 +27,7 @@ class UserRepository {
       createdAt: user.createdAt,
     );
 
-    await _service.addUser(userWithUid);
+    await _service.addOrUpdateUser(userWithUid);
   }
 
   /// Đăng nhập bằng email + password
@@ -46,21 +45,20 @@ class UserRepository {
       return user;
     } on fb_auth.FirebaseAuthException catch (e) {
       // Xử lý lỗi đăng nhập
-      print('❌ Lỗi đăng nhập: ${e.message}');
       return null;
     }
   }
 
   /// Đăng xuất
   Future<void> logout() async {
-    await _auth.signOut();
+    await _service.signOut();
   }
 
   /// Kiểm tra người dùng hiện tại (đã đăng nhập chưa)
   fb_auth.User? get currentUser => _auth.currentUser;
 
   /// Các hàm thao tác Firestore
-  Future<void> createUser(User user) => _service.addUser(user);
+  Future<void> createUser(User user) => _service.addOrUpdateUser(user);
   Future<List<User>> fetchUsers() => _service.getAllUsers();
   Future<User?> getUserById(String id) => _service.getUserById(id);
   Future<void> updateUser(String id, Map<String, dynamic> data) =>
