@@ -1,5 +1,5 @@
 import 'package:fashion_app/data/models/shop_model.dart';
-import 'package:fashion_app/data/repositories/shop_repositories.dart';
+import 'package:fashion_app/data/repositories/shop_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 

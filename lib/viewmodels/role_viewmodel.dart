@@ -1,4 +1,4 @@
-import 'package:fashion_app/data/repositories/role_repositories.dart';
+import 'package:fashion_app/data/repositories/role_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:fashion_app/data/models/role_model.dart';
 

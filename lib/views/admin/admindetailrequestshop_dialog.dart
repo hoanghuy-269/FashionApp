@@ -302,7 +302,6 @@ class _AdmindetailrequestshopDialogState
                 Navigator.of(context).pop('approved');
                 return;
               } catch (e) {
-                debugPrint('Error creating shop from request: $e');
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi khi tạo shop')));
                 return;

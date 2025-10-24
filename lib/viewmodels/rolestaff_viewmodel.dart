@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fashion_app/data/models/rolestaff_model.dart';
-import 'package:fashion_app/data/repositories/rolestaff_repositories.dart';
+import 'package:fashion_app/data/repositories/rolestaff_repository.dart';
 
 class RolestaffViewmodel extends ChangeNotifier {
   final RolestaffRepositories _repositories = RolestaffRepositories();

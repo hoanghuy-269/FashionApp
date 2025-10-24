@@ -1,6 +1,6 @@
 import 'package:fashion_app/data/models/role_model.dart';
 
-class RoleRemoteSources {
+class RoleSources {
   // Danh sách role cố định
   final List<RoleModel> _roles = [
     RoleModel(id: 'R1', name: 'Shop'),

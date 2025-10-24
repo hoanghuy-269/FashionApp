@@ -1,8 +1,8 @@
 import 'package:fashion_app/data/models/shop_model.dart';
-import 'package:fashion_app/data/sources/shop_remote_sources.dart';
+import 'package:fashion_app/data/sources/shop_sources.dart';
 
 class ShopRepositories {
-  final ShopRemoteSources _remoteSources = ShopRemoteSources();
+  final ShopRepositories _remoteSources = ShopRepositories();
 
  Future<void> addShop(ShopModel shop) => _remoteSources.addShop(shop);
 

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/data/models/shop_model.dart';
 
-class ShopRemoteSources {
+class ShopSources {
   final _db = FirebaseFirestore.instance;
 
   Future<void> addShop(ShopModel shop) async {

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/data/models/storestaff_model.dart';
-import 'package:fashion_app/viewmodels/employee_role_viewmodel.dart';
+import 'package:fashion_app/viewmodels/employeerole_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:flutter/material.dart';

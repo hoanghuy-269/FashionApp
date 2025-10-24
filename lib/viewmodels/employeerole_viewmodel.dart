@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fashion_app/data/models/employeerole_model.dart';
-import 'package:fashion_app/data/repositories/employeerole_repositories.dart';
+import 'package:fashion_app/data/repositories/employeerole_repository.dart';
 
 class EmployeeRoleViewmodel extends ChangeNotifier {
   final EmployeeroleRepositories _repositories = EmployeeroleRepositories();

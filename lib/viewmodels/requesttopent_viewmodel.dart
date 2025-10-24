@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:fashion_app/data/models/requesttoopentshop_model.dart';
-import 'package:fashion_app/data/repositories/requesttoopent_repositories.dart';
+import 'package:fashion_app/data/repositories/requesttoopent_repository.dart';
 
 class RequestToOpenShopViewModel extends ChangeNotifier {
   final RequestToOpenShopRepository _repo = RequestToOpenShopRepository();

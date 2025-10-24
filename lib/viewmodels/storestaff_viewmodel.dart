@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/data/models/storestaff_model.dart';
-import 'package:fashion_app/data/repositories/storestaffs_repositories.dart';
+import 'package:fashion_app/data/repositories/storestaffs_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 

@@ -185,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (_authViewModel.currentUser?.roleId == 'r1') {
                       // 👉 Nếu là shop
                       print('DEBUG → roleId: ${_authViewModel.currentUser?.roleId}');
-            print('DEBUG → id: ${_authViewModel.currentUser?.id}');
+                      print('DEBUG → id: ${_authViewModel.currentUser?.id}');
 
                       Navigator.pushReplacement(
                         context,

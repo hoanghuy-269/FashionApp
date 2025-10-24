@@ -140,6 +140,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                     final result = await Navigator.push(context, MaterialPageRoute(builder: (context)=>
                       RequestToOpenStoreScreen(uid: currentUser?.id)
                     ));
+                    
                     if(result == "pending"){
                       setState(() {
                         requestStatus = "pending";
@@ -164,7 +165,24 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+                if(currentUser?.roleId == "r3") ...[
+                  ElevatedButton(onPressed: (){
+
+                  },style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ), child: const Text("Chọn Shop",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  ))
+                ],
+
                 // Form fields
                 _buildTextField(
                   label: "Email",
