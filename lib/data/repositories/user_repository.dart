@@ -45,7 +45,6 @@ class UserRepository {
       return user;
     } on fb_auth.FirebaseAuthException catch (e) {
       // Xử lý lỗi đăng nhập
-      print('❌ Lỗi đăng nhập: ${e.message}');
       return null;
     }
   }

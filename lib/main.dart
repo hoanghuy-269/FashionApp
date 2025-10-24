@@ -5,11 +5,6 @@ import 'package:fashion_app/viewmodels/role_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/login/login_screen.dart';
-<<<<<<< HEAD
-import 'package:fashion_app/views/login/register_screen.dart';
-import 'package:fashion_app/views/shop/test_login.dart';
-=======
->>>>>>> 37e00636699dbc2929d71aa02042fe1f729a53e5
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:fashion_app/views/admin_confirm_screen.dart';
 import 'package:fashion_app/views/admin_home_screen.dart';
@@ -70,12 +65,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
     return Scaffold(body: Center(child: LoginScreen()));
-=======
-
-    return Scaffold(body: Center(child: AdminrequestshopScreen()));
->>>>>>> 37e00636699dbc2929d71aa02042fe1f729a53e5
     //return Scaffold(body: Center(child: AdminHomeScreen()));
   }
 }

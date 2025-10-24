@@ -1,3 +1,4 @@
+import 'package:fashion_app/viewmodels/role_viewmodel.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
@@ -20,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isShopLogin = false;
   final AuthViewModel _authViewModel = AuthViewModel();
+  final RoleViewModel _roleViewModel = RoleViewModel();
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +175,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () async {
                   final username = _accountController.text.trim();
                   final password = _passwordController.text.trim();
-
+                  final roleAdmin = 'role001';
+                  final roleCustomer = 'role002';
+                  final roleShop = 'role003';
+                  final roleStaff = '';
                   if (username.isEmpty || password.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -185,7 +190,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   setState(() => _authViewModel.isLoading = true);
 
-                  // ✅ Gọi login (hàm này trả về User hoặc null)
                   final user = await _authViewModel.login(
                     email: username,
                     password: password,
@@ -194,14 +198,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   setState(() => _authViewModel.isLoading = false);
 
                   if (user != null) {
-                    // ✅ Kiểm tra role
-                    if (_authViewModel.currentUser?.roleId == 'r1') {
-                      // 👉 Nếu là shop
-                      print(
-                        'DEBUG → roleId: ${_authViewModel.currentUser?.roleId}',
-                      );
-                      print('DEBUG → id: ${_authViewModel.currentUser?.id}');
+                    await _roleViewModel.fetchRoleById(
+                      _authViewModel.currentUser?.roleId,
+                    );
+                    final role = _roleViewModel.currentRole;
 
+                    if (role == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Không tìm thấy quyền của người dùng!'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    //
+                    if (role.id.toLowerCase() == roleCustomer) {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
@@ -211,13 +223,27 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                         ),
                       );
-                    } else {
-                      // 👉 Nếu là khách hàng
+                    } else if (role.id.toLowerCase() == roleShop) {
+                      print("huy ${_authViewModel.currentUser?.id}");
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => ShopScreen(
+                                idUser: _authViewModel.currentUser?.id,
+                              ),
+                        ),
+                      );
+                    } else if (role.id.toLowerCase() == roleAdmin) {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder: (_) => const AdminrequestshopScreen(),
                         ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Đăng nhập that bai!')),
                       );
                     }
 
