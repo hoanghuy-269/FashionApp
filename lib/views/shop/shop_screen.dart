@@ -1,6 +1,4 @@
-import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
-import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:fashion_app/views/shop/shop_personnal_screen.dart';
 import 'package:fashion_app/views/shop/shop_profile_screen.dart';
 import 'package:fashion_app/views/shop/storerevenue_detail_screen.dart';
@@ -10,14 +8,15 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 class ShopScreen extends StatefulWidget {
-  const ShopScreen({super.key});
+  final String? idUser;
+
+  const ShopScreen({super.key, this.idUser});
 
   @override
   State<ShopScreen> createState() => _ShopScreenState();
 }
 
 class _ShopScreenState extends State<ShopScreen> {
-  final _auth_model = AuthViewModel();
   @override
   void initState() {
     super.initState();
@@ -28,16 +27,32 @@ class _ShopScreenState extends State<ShopScreen> {
         statusBarIconBrightness: Brightness.dark,
       ),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // khi màn hinh build xong fetch shop
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final vm = Provider.of<ShopViewModel>(context, listen: false);
-      () async {
-        try {
-          await vm.fetchShopForCurrentUser();
-        } catch (e, st) {
-          debugPrint('fetch shop error $e\n$st');
+      try {
+        // if có idUser truyền vào thì lấy shop của user đó
+        if (widget.idUser != null && widget.idUser!.isNotEmpty) {
+          // tranhs fetch lại nếu đã có shop của user đó
+          if (vm.currentShop == null ||
+              vm.currentShop?.userId != widget.idUser) {
+            await vm.fetchShopByUserId(widget.idUser!);
+          }
+        } else {
+          // tranh fetch lại nếu đã có shop hiện tại
+          if (vm.currentShop == null) {
+            await vm.fetchShopForCurrentUser();
+          }
         }
-      }();
+      } catch (e) {
+        debugPrint('Lỗi lấy thông tin cửa hàng: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi lấy thông tin cửa hàng: $e')),
+          );
+        }
+      }
     });
   }
 
@@ -59,67 +74,72 @@ class _ShopScreenState extends State<ShopScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ShopProfileScreen(),
+                  Consumer<ShopViewModel>(
+                    builder: (context, vm, _) {
+                      if (vm.isLoading) {
+                        return Row(
+                          children: [
+                            CircleAvatar(
+                              radius: width * 0.05,
+                              backgroundColor: Colors.grey.shade100,
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.blue,
+                              ),
                             ),
-                          );
-                        },
-                        child: CircleAvatar(
-                          radius: width * 0.05,
-                          backgroundColor: Colors.blue.shade100,
-                          child: const Icon(Icons.person, color: Colors.blue),
-                        ),
-                      ),
-                      SizedBox(width: width * 0.03),
-
-                      Consumer<ShopViewModel>(
-                        builder: (context, vm, _) {
-                          return Text(
-                            vm.currentShop?.shopName ?? "Tên cửa hàng",
+                            SizedBox(width: width * 0.03),
+                            const CircularProgressIndicator(),
+                          ],
+                        );
+                      }
+                      final shop = vm.currentShop;
+                      return Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ShopProfileScreen(),
+                                ),
+                              );
+                            },
+                            child: CircleAvatar(
+                              radius: width * 0.05,
+                              backgroundColor: Colors.grey.shade100,
+                              backgroundImage:
+                                  shop?.logo != null
+                                      ? NetworkImage(shop!.logo!)
+                                      : null,
+                              child:
+                                  shop?.logo == null
+                                      ? const Icon(
+                                        Icons.person,
+                                        color: Colors.blue,
+                                      )
+                                      : null,
+                            ),
+                          ),
+                          SizedBox(width: width * 0.03),
+                          Text(
+                            shop?.shopName ?? 'Cửa hàng',
                             style: TextStyle(
-                              fontSize: width * 0.045,
+                              fontSize: width * 0.05,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black,
                             ),
-                          );
-                        },
-                      ),
-                    ],
+                          ),
+                        ],
+                      );
+                    },
                   ),
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: width * 0.05,
-                        backgroundColor: Colors.blue.shade50,
-                        child: const Icon(
-                          Icons.notifications_none,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      GestureDetector(
-                        onTap: () async {
-                          await _auth_model.logout();
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LoginScreen(),
-                            ),
-                          );
-                        },
-                        child: CircleAvatar(
-                          radius: width * 0.05,
-                          backgroundColor: Colors.blue.shade50,
-                          child: const Icon(Icons.login, color: Colors.blue),
-                        ),
-                      ),
-                    ],
+
+                  CircleAvatar(
+                    radius: width * 0.05,
+                    backgroundColor: Colors.blue.shade50,
+                    child: const Icon(
+                      Icons.notifications_none,
+                      color: Colors.blue,
+                    ),
                   ),
                 ],
               ),
@@ -268,7 +288,7 @@ class _ShopScreenState extends State<ShopScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
+            padding: const EdgeInsets.symmetric(vertical: 16),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -278,12 +298,15 @@ class _ShopScreenState extends State<ShopScreen> {
                       backgroundColor: Colors.red,
                       child: Icon(icon, color: color, size: 32),
                     )
-                    : Icon(icon, color: color, size: 32),
+                    : Icon(icon, color: color, size: 24),
                 const SizedBox(height: 10),
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),

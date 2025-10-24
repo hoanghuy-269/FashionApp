@@ -1,3 +1,5 @@
+import 'package:another_flushbar/flushbar.dart';
+import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/viewmodels/employee_role_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/views/shop/shop_addpersonal_screen.dart';
@@ -108,10 +110,10 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              //  Search bar với loading check
+              //  Search 
               _buildSearchBar(),
 
-              //  Header với số lượng nhân viên
+              //  số lượng nhân viên
               _buildStaffHeader(),
 
               //  Danh sách nhân viên
@@ -328,12 +330,7 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
       await staffVm.deleteStaff(staff.employeeId);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Xóa nhân viên thành công'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      context.showSuccess("Xóa nhân viên thành công");
     } catch (e) {
       if (!mounted) return;
       debugPrint(' Delete error: $e');

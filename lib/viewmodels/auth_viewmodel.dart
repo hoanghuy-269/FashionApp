@@ -86,7 +86,6 @@ class AuthViewModel {
       isLoading = false;
     }
   }
-
   // 🔹 Login Facebook
   Future<bool> loginWithFacebook() async {
     try {
@@ -126,4 +125,25 @@ class AuthViewModel {
       currentUser = await _userRepository.getUserById(fbUser.uid);
     }
   }
+
+ Future<User?> FetchUserById(String userId) async {
+   try {
+     isLoading = true;
+     message = null;
+     final user = await _userRepository.getUserById(userId);
+      if (user != null) {
+        currentUser = user;
+        return user;
+      } else {
+        message = 'Không tìm thấy người dùng.';
+        return null;
+      }
+
+   } catch (e) {
+     message = 'Lỗi khi lấy thông tin người dùng: $e';
+     return null;
+   } finally {
+     isLoading = false;
+   }
+ }
 }

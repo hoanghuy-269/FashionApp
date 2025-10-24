@@ -4,6 +4,11 @@
     <string name="facebook_app_id">2061896341314222</string>
     <string name="facebook_client_token">fd03d17953a48340895d628fbdab7a30</string>
 
+<<<<<<< HEAD
     <!-- ⚙️ Dòng này BẮT BUỘC PHẢI CÓ -->
     <string name="fb_login_protocol_scheme">fb2061896341314222</string>
+=======
+    <!-- ⚙️ Dòng này BẮT BUỘC PHẢI CÓ
+    <string name="fb_login_protocol_scheme">fb840676461823133</string> -->
+>>>>>>> 37e00636699dbc2929d71aa02042fe1f729a53e5
 </resources>
