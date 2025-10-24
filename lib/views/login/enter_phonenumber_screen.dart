@@ -1,3 +1,5 @@
+import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
+import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:flutter/material.dart';
 
 class OtpRequestScreen extends StatefulWidget {
@@ -9,6 +11,7 @@ class OtpRequestScreen extends StatefulWidget {
 
 class _OtpRequestScreenState extends State<OtpRequestScreen> {
   final TextEditingController _phoneController = TextEditingController();
+  final _auth_model = AuthViewModel();
 
   void _sendOtp() {
     final phone = _phoneController.text.trim();
@@ -55,6 +58,22 @@ class _OtpRequestScreenState extends State<OtpRequestScreen> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
+                      GestureDetector(
+                        onTap: () async {
+                          await _auth_model.logout();
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                          );
+                        },
+                        child: CircleAvatar(
+                          radius: 10,
+                          backgroundColor: Colors.blue.shade50,
+                          child: const Icon(Icons.login, color: Colors.blue),
+                        ),
+                      ),
                       const SizedBox(height: 20),
                       // Icon khóa
                       Image.asset('assets/icons/lock.png', height: 100),

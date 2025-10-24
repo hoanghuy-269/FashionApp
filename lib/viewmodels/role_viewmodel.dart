@@ -1,43 +1,36 @@
-import 'package:fashion_app/data/repositories/role_repositories.dart';
 import 'package:flutter/material.dart';
-import 'package:fashion_app/data/models/role_model.dart';
+import '../data/models/role_model.dart';
+import '../data/repositories/role_repositories.dart';
+import '../data/sources/role_remote_sources.dart';
 
 class RoleViewModel extends ChangeNotifier {
-  final RoleRepository _repo = RoleRepository();
-
-  String? _selectedRoleId;
-  String? get selectedRoleId => _selectedRoleId;
-
-  List<RoleModel> _roles = [];
-  List<RoleModel> get roles => _roles;
+  final RoleRepository _repository = RoleRepository(FirebaseRoleSource());
 
   bool _isLoading = false;
-  bool get isLoading => _isLoading;
+  Role? _currentRole;
+  List<Role> _roles = [];
 
-  Future<void> fetchRoles() async {
+  bool get isLoading => _isLoading;
+  Role? get currentRole => _currentRole;
+  List<Role> get roles => _roles;
+
+  /// Lấy role theo ID
+  Future<Role?> fetchRoleById(String? id) async {
+    if (id == null) return null;
+    final role = await _repository.getRoleById(id);
+    _currentRole = role;
+    notifyListeners();
+    return role;
+  }
+
+  /// Lấy tất cả role
+  Future<void> fetchAllRoles() async {
     _isLoading = true;
     notifyListeners();
 
-    try {
-      _roles = await _repo.fetchRoles();
-    } catch (e) {
-      debugPrint('Lỗi load roles: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
+    _roles = await _repository.getAllRoles();
 
-  void selectRole(String id) {
-    _selectedRoleId = id;
+    _isLoading = false;
     notifyListeners();
-  }
-
-  RoleModel? getRoleById(String id) {
-    try {
-      return _roles.firstWhere((role) => role.id == id);
-    } catch (_) {
-      return null;
-    }
   }
 }

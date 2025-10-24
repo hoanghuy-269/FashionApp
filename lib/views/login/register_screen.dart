@@ -16,8 +16,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  final AuthViewModel _authViewModel =
-      AuthViewModel(); // 👈 Không dùng Provider
+  final AuthViewModel _authViewModel = AuthViewModel();
 
   Future<void> _register() async {
     final email = _emailController.text.trim();
@@ -89,7 +88,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const Center(
                 child: Text(
                   'ĐĂNG KÝ',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),

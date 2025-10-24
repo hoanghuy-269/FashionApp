@@ -65,8 +65,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-
-    return Scaffold(body: Center(child: AdminrequestshopScreen()));
+    return Scaffold(body: Center(child: LoginScreen()));
     //return Scaffold(body: Center(child: AdminHomeScreen()));
   }
 }
