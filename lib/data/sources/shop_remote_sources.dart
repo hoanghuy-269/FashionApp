@@ -11,6 +11,9 @@ class ShopRemoteSources {
   Future<void> deleteShop(String shopId) async {
     await _db.collection('shops').doc(shopId).delete();
   }
+  Future<void> updateShop(ShopModel shop) async {
+    await _db.collection('shops').doc(shop.shopId).update(shop.toMap());
+  }
 
 
   Future<int> _getNextShopSequence() async {

@@ -1,7 +1,10 @@
+import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/employee_role_viewmodel.dart';
+import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
+import 'package:fashion_app/viewmodels/role_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
+import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/login/login_screen.dart';
-import 'package:fashion_app/views/shop/test_login.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:fashion_app/views/admin_confirm_screen.dart';
 import 'package:fashion_app/views/admin_home_screen.dart';
@@ -32,6 +35,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ShopViewModel()),
         ChangeNotifierProvider(create: (_) => StorestaffViewmodel()),
         ChangeNotifierProvider(create: (_) => EmployeeRoleViewmodel()),
+        ChangeNotifierProvider(create: (_) => RequestToOpenShopViewModel()),
+        Provider(create: (_) => AuthViewModel()),
       ],
       child: const MyApp(),
     ),
@@ -60,8 +65,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    
-    return Scaffold(body: Center(child: LoginScreen()));
+
+    return Scaffold(body: Center(child: AdminrequestshopScreen()));
     //return Scaffold(body: Center(child: AdminHomeScreen()));
   }
 }
