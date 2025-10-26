@@ -6,13 +6,11 @@ class StorestaffModel {
   final String fullName;
   final String? phoneNumber;
   final String email;
-  final String password;
   final String roleIds;
   final String? nationalId; // căn cước công dận
   final String? nationalIdFront; // mặt trước căn cước công dân
   final String? nationalIdBack; // mặt sau căn cước công dân
   final DateTime createdAt;
-  final String? uid; // Thêm trường uid nếu cần thiết
 
   StorestaffModel({
     required this.employeeId,
@@ -20,18 +18,15 @@ class StorestaffModel {
     required this.fullName,
     this.phoneNumber,
     required this.email,
-    required this.password,
     required this.roleIds,
     this.nationalId,
     this.nationalIdFront,
     this.nationalIdBack,
     required this.createdAt,
-    this.uid,
   });
 
   factory StorestaffModel.fromMap(Map<String, dynamic> map) {
-    // createdAt can be stored in Firestore as a Timestamp, as an ISO String,
-    // or as an integer (millisecondsSinceEpoch). Handle the common types.
+  
     final dynamic createdAtRaw = map['createdAt'];
     DateTime createdAt;
     if (createdAtRaw is DateTime) {
@@ -53,30 +48,52 @@ class StorestaffModel {
       fullName: map['fullName'] ?? '',
       phoneNumber: map['phoneNumber'],
       email: map['email'] ?? '',
-      password: map['password'] ?? '',
       roleIds: map['roleIds'] ?? '',
       nationalId: map['nationalId'],
       nationalIdFront: map['nationalIdFront'],
       nationalIdBack: map['nationalIdBack'],
       createdAt: createdAt,
-      uid: map['uid'],
     );
   }
-
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toFirestoreMap({bool useServerTimestamp = true}) {
     return {
       'employeeId': employeeId,
       'shopId': shopId,
       'fullName': fullName,
       'phoneNumber': phoneNumber,
       'email': email,
-      'password': password,
       'roleIds': roleIds,
       'nationalId': nationalId,
       'nationalIdFront': nationalIdFront,
       'nationalIdBack': nationalIdBack,
-      'createdAt': createdAt.toIso8601String(),
-      'uid': uid,
+      'createdAt': useServerTimestamp ? FieldValue.serverTimestamp() : Timestamp.fromDate(createdAt),
     };
+  }
+
+  StorestaffModel copyWith({
+    String? employeeId,
+    String? shopId,
+    String? fullName,
+    String? phoneNumber,
+    String? email,
+    String? roleIds,
+    String? nationalId,
+    String? nationalIdFront,
+    String? nationalIdBack,
+    DateTime? createdAt,
+    String? uid,
+  }) {
+    return StorestaffModel(
+      employeeId: employeeId ?? this.employeeId,
+      shopId: shopId ?? this.shopId,
+      fullName: fullName ?? this.fullName,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      email: email ?? this.email,
+      roleIds: roleIds ?? this.roleIds,
+      nationalId: nationalId ?? this.nationalId,
+      nationalIdFront: nationalIdFront ?? this.nationalIdFront,
+      nationalIdBack: nationalIdBack ?? this.nationalIdBack,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 }

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/data/models/storestaff_model.dart';
-import 'package:fashion_app/data/repositories/storestaffs_repository.dart';
+import 'package:fashion_app/data/repositories/storestaffs_repositories.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -108,12 +108,12 @@ class StorestaffViewmodel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> deleteStaff(String employeeId) async {
+  Future<void> deleteStaff(String shopId , String employeeId) async {
     isLoading = true;
     notifyListeners();
 
     try {
-      await _repo.deleteStaff(employeeId);
+      await _repo.deleteStaff(shopId, employeeId);
       staffs.removeWhere((staff) => staff.employeeId == employeeId);
       filteredStaffs.removeWhere((staff) => staff.employeeId == employeeId);
     } catch (e) {
@@ -126,6 +126,7 @@ class StorestaffViewmodel extends ChangeNotifier {
 
   Future<StorestaffModel> saveStaffWithAuth(
     StorestaffModel model, {
+    required String password,
     File? front,
     File? back,
   }) async {
@@ -150,43 +151,32 @@ class StorestaffViewmodel extends ChangeNotifier {
         );
       }
 
-      String uid = model.uid ?? '';
-      String employeeId = model.employeeId;
+      final isAddNew =  model.employeeId.isEmpty;
 
-      final isAddNew = uid.isEmpty || employeeId.isEmpty;
-
+      String docId = model.employeeId;
       if (isAddNew) {
-        //b1 Tạo user trên firebase auth
-        UserCredential userCredential =
-            await _auth.createUserWithEmailAndPassword(
+        final userCredential = await _auth.createUserWithEmailAndPassword(
           email: model.email,
-          password: model.password,
+          password: password,
         );
-        uid = userCredential.user?.uid ?? '';
-        // B2. Tạo employeeId mới
-        employeeId = _firestore.collection('storestaffs').doc().id;
+      } else {
+        docId =  model.employeeId;
       }
 
-      // B3. Cập nhật lại model hoàn chỉnh
-      final updated = StorestaffModel(
-        employeeId: employeeId,
-        shopId: model.shopId,
-        fullName: model.fullName,
-        password: model.password,
-        email: model.email,
-        nationalId: model.nationalId,
+      final updated = model.copyWith(
+        employeeId: docId,
         nationalIdFront: frontUrl,
         nationalIdBack: backUrl,
-        roleIds: model.roleIds,
         createdAt: model.createdAt,
-        uid: uid,
       );
 
-      // B4. Lưu vào Firestore
+      // B4. Lưu vào Firestore dưới shops/{shopId}/staff/{docId}
       await _firestore
-          .collection('storestaffs')
-          .doc(employeeId)
-          .set(updated.toMap());
+          .collection('shops')
+          .doc(updated.shopId)
+          .collection('staff')
+          .doc(docId)
+          .set(updated.toFirestoreMap());
 
       // B5. Cập nhật list cục bộ
       final exists = staffs.any((s) => s.employeeId == updated.employeeId);

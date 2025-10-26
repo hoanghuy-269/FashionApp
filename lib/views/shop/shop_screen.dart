@@ -9,8 +9,9 @@ import 'package:provider/provider.dart';
 
 class ShopScreen extends StatefulWidget {
   final String? idUser;
+  final String? idShop;
 
-  const ShopScreen({super.key, this.idUser});
+  const ShopScreen({super.key, this.idUser, this.idShop});
 
   @override
   State<ShopScreen> createState() => _ShopScreenState();
@@ -27,20 +28,20 @@ class _ShopScreenState extends State<ShopScreen> {
         statusBarIconBrightness: Brightness.dark,
       ),
     );
-    // khi màn hinh build xong fetch shop
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final vm = Provider.of<ShopViewModel>(context, listen: false);
       try {
-        // if có idUser truyền vào thì lấy shop của user đó
-        if (widget.idUser != null && widget.idUser!.isNotEmpty) {
-          // tranhs fetch lại nếu đã có shop của user đó
-          if (vm.currentShop == null ||
-              vm.currentShop?.userId != widget.idUser) {
+        if (widget.idShop != null && widget.idShop!.isNotEmpty) {
+          if (vm.currentShop == null || vm.currentShop?.shopId != widget.idShop) {
+            await vm.fetchShopById(widget.idShop!);
+          }
+        } else if (widget.idUser != null && widget.idUser!.isNotEmpty) {
+          
+          if (vm.currentShop == null || vm.currentShop?.userId != widget.idUser) {
             await vm.fetchShopByUserId(widget.idUser!);
           }
         } else {
-          // tranh fetch lại nếu đã có shop hiện tại
           if (vm.currentShop == null) {
             await vm.fetchShopForCurrentUser();
           }

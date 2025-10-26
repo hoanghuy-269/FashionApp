@@ -12,6 +12,15 @@ class AdminrequestshopScreen extends StatefulWidget {
 
 class _AdminrequestshopScreenState extends State<AdminrequestshopScreen>
     with SingleTickerProviderStateMixin {
+  // Constants
+  static const String STATUS_PENDING = 'pending';
+  static const String STATUS_APPROVED = 'approved';
+  static const String STATUS_REJECTED = 'rejected';
+
+  // Tab indexes
+  static const int TAB_APPROVED = 1;
+  static const int TAB_REJECTED = 2;
+
   late TabController _tabController;
   final RequestToOpenShopViewModel _requestVm = RequestToOpenShopViewModel();
 
@@ -22,7 +31,7 @@ class _AdminrequestshopScreenState extends State<AdminrequestshopScreen>
   }
 
   Future<void> _refresh() async {
-    setState(() {}); // gọi lại FutureBuilder
+    setState(() {});
   }
 
   @override
@@ -43,9 +52,9 @@ class _AdminrequestshopScreenState extends State<AdminrequestshopScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildRequestList('pending'),
-          _buildRequestList('approved'),
-          _buildRequestList('rejected'),
+          _buildRequestList(STATUS_PENDING),
+          _buildRequestList(STATUS_APPROVED),
+          _buildRequestList(STATUS_REJECTED),
         ],
       ),
     );
@@ -77,40 +86,45 @@ class _AdminrequestshopScreenState extends State<AdminrequestshopScreen>
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 child: ListTile(
-                  title: Text(req.shopName ?? "Shop chưa đặt tên"),
+                  title: Text(req.shopName),
                   subtitle: Text("Người gửi: ${req.userId}"),
-                  trailing: status == 'pending'
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                           ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                            ),
-                              onPressed: () async {
-                                
-                                final result = await showDialog(
-                                  context: context,
-                                  builder: (context) => AdmindetailrequestshopDialog(requestId: req.requestId!),
-                                );
-                                if (!mounted) return;
-                                if (result == 'approved') {
-                                  await _refresh();
-                                  _tabController.animateTo(1); // switch to 'Đã duyệt'
-                                } else if (result == 'rejected') {
-                                  await _refresh();
-                                  _tabController.animateTo(2); // switch to 'Đã hủy'
-                                } else {
-                                  await _refresh();
-                                }
-                              },
-                              child: const Text('Chi tiết'),
-                            ),
-                            
-                          ],
-                        )
-                      : null,
+                  trailing:
+                      status == STATUS_PENDING
+                          ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                ),
+                                onPressed: () async {
+                                  final result = await showDialog(
+                                    context: context,
+                                    builder:
+                                        (context) =>
+                                            AdmindetailrequestshopDialog(
+                                              requestId: req.requestId,
+                                            ),
+                                  );
+                                  if (!mounted) return;
+
+                                  // Dùng constants thay vì string để tránh typo
+                                  if (result == STATUS_APPROVED) {
+                                    await _refresh();
+                                    _tabController.animateTo(TAB_APPROVED);
+                                  } else if (result == STATUS_REJECTED) {
+                                    await _refresh();
+                                    _tabController.animateTo(TAB_REJECTED);
+                                  } else {
+                                    await _refresh();
+                                  }
+                                },
+                                child: const Text('Chi tiết'),
+                              ),
+                            ],
+                          )
+                          : null,
                 ),
               );
             },

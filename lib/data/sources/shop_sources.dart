@@ -45,7 +45,6 @@ class ShopSources {
     final seq = await _getNextShopSequence();
     final shopId = seq.toString().padLeft(5, '0');
 
-    // Ensure createdAt is stored as ISO string
     if (shopData['createdAt'] is DateTime) {
       shopData['createdAt'] = (shopData['createdAt'] as DateTime).toIso8601String();
     }
@@ -86,5 +85,14 @@ class ShopSources {
       return ShopModel.fromtoMap(data);
     }
     return null;
+  }
+
+  Future<List<ShopModel>> getShopsByOwnerId(String ownerId) async {
+    final query = await _db.collection('shops').where('userId', isEqualTo: ownerId).get();
+    return query.docs.map((e) {
+      final data = e.data();
+      data['shopId'] = e.id;
+      return ShopModel.fromtoMap(data);
+    }).toList();
   }
 }
