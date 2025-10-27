@@ -5,11 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class UserprofileScreen extends StatefulWidget {
-    final String? idUser;
+  final String? idUser;
 
-  const UserprofileScreen({super.key,  this.idUser});
+  const UserprofileScreen({super.key, this.idUser});
 
- 
   @override
   State<UserprofileScreen> createState() => _UserprofileScreenState();
 }
@@ -19,11 +18,11 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
   final TextEditingController phoneControler = TextEditingController();
   final TextEditingController addressControler = TextEditingController();
   String? requestStatus;
-  late  AuthViewModel auth;
+  late AuthViewModel auth;
   User? currentUser;
   bool isLoading = false;
   String? errorMessage;
-  bool _hasLoadedData = false; 
+  bool _hasLoadedData = false;
 
   @override
   void initState() {
@@ -32,13 +31,11 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
       if (!mounted) return;
       auth = AuthViewModel();
       loadUserData();
-    }
-  );
+    });
   }
 
   @override
   void dispose() {
-
     nameController.dispose();
     phoneControler.dispose();
     addressControler.dispose();
@@ -68,7 +65,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
       final user = await auth.FetchUserById(id);
 
       if (!mounted) return;
-      
+
       setState(() {
         if (user != null) {
           currentUser = user;
@@ -100,9 +97,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
           title: const Text('Thông tin người dùng'),
           centerTitle: true,
         ),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -136,11 +131,16 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                   onPressed: () async {
                     // Xử lý đăng kí shop
                     print("Đăng kí shop :${widget.idUser}");
-                    
-                    final result = await Navigator.push(context, MaterialPageRoute(builder: (context)=>
-                      RequestToOpenStoreScreen(uid: currentUser?.id)
-                    ));
-                    if(result == "pending"){
+
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                RequestToOpenStoreScreen(uid: currentUser?.id),
+                      ),
+                    );
+                    if (result == "pending") {
                       setState(() {
                         requestStatus = "pending";
                       });
@@ -148,14 +148,16 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                   },
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.all(
-                      requestStatus == "pending" ? Colors.grey : Colors.blue
+                      requestStatus == "pending" ? Colors.grey : Colors.blue,
                     ),
                     side: WidgetStateProperty.all(
                       const BorderSide(color: Colors.blue),
                     ),
                   ),
                   child: Text(
-                    requestStatus == "pending" ? "Yêu cầu đang chờ xử lí" : "Đăng kí shop",
+                    requestStatus == "pending"
+                        ? "Yêu cầu đang chờ xử lí"
+                        : "Đăng kí shop",
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -164,7 +166,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Form fields
                 _buildTextField(
                   label: "Email",
@@ -173,7 +175,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                   enabled: false, // Email thường không cho edit
                 ),
                 const SizedBox(height: 16),
-                
+
                 _buildTextField(
                   label: "Họ và tên",
                   controller: nameController,
@@ -181,19 +183,20 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                   icon: Icons.person_2_outlined,
                 ),
                 const SizedBox(height: 16),
-                
+
                 _buildPhoneField(),
                 const SizedBox(height: 16),
-                
+
                 _buildTextField(
                   label: "Địa chỉ",
                   controller: addressControler,
-                  hintText: currentUser?.addresses.isNotEmpty == true 
-                      ? currentUser!.addresses[0] 
-                      : '',
+                  hintText:
+                      currentUser?.addresses.isNotEmpty == true
+                          ? currentUser!.addresses[0]
+                          : '',
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -283,9 +286,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
             border: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(16)),
             ),
-            prefixIcon: icon != null
-                ? Icon(icon, color: Colors.blue)
-                : null,
+            prefixIcon: icon != null ? Icon(icon, color: Colors.blue) : null,
           ),
         ),
       ],
@@ -324,16 +325,15 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
             border: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(16)),
             ),
-            hintText: currentUser?.phoneNumbers.isNotEmpty == true
-                ? currentUser!.phoneNumbers[0]
-                : '',
+            hintText:
+                currentUser?.phoneNumbers.isNotEmpty == true
+                    ? currentUser!.phoneNumbers[0]
+                    : '',
           ),
         ),
       ],
     );
   }
 
-  Future<void> _updateUserInfo() async {
-   
-  }
+  Future<void> _updateUserInfo() async {}
 }
