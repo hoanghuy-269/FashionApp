@@ -12,11 +12,7 @@ extension FlushbarExtension on BuildContext {
     Flushbar(
       message: message,
       duration: Duration(seconds: durationSeconds),
-      icon: Icon(
-        icon,
-        size: 28.0,
-        color: Colors.white,
-      ),
+      icon: Icon(icon, size: 28.0, color: Colors.white),
       flushbarPosition: FlushbarPosition.TOP,
       backgroundColor: backgroundColor,
     ).show(this);
