@@ -1,4 +1,3 @@
-import 'package:fashion_app/data/models/User.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

@@ -94,7 +94,7 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
               showDialog(
                 barrierDismissible: false,
                 context: context,
-                builder: (_) => const ShopAddemployCreen(),
+                builder: (_) => ShopAddemployCreen(shopId: _shopVm?.currentShop?.shopId),
               );
             },
             icon: const Icon(Icons.add),

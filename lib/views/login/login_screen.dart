@@ -41,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    if (password.isEmpty || !Validator.isValidPassword(password)) {
+    if (password.isEmpty) {
       setState(() => _passwordError = true);
       _showError(
         'Mật khẩu phải có ít nhất 6 ký tự, chữ hoa, số và ký tự đặc biệt',

@@ -10,7 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class ShopAddemployCreen extends StatefulWidget {
-  const ShopAddemployCreen({super.key});
+  final String? shopId;
+  const ShopAddemployCreen({super.key, this.shopId});
 
   @override
   State<ShopAddemployCreen> createState() => _ShopAddemployCreenState();
@@ -214,7 +215,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                           createdAt: DateTime.now(),
                         );
                         setState(() => isLoading = true);
-                          
+
                         
                         try {
                           await staffVm.saveStaffWithAuth(

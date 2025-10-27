@@ -47,11 +47,11 @@ class _AdmindetailrequestshopDialogState
   @override
   void initState() {
     super.initState();
-   WidgetsBinding.instance.addPostFrameCallback((_){
-     if (widget.requestId != null && widget.requestId!.isNotEmpty) {
-      _loadRequestData(widget.requestId!);
-    }
-   });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.requestId != null && widget.requestId!.isNotEmpty) {
+        _loadRequestData(widget.requestId!);
+      }
+    });
   }
 
   @override
@@ -66,7 +66,10 @@ class _AdmindetailrequestshopDialogState
     setState(() => _isLoading = true);
 
     try {
-      final vm = Provider.of<RequestToOpenShopViewModel>(context, listen: false);
+      final vm = Provider.of<RequestToOpenShopViewModel>(
+        context,
+        listen: false,
+      );
       final request = await vm.fetchRequestById(requestId);
 
       if (request != null && mounted) {
@@ -74,9 +77,14 @@ class _AdmindetailrequestshopDialogState
         _cccdController.text = request.nationalId;
         _addressController.text = request.address;
         _loadedRequest = request;
-        _frontIDUrl = request.idnationFront.isNotEmpty ? request.idnationFront : null;
-        _backIDUrl = request.idnationBack.isNotEmpty ? request.idnationBack : null;
-        _licenseUrl = request.businessLicense?.isNotEmpty == true ? request.businessLicense : null;
+        _frontIDUrl =
+            request.idnationFront.isNotEmpty ? request.idnationFront : null;
+        _backIDUrl =
+            request.idnationBack.isNotEmpty ? request.idnationBack : null;
+        _licenseUrl =
+            request.businessLicense?.isNotEmpty == true
+                ? request.businessLicense
+                : null;
         setState(() {});
       }
     } catch (e) {
@@ -117,9 +125,9 @@ class _AdmindetailrequestshopDialogState
     await vm.updateStatus(_loadedRequest!.requestId, STATUS_REJECTED);
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã từ chối yêu cầu')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Đã từ chối yêu cầu')));
     Navigator.of(context).pop(STATUS_REJECTED);
   }
 
@@ -131,11 +139,22 @@ class _AdmindetailrequestshopDialogState
       return;
     }
 
-    final requestVm = Provider.of<RequestToOpenShopViewModel>(context, listen: false);
+    final requestVm = Provider.of<RequestToOpenShopViewModel>(
+      context,
+      listen: false,
+    );
     final shopVm = Provider.of<ShopViewModel>(context, listen: false);
 
+    String generateRequestId() {
+      final now = DateTime.now();
+      final formattedDate =
+          "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}";
+      final timestamp = now.millisecondsSinceEpoch.toString().substring(10);
+      return 'Shop_${formattedDate}_$timestamp';
+    }
+
     final shopToCreate = ShopModel(
-      shopId: '',
+      shopId: generateRequestId(),
       userId: _loadedRequest!.userId,
       requestId: _loadedRequest!.requestId,
       shopName: _loadedRequest!.shopName,
@@ -154,14 +173,18 @@ class _AdmindetailrequestshopDialogState
 
       if (createdShop == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Lỗi khi tạo shop')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Lỗi khi tạo shop')));
         return;
       }
 
       try {
-        await requestVm.updateStatusWithShop(_loadedRequest!.requestId, STATUS_APPROVED, createdShop.shopId);
+        await requestVm.updateStatusWithShop(
+          _loadedRequest!.requestId,
+          STATUS_APPROVED,
+          createdShop.shopId,
+        );
       } catch (e) {
         try {
           await shopVm.deleteShop(createdShop.shopId);
@@ -178,9 +201,9 @@ class _AdmindetailrequestshopDialogState
       Navigator.of(context).pop(STATUS_APPROVED);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lỗi khi tạo shop')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Lỗi khi tạo shop')));
     }
   }
 
@@ -190,10 +213,7 @@ class _AdmindetailrequestshopDialogState
       contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       content: _isLoading ? _buildLoadingState() : _buildFormContent(),
       actions: [
-        TextButton(
-          onPressed: _handleReject,
-          child: const Text('Từ chối'),
-        ),
+        TextButton(onPressed: _handleReject, child: const Text('Từ chối')),
         ElevatedButton(
           onPressed: _handleApprove,
           child: Text(_loadedRequest != null ? 'Chấp nhận' : 'Gửi yêu cầu'),
@@ -236,9 +256,7 @@ class _AdmindetailrequestshopDialogState
     return Center(
       child: GestureDetector(
         onTap: () {}, // Logo picker disabled for now
-        child: const CircleAvatar(
-          child: Icon(Icons.person, size: 50),
-        ),
+        child: const CircleAvatar(child: Icon(Icons.person, size: 50)),
       ),
     );
   }

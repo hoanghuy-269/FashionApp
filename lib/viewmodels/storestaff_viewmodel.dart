@@ -5,11 +5,15 @@ import 'package:fashion_app/data/models/storestaff_model.dart';
 import 'package:fashion_app/data/repositories/storestaffs_repositories.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class StorestaffViewmodel extends ChangeNotifier {
   final StorestaffsRepositories _repo = StorestaffsRepositories();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
+  late UserCredential userCredential;
+
   List<StorestaffModel> staffs = [];
   List<StorestaffModel> filteredStaffs = [];
   StorestaffModel? currentStaff;
@@ -27,12 +31,10 @@ class StorestaffViewmodel extends ChangeNotifier {
       filteredStaffs = List.from(staffs);
     } catch (e) {
       debugPrint('Lỗi thêm nhân viên: $e');
-    }
-    finally {
+    } finally {
       isLoading = false;
       notifyListeners();
     }
-  
   }
 
   Future<void> updateStaff(StorestaffModel staff) async {
@@ -84,31 +86,33 @@ class StorestaffViewmodel extends ChangeNotifier {
       staffs = await _repo.getStaffsByShop(shopId);
       filteredStaffs = List.from(staffs);
       _lastFetchedShopId = shopId;
-  } catch (_) {
+    } catch (_) {
     } finally {
       isLoading = false;
       notifyListeners();
     }
   }
 
-  
   void searchStaff(String query) {
     if (staffs.isEmpty) {
-      return; 
+      return;
     }
 
     if (query.isEmpty) {
       filteredStaffs = List.from(staffs);
     } else {
-      filteredStaffs = staffs
-          .where((staff) =>
-              staff.fullName.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+      filteredStaffs =
+          staffs
+              .where(
+                (staff) =>
+                    staff.fullName.toLowerCase().contains(query.toLowerCase()),
+              )
+              .toList();
     }
     notifyListeners();
   }
 
-  Future<void> deleteStaff(String shopId , String employeeId) async {
+  Future<void> deleteStaff(String shopId, String employeeId) async {
     isLoading = true;
     notifyListeners();
 
@@ -151,16 +155,17 @@ class StorestaffViewmodel extends ChangeNotifier {
         );
       }
 
-      final isAddNew =  model.employeeId.isEmpty;
+      final isAddNew = model.employeeId.isEmpty;
 
       String docId = model.employeeId;
       if (isAddNew) {
-        final userCredential = await _auth.createUserWithEmailAndPassword(
+        userCredential = await _auth.createUserWithEmailAndPassword(
           email: model.email,
           password: password,
         );
+        docId = userCredential.user?.uid ?? '';
       } else {
-        docId =  model.employeeId;
+        docId = model.employeeId;
       }
 
       final updated = model.copyWith(
@@ -170,7 +175,10 @@ class StorestaffViewmodel extends ChangeNotifier {
         createdAt: model.createdAt,
       );
 
-      // B4. Lưu vào Firestore dưới shops/{shopId}/staff/{docId}
+      if (updated.shopId.isEmpty) {
+        throw Exception('shopId trống. Vui lòng cung cấp shopId hợp lệ trước khi lưu nhân viên.');
+      }
+
       await _firestore
           .collection('shops')
           .doc(updated.shopId)
@@ -192,14 +200,23 @@ class StorestaffViewmodel extends ChangeNotifier {
       filteredStaffs = List.from(staffs);
 
       return updated;
-    } on FirebaseAuthException catch (_) {
-      rethrow;
-    } catch (_) {
+    } on FirebaseAuthException catch (e) {
+      // Provide a clearer message for common auth errors
+      if (e.code == 'email-already-in-use' || e.code == 'email-already-in-use') {
+        throw Exception('Email này đã được sử dụng bởi tài khoản khác.');
+      }
+      throw Exception(e.message ?? 'Lỗi xác thực: ${e.code}');
+    } on PlatformException catch (e) {
+      // On some platforms the plugin throws PlatformException
+      if (e.code.toLowerCase().contains('email') || e.message?.toLowerCase().contains('email') == true) {
+        throw Exception('Email này đã được sử dụng bởi tài khoản khác.');
+      }
+      throw Exception(e.message ?? e.code);
+    } catch (e) {
       rethrow;
     } finally {
       isLoading = false;
       notifyListeners();
     }
   }
-
 }

@@ -18,14 +18,14 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
   final _phoneController = TextEditingController();
   final _cccdController = TextEditingController();
   final _addressController = TextEditingController();
-  
+
   File? _frontID;
   File? _backID;
   File? _license;
   String? _frontUrl;
   String? _backUrl;
   String? _licenseUrl;
-  
+
   bool _isLoading = false;
   bool _isInitialized = false;
 
@@ -48,12 +48,14 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     _addressController.text = shop.address ?? '';
     setState(() {
       _cccdController.text = shop.nationalId;
-      _frontUrl = shop.idnationFront != null && shop.idnationFront.isNotEmpty
-          ? "${shop.idnationFront}?ts=${DateTime.now().millisecondsSinceEpoch}"
-          : null;
-      _backUrl = shop.idnationBack != null && shop.idnationBack.isNotEmpty
-          ? "${shop.idnationBack}?ts=${DateTime.now().millisecondsSinceEpoch}"
-          : null;
+      _frontUrl =
+          shop.idnationFront.isNotEmpty
+              ? "${shop.idnationFront}?ts=${DateTime.now().millisecondsSinceEpoch}"
+              : null;
+      _backUrl =
+          shop.idnationBack.isNotEmpty
+              ? "${shop.idnationBack}?ts=${DateTime.now().millisecondsSinceEpoch}"
+              : null;
       _licenseUrl = shop.businessLicense;
     });
   }
@@ -102,7 +104,9 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
 
       // Upload ảnh mới nếu có
       if (_frontID != null) {
-        final uploadedFront = await GalleryUtil.uploadImageToFirebase(_frontID!);
+        final uploadedFront = await GalleryUtil.uploadImageToFirebase(
+          _frontID!,
+        );
         if (uploadedFront != null) frontUrl = uploadedFront;
       }
 
@@ -112,7 +116,9 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
       }
 
       if (_license != null) {
-        final uploadedLicense = await GalleryUtil.uploadImageToFirebase(_license!);
+        final uploadedLicense = await GalleryUtil.uploadImageToFirebase(
+          _license!,
+        );
         if (uploadedLicense != null) licenseUrl = uploadedLicense;
       }
 
@@ -259,23 +265,24 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                       backgroundColor: Colors.blue,
                       disabledBackgroundColor: Colors.grey,
                     ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                    child:
+                        _isLoading
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                            : const Text(
+                              "Cập nhật",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
-                          )
-                        : const Text(
-                            "Cập nhật",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
                   ),
                 ),
               ],
@@ -339,42 +346,44 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: Colors.grey.shade400),
-          image: file != null
-              ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
-              : (url != null
-                  ? DecorationImage(
-                      image: NetworkImage(url),
-                      fit: BoxFit.cover,
-                    )
-                  : null),
+          image:
+              file != null
+                  ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
+                  : (url != null
+                      ? DecorationImage(
+                        image: NetworkImage(url),
+                        fit: BoxFit.cover,
+                      )
+                      : null),
         ),
-        child: (file == null && url == null)
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.add_a_photo, color: Colors.grey),
-                  const SizedBox(height: 5),
-                  Text(
-                    label,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              )
-            : Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: const EdgeInsets.all(5),
-                  child: InkWell(
-                    onTap: onTap,
-                    child: const CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Colors.black54,
-                      child: Icon(Icons.edit, size: 15, color: Colors.white),
+        child:
+            (file == null && url == null)
+                ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.add_a_photo, color: Colors.grey),
+                    const SizedBox(height: 5),
+                    Text(
+                      label,
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                )
+                : Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.all(5),
+                    child: InkWell(
+                      onTap: onTap,
+                      child: const CircleAvatar(
+                        radius: 12,
+                        backgroundColor: Colors.black54,
+                        child: Icon(Icons.edit, size: 15, color: Colors.white),
+                      ),
                     ),
                   ),
                 ),
-              ),
       ),
     );
   }
