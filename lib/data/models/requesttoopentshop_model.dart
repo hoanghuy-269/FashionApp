@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class RequesttoopentshopModel {
   final String requestId;
   final String userId;
+  final String? shopId;
   final String shopName;
   final String? businessLicense; // giấy phép kinh doanh
   final String nationalId; // căn cước công dân
@@ -17,6 +18,7 @@ class RequesttoopentshopModel {
   RequesttoopentshopModel({
     required this.requestId,
     required this.userId,
+    this.shopId,
     required this.shopName,
     this.businessLicense,
     required this.nationalId,
@@ -33,6 +35,7 @@ class RequesttoopentshopModel {
     return RequesttoopentshopModel(
       requestId: map['requestId'] ?? '',
       userId: map['userId'] ?? '',
+      shopId: map['shopId'],
       shopName: map['shopName'] ?? '',
       businessLicense: map['businessLicense'],
       nationalId: map['nationalId'] ?? '',
@@ -58,6 +61,7 @@ class RequesttoopentshopModel {
     return {
       'requestId': requestId,
       'userId': userId,
+      'shopId': shopId,
       'shopName': shopName,
       'businessLicense': businessLicense,
       'address': address,
@@ -74,6 +78,7 @@ class RequesttoopentshopModel {
   RequesttoopentshopModel copyWith({
     String? requestId,
     String? userId,
+    String? shopId,
     String? shopName,
     String? businessLicense,
     String? nationalId,
@@ -88,6 +93,7 @@ class RequesttoopentshopModel {
     return RequesttoopentshopModel(
       requestId: requestId ?? this.requestId,
       userId: userId ?? this.userId,
+  shopId: shopId ?? this.shopId,
       shopName: shopName ?? this.shopName,
       businessLicense: businessLicense ?? this.businessLicense,
       nationalId: nationalId ?? this.nationalId,

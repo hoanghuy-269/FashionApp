@@ -1,6 +1,5 @@
-import 'package:another_flushbar/flushbar.dart';
 import 'package:fashion_app/core/utils/flushbar_extension.dart';
-import 'package:fashion_app/viewmodels/employee_role_viewmodel.dart';
+import 'package:fashion_app/viewmodels/employeerole_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/views/shop/shop_addpersonal_screen.dart';
 import 'package:fashion_app/views/shop/shop_updatepersonnal_screen.dart';
@@ -72,7 +71,7 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
   String _getRoleName(BuildContext context, String roleId) {
     if (!mounted) return '';
     final roleVm = Provider.of<EmployeeRoleViewmodel>(context, listen: false);
-    return roleVm.getRoleName(roleId, fallback: 'Chưa xác định');
+    return roleVm.getRoleName(roleId);
   }
 
   @override
@@ -125,7 +124,7 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
     );
   }
 
-  //  Search bar với check loading
+  //  Search 
   Widget _buildSearchBar() {
     return Consumer<StorestaffViewmodel>(
       builder: (context, vm, _) {
@@ -134,7 +133,6 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
           child: TextField(
             enabled: !vm.isLoading, //  Disable khi đang loading
             onChanged: (value) {
-              //  Chỉ search khi không loading và có data
               if (!vm.isLoading && vm.staffs.isNotEmpty) {
                 vm.searchStaff(value);
               }
@@ -327,7 +325,7 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
 
     try {
       final staffVm = Provider.of<StorestaffViewmodel>(context, listen: false);
-      await staffVm.deleteStaff(staff.employeeId);
+      await staffVm.deleteStaff(staff.shopId, staff.employeeId);
 
       if (!mounted) return;
       context.showSuccess("Xóa nhân viên thành công");

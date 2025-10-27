@@ -1,9 +1,8 @@
 import 'package:fashion_app/data/models/storestaff_model.dart';
-import 'package:fashion_app/data/sources/staff_remotesources.dart';
 
 class StaffRepositories {
 
-  final StaffRemotesources _remoteDataSource = StaffRemotesources();
+  final StaffRepositories _remoteDataSource = StaffRepositories();
 
   Future<void> addStaff(StorestaffModel staff) => _remoteDataSource.addStaff(staff);
   Future<void> updateStaff(StorestaffModel staff) => _remoteDataSource.updateStaff(staff);

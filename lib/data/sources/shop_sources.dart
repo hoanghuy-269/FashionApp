@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/data/models/shop_model.dart';
 
-class ShopRemoteSources {
+class ShopSources {
   final _db = FirebaseFirestore.instance;
 
   Future<void> addShop(ShopModel shop) async {
@@ -45,7 +45,6 @@ class ShopRemoteSources {
     final seq = await _getNextShopSequence();
     final shopId = seq.toString().padLeft(5, '0');
 
-    // Ensure createdAt is stored as ISO string
     if (shopData['createdAt'] is DateTime) {
       shopData['createdAt'] = (shopData['createdAt'] as DateTime).toIso8601String();
     }
@@ -86,5 +85,14 @@ class ShopRemoteSources {
       return ShopModel.fromtoMap(data);
     }
     return null;
+  }
+
+  Future<List<ShopModel>> getShopsByOwnerId(String ownerId) async {
+    final query = await _db.collection('shops').where('userId', isEqualTo: ownerId).get();
+    return query.docs.map((e) {
+      final data = e.data();
+      data['shopId'] = e.id;
+      return ShopModel.fromtoMap(data);
+    }).toList();
   }
 }

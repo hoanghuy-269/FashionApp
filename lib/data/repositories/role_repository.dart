@@ -1,6 +1,5 @@
+import 'package:fashion_app/data/sources/role_sources.dart';
 import '../models/role_model.dart';
-import '../sources/role_remote_sources.dart';
-
 class RoleRepository {
   final FirebaseRoleSource _source;
 
