@@ -14,5 +14,5 @@ class StorestaffsRepositories {
 
   Future<List<StorestaffModel>> getStaffsByShop(String shopId) => _remoteDataSource.getStaffsByShop(shopId);
 
-  Future<void> deleteStaff(String employeeId) => _remoteDataSource.deleteStaff(employeeId);
+  Future<void> deleteStaff(String shopId, String employeeId) => _remoteDataSource.deleteStaff(shopId, employeeId);
 }

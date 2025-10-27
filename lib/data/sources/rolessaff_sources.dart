@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class RolesRemoteSources {
+class RolessaffSources {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final String collectionPath = 'storeroles';
 

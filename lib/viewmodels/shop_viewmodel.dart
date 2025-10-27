@@ -1,5 +1,5 @@
 import 'package:fashion_app/data/models/shop_model.dart';
-import 'package:fashion_app/data/repositories/shop_repositories.dart';
+import 'package:fashion_app/data/repositories/shop_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -99,7 +99,26 @@ class ShopViewModel extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
-}
+
+  }
+
+  Future<void> deleteShop(String shopId) async {
+    try {
+      isLoading = true;
+      notifyListeners();
+
+      await _repo.deleteShop(shopId);
+      shops.removeWhere((s) => s.shopId == shopId);
+      if (currentShop?.shopId == shopId) currentShop = null;
+    } catch (e) {
+      debugPrint('Lỗi xóa shop: $e');
+      rethrow;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
 
 
   // lấy theo id trên firebase
@@ -120,6 +139,26 @@ class ShopViewModel extends ChangeNotifier {
     }
   }
 
+  /// Fetch shop by its shopId (useful when caller passes shopId explicitly)
+  Future<ShopModel?> fetchShopById(String shopId) async {
+    if (shopId.isEmpty) return null;
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final shop = await _repo.getShopById(shopId);
+      currentShop = shop;
+      return shop;
+    } catch (e) {
+      debugPrint('Lỗi fetchShopById: $e');
+      return null;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<ShopModel?> fetchShopByUserId(String userId) async {
     if (userId.isEmpty) return null;
 
@@ -131,7 +170,28 @@ class ShopViewModel extends ChangeNotifier {
       currentShop = shop;
       return shop;
     } catch (e) {
-      rethrow;
+      debugPrint('Lỗi fetchShopByUserId: $e');
+      return null;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<List<ShopModel>> fetchShopsByUserId(String userId) async {
+    if (userId.isEmpty) return [];
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final result = await _repo.getShopsByOwnerId(userId);
+      // optionally update local cache
+      // do not overwrite shops list here to avoid side effects
+      return result;
+    } catch (e) {
+      debugPrint('Lỗi fetchShopsByUserId: $e');
+      return [];
     } finally {
       isLoading = false;
       notifyListeners();

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/data/models/storestaff_model.dart';
-import 'package:fashion_app/viewmodels/employee_role_viewmodel.dart';
+import 'package:fashion_app/viewmodels/employeerole_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -34,7 +34,6 @@ class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
     if (s != null) {
       nameController.text = s.fullName;
       acountController.text = s.email;
-      passwordController.text = s.password;
       cccdControler.text = s.nationalId ?? '';
       selectedRole = s.roleIds;
     }
@@ -47,9 +46,11 @@ class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
   }
 
   bool _validateEmployee() {
+    final isNew = widget.staffToEdit == null;
     if (nameController.text.trim().isEmpty ||
         acountController.text.trim().isEmpty ||
-        passwordController.text.trim().isEmpty ||
+        // password required only for new employees
+        (isNew && passwordController.text.trim().isEmpty) ||
         cccdControler.text.trim().isEmpty) {
       context.showError('Vui lòng điền đầy đủ thông tin');
       return false;
@@ -207,18 +208,22 @@ class _ShopUpdatestaffScreenState extends State<ShopUpdatestaffScreen> {
                           employeeId: base?.employeeId ?? DateTime.now().millisecondsSinceEpoch.toString(),
                           shopId: base?.shopId ?? '', 
                           fullName: nameController.text.trim(),
-                          password: passwordController.text.trim(),
                           email: base?.email ?? acountController.text.trim(),
                           nationalId: cccdControler.text.trim(),
                           nationalIdFront: base?.nationalIdFront,
                           nationalIdBack: base?.nationalIdBack,
                           roleIds: selectedRole,
                           createdAt: base?.createdAt ?? DateTime.now(),
-                          uid: base?.uid,
                         );
 
                         try {
-                          await shopVm.saveStaffWithAuth(model, front: frontID, back: backID);
+                          // when updating existing staff we don't change their password here
+                          await shopVm.saveStaffWithAuth(
+                            model,
+                            password: '',
+                            front: frontID,
+                            back: backID,
+                          );
                           if (!mounted) return;
                           Navigator.pop(context, true);
                         } catch (e) {

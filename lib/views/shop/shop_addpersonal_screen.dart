@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/data/models/storestaff_model.dart';
-import 'package:fashion_app/viewmodels/employee_role_viewmodel.dart';
+import 'package:fashion_app/viewmodels/employeerole_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +33,6 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
        final roleVm = Provider.of<EmployeeRoleViewmodel>(context, listen: false);
         roleVm.fetchRoles();
-
     });
   }
 
@@ -207,20 +206,23 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
                           employeeId: '',
                           shopId: shopId,
                           fullName: nameController.text.trim(),
-                          password: passwordController.text.trim(),
                           email: acountController.text.trim(),
                           nationalId: cccdControler.text.trim(),
                           nationalIdFront: null,
                           nationalIdBack: null,
                           roleIds: selectedRole,
                           createdAt: DateTime.now(),
-                          uid: '', 
                         );
                         setState(() => isLoading = true);
                           
                         
                         try {
-                          await staffVm.saveStaffWithAuth(model, front: frontID, back: backID);
+                          await staffVm.saveStaffWithAuth(
+                            model,
+                            password: passwordController.text.trim(),
+                            front: frontID,
+                            back: backID,
+                          );
                           if (!mounted) return;
                           context.showSuccess('Thêm nhân viên thành công');
                         } catch (e) {

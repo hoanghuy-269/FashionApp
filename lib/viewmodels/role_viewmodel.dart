@@ -1,7 +1,8 @@
+import 'package:fashion_app/data/repositories/role_repository.dart';
+import 'package:fashion_app/data/sources/role_sources.dart';
 import 'package:flutter/material.dart';
 import '../data/models/role_model.dart';
-import '../data/repositories/role_repositories.dart';
-import '../data/sources/role_remote_sources.dart';
+
 
 class RoleViewModel extends ChangeNotifier {
   final RoleRepository _repository = RoleRepository(FirebaseRoleSource());
