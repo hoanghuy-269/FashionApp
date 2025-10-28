@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
+import 'package:fashion_app/core/widget/vaidatedtextfielfromrequest.dart';
 import 'package:fashion_app/data/models/storestaff_model.dart';
 import 'package:fashion_app/viewmodels/employeerole_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class ShopAddemployCreen extends StatefulWidget {
@@ -19,402 +19,510 @@ class ShopAddemployCreen extends StatefulWidget {
 
 class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController acountController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController cccdControler = TextEditingController();
+  
   String selectedRole = "";
   bool isLoading = false;
 
   File? frontID;
   File? backID;
 
+  String? roleError;
+  String? nameError;
+  String? emailError;
+  String? cccdError;
+  String? passwordError;
+  String? frontError;
+  String? backError;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-       final roleVm = Provider.of<EmployeeRoleViewmodel>(context, listen: false);
-        roleVm.fetchRoles();
+      final roleVm = Provider.of<EmployeeRoleViewmodel>(context, listen: false);
+      roleVm.fetchRoles();
     });
   }
 
-  bool validatEmploy() {
-    if (nameController.text.trim().isEmpty ||
-        acountController.text.trim().isEmpty ||
-        passwordController.text.trim().isEmpty ||
-        cccdControler.text.trim().isEmpty ||
-        frontID == null ||
-        backID == null) {
-      context.showError('Vui lòng điền đầy đủ thông tin');
-      return false;
-    }
-    if (selectedRole.isEmpty) {
-      context.showError('Vui lòng chọn chức vụ');
-      return false;
-    }
-    return true;
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    cccdControler.dispose();
+    super.dispose();
   }
+
   Future<void> pickImage(bool isFront) async {
     final File? image = await GalleryUtil.pickImageFromGallery();
     if (image != null) {
       setState(() {
         if (isFront) {
           frontID = image;
+          frontError = null;
         } else {
           backID = image;
+          backError = null;
         }
       });
     }
   }
 
+  bool validateFields() {
+    bool isValid = true;
+    
+    // Reset tất cả lỗi trước
+    nameError = null;
+    emailError = null;
+    passwordError = null;
+    roleError = null;
+    cccdError = null;
+    frontError = null;
+    backError = null;
+
+    if (nameController.text.trim().isEmpty) {
+      nameError = "Tên nhân viên không được để trống";
+      isValid = false;
+    }
+
+    if (emailController.text.trim().isEmpty) {
+      emailError = "Email không được để trống";
+      isValid = false;
+    } else if (!emailController.text.contains("@")) {
+      emailError = "Email không hợp lệ";
+      isValid = false;
+    }
+
+    if (passwordController.text.trim().isEmpty) {
+      passwordError = "Mật khẩu không được để trống";
+      isValid = false;
+    } else if (passwordController.text.length < 6) {
+      passwordError = "Mật khẩu phải ít nhất 6 ký tự";
+      isValid = false;
+    }
+
+    if (selectedRole.trim().isEmpty) {
+      roleError = "Vui lòng chọn chức vụ cho nhân viên";
+      isValid = false;
+    }
+
+    if (cccdControler.text.trim().isEmpty) {
+      cccdError = "CCCD không được để trống";
+      isValid = false;
+    }
+
+    if (frontID == null) {
+      frontError = "Ảnh mặt trước không được để trống";
+      isValid = false;
+    }
+
+    if (backID == null) {
+      backError = "Ảnh mặt sau không được để trống";
+      isValid = false;
+    }
+
+    if (!isValid) {
+      setState(() {});
+    }
+
+    return isValid;
+  }
+  void clearFields() {
+    nameController.clear();
+    emailController.clear();
+    passwordController.clear();
+    cccdControler.clear();
+    selectedRole = "";
+    frontID = null;
+    backID = null;
+
+    nameError = null;
+    emailError = null;
+    passwordError = null;
+    roleError = null;
+    cccdError = null;
+    frontError = null;
+    backError = null;
+
+    setState(() {});
+  }
+
+ Future<void> _handleAddEmployee() async {
+  if (!validateFields()) return;
+
+  setState(() => isLoading = true);
+
+  try {
+    final staffVm = Provider.of<StorestaffViewmodel>(context, listen: false);
+    final shopVm = Provider.of<ShopViewModel>(context, listen: false);
+    final shopId = shopVm.currentShop?.shopId;
+    if (shopId == null) {
+      throw Exception('Không tìm thấy cửa hàng hiện tại.');
+    }
+    
+
+    final model = StorestaffModel(
+      employeeId: '',
+      shopId: shopId,
+      fullName: nameController.text.trim(),
+      email: emailController.text.trim(),
+      nationalId: cccdControler.text.trim(),
+      nationalIdFront: null,
+      nationalIdBack: null,
+      roleIds: selectedRole,
+      createdAt: DateTime.now(),
+    );
+
+    await staffVm.saveStaffWithAuth(
+      model,
+      password: passwordController.text.trim(),
+      front: frontID,
+      back: backID,
+    );
+
+    if (!mounted) return;
+    setState(() => isLoading = false);
+
+    // Hiển thị AlertDialog thành công
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Thành công'),
+        content: Text('Thêm nhân viên thành công'),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('OK'),
+              ),
+              TextButton(
+                onPressed: () {
+                  clearFields();
+                },
+                child: Text('Thêm mới'),
+              ),
+            ],
+
+          )
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    Navigator.of(context).pop(true);
+
+  } catch (e) {
+    if (!mounted) return;
+    setState(() => isLoading = false);
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Lỗi'),
+        content: Text(e.toString().replaceAll('Exception: ', '')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Center(
-                child: const Text(
-                  "Thêm nhân viên ",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                "Tên nhân viên",
-                nameController,
-                hintText: "Nhập vào tên đầy dủ",
-                prefixIcon: Icons.person,
-              ),
-              _buildInputField(
-                "Email",
-                acountController,
-                hintText: "Nhập vào email",
-                prefixIcon: Icons.email,
-              ),
-              _buildInputField(
-                "Mật khẩu ",
-                passwordController,
-                hintText: "Nhập vào mật khẩu ",
-                prefixIcon: Icons.lock_outline,
-                obscureText: true,
-              ),
-
-              const SizedBox(height: 5),
-              _buildInputField(
-                'Căn cước công dân',
-                cccdControler,
-                hintText: 'Nhập vào 12 số CCCD',
-                prefixIcon: Icons.badge,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(12),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  buildImageBox(
-                    "Mặt trước",
-                    frontID,
-                    onTap: () => pickImage(true),
-                  ),
-                  buildImageBox(
-                    "Mặt sau",
-                    backID,
-                    onTap: () => pickImage(false),
-                  ),
+                  _buildHeader(),
+                  const SizedBox(height: 16),
+                  _buildNameField(),
+                  _buildEmailField(),
+                  _buildPasswordField(),
+                  const SizedBox(height: 5),
+                  _buildCCCDField(),
+                  const SizedBox(height: 10),
+                  _buildImageSection(),
+                  const SizedBox(height: 20),
+                  _buildRoleSection(),
                 ],
               ),
-              const SizedBox(height: 20),
-
-              const Text(
-                "Chức vụ ",
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-              ),
-              const SizedBox(height: 10),
-
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Consumer<EmployeeRoleViewmodel>(
-                  builder: (context, sfroles, _) {
-                    return Row(
-                      children: sfroles.roles
-                          .map((role) => _buildRoleOption(role.roleName, role.roleId))
-                          .toList(),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.30,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.all(10),
-                      ),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: Text(
-                        " Hủy ",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.30,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.all(10),
-                      ),
-                      onPressed: () async {
-                        if (!validatEmploy()) return;
-
-                        final staffVm = Provider.of<StorestaffViewmodel>(context, listen: false);
-                        final shopVm = Provider.of<ShopViewModel>(context, listen: false);
-                        final shopId = shopVm.currentShop?.shopId;
-                        if (shopId == null || shopId.isEmpty) {
-                          context.showError('Không có cửa hàng đang được chọn. Vui lòng tạo hoặc chọn cửa hàng.');
-                          return;
-                        }
-                        
-                        final model = StorestaffModel(
-                          employeeId: '',
-                          shopId: shopId,
-                          fullName: nameController.text.trim(),
-                          email: acountController.text.trim(),
-                          nationalId: cccdControler.text.trim(),
-                          nationalIdFront: null,
-                          nationalIdBack: null,
-                          roleIds: selectedRole,
-                          createdAt: DateTime.now(),
-                        );
-                        setState(() => isLoading = true);
-
-                        
-                        try {
-                          await staffVm.saveStaffWithAuth(
-                            model,
-                            password: passwordController.text.trim(),
-                            front: frontID,
-                            back: backID,
-                          );
-                          if (!mounted) return;
-                          context.showSuccess('Thêm nhân viên thành công');
-                        } catch (e) {
-                          if (!mounted) return;
-                          context.showError('Lỗi khi thêm nhân viên: $e');
-                        } finally {
-                          setState(() => isLoading = false);
-                        }
-                      },
-                      child: Text(
-                        "Thêm",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
-        ),
+          if (isLoading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black45,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  // giao diện cccd 2 ảnh
+  Widget _buildHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close),
+          color: Colors.black,
+          iconSize: 26,
+        ),
+        const Text(
+          "Thêm nhân viên",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        IconButton(
+          onPressed: _handleAddEmployee,
+          icon: const Icon(Icons.person_add),
+          color: Colors.blue,
+          iconSize: 26,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNameField() {
+    return ValidatedTextFieldFromRequest(
+      controller: nameController,
+      label: "Họ và tên",
+      hint: "Nhập vào họ và tên",
+      icon: Icons.person,
+      keyboardType: TextInputType.name,
+      hasError: nameError != null,
+      errorMessage: nameError ?? "Tên nhân viên không được để trống",
+      onChanged: (value) {
+        if (nameError != null) {
+          setState(() => nameError = null);
+        }
+      },
+    );
+  }
+
+  Widget _buildEmailField() {
+    return ValidatedTextFieldFromRequest(
+      controller: emailController,
+      label: "Email",
+      hint: "Nhập vào email",
+      icon: Icons.email,
+      keyboardType: TextInputType.emailAddress,
+      hasError: emailError != null,
+      errorMessage: emailError ?? "Email không được để trống",
+      onChanged: (value) {
+        if (emailError != null) {
+          setState(() => emailError = null);
+        }
+      },
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return ValidatedTextFieldFromRequest(
+      controller: passwordController,
+      label: "Mật khẩu",
+      hint: "Nhập vào mật khẩu",
+      icon: Icons.lock,
+      keyboardType: TextInputType.visiblePassword,
+      hasError: passwordError != null,
+      errorMessage: passwordError ?? "Mật khẩu không được để trống",
+      onChanged: (value) {
+        if (passwordError != null) {
+          setState(() => passwordError = null);
+        }
+      },
+    );
+  }
+
+  Widget _buildCCCDField() {
+    return ValidatedTextFieldFromRequest(
+      controller: cccdControler,
+      label: "CCCD",
+      hint: "Nhập vào số CCCD",
+      icon: Icons.credit_card,
+      maxLength: 12,
+      keyboardType: TextInputType.phone,
+      hasError: cccdError != null,
+      errorMessage: cccdError ?? "CCCD không được để trống",
+      onChanged: (value) {
+        if (cccdError != null) {
+          setState(() => cccdError = null);
+        }
+      },
+    );
+  }
+
+  Widget _buildImageSection() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: buildImageBox(
+            "Mặt trước",
+            file: frontID,
+            error: frontError,
+            onTap: () => pickImage(true),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: buildImageBox(
+            "Mặt sau",
+            file: backID,
+            error: backError,
+            onTap: () => pickImage(false),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Chức vụ",
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        const SizedBox(height: 10),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Consumer<EmployeeRoleViewmodel>(
+            builder: (context, sfroles, _) {
+              return Row(
+                children: sfroles.roles
+                    .map((role) => _buildRoleOption(role.roleName, role.roleId))
+                    .toList(),
+              );
+            },
+          ),
+        ),
+        if (roleError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 4),
+            child: Text(
+              roleError!,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ),
+      ],
+    );
+  }
 
   Widget buildImageBox(
-    String label,
-    File? file, {
+    String label, {
+    File? file,
+    String? url,
+    String? error,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          Container(
-            width: MediaQuery.of(context).size.width * 0.30,
-            height: MediaQuery.of(context).size.width * 0.30,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: file != null ? Colors.blue.shade300 : Colors.grey.shade300,
-                width: 1.5,
-              ),
-              image:
-                  file != null
-                      ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
-                      : null,
-              color: Colors.white,
-            ),
-            child:
-                file == null
-                    ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.add_a_photo, color: Colors.grey, size: 28),
-                        const SizedBox(height: 8),
-                        Text(label, style: const TextStyle(color: Colors.grey)),
-                      ],
-                    )
-                    : Stack(
-                      children: [
-                        Positioned(
-                          right: 6,
-                          top: 6,
-                          child: InkWell(
-                            onTap:
-                                () => setState(() {
-                                  if (label.contains("trước")) frontID = null;
-                                  if (label.contains("sau")) backID = null;
-                                }),
-                            child: const CircleAvatar(
-                              radius: 14,
-                              backgroundColor: Colors.black54,
-                              child: Icon(
-                                Icons.close,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          left: 6,
-                          bottom: 6,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black45,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              label,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // thêm nhân viên
-  Widget _buildInputField(
-    String label,
-    TextEditingController controller, {
-    bool obscureText = false,
-    String? hintText,
-    IconData? prefixIcon,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    String? Function(String?)? validator,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-              color: Colors.black87,
+          Container(
+            height: 100,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: error != null ? Colors.red : Colors.grey.shade400,
+              ),
+              image: file != null
+                  ? DecorationImage(
+                      image: FileImage(file),
+                      fit: BoxFit.cover,
+                    )
+                  : (url != null
+                      ? DecorationImage(
+                          image: NetworkImage(url),
+                          fit: BoxFit.cover,
+                        )
+                      : null),
             ),
+            child: (file == null && url == null)
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.add_a_photo, color: Colors.grey),
+                      const SizedBox(height: 5),
+                      Text(
+                        label,
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                    ],
+                  )
+                : Stack(
+                    children: [
+                      Positioned(
+                        right: 5,
+                        top: 5,
+                        child: InkWell(
+                          onTap: onTap,
+                          child: const CircleAvatar(
+                            radius: 12,
+                            backgroundColor: Colors.black54,
+                            child: Icon(
+                              Icons.close,
+                              size: 15,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
           ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: controller,
-            obscureText: obscureText,
-            keyboardType: keyboardType,
-            inputFormatters: inputFormatters,
-            validator: validator,
-            style: const TextStyle(fontSize: 15),
-            decoration: InputDecoration(
-              prefixIcon:
-                  prefixIcon != null
-                      ? Icon(prefixIcon, color: Colors.blue)
-                      : null,
-              hintText: hintText,
-              hintStyle: TextStyle(color: Colors.grey.shade500),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 14,
-                horizontal: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.black, width: 1),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.black, width: 1),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Colors.blue, width: 1.6),
+          if (error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 4),
+              child: Text(
+                error,
+                style: const TextStyle(color: Colors.red, fontSize: 12),
               ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildRoleOption(
-    String roleName,
-    String roleId, {
-    VoidCallback? onTap,
-    VoidCallback? onLongPress,
-  }) {
+  Widget _buildRoleOption(String roleName, String roleId) {
     final isSelected = selectedRole == roleId;
 
     return GestureDetector(
-      onTap: onTap ?? () => setState(() => selectedRole = roleId),
-      onLongPress: onLongPress,
+      onTap: () => setState(() {
+        selectedRole = roleId;
+        roleError = null;
+      }),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),

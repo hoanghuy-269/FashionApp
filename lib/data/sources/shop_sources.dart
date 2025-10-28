@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/data/models/shop_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ShopSources {
   final _db = FirebaseFirestore.instance;

@@ -5,13 +5,12 @@ import 'package:fashion_app/data/models/storestaff_model.dart';
 import 'package:fashion_app/data/repositories/storestaffs_repositories.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class StorestaffViewmodel extends ChangeNotifier {
   final StorestaffsRepositories _repo = StorestaffsRepositories();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   late UserCredential userCredential;
 
   List<StorestaffModel> staffs = [];
@@ -129,6 +128,7 @@ class StorestaffViewmodel extends ChangeNotifier {
   }
 
   Future<StorestaffModel> saveStaffWithAuth(
+
     StorestaffModel model, {
     required String password,
     File? front,
@@ -138,10 +138,16 @@ class StorestaffViewmodel extends ChangeNotifier {
     notifyListeners();
 
     try {
+
+      final emailExists = await isStaffEmailExists(model.email , model.shopId);
+      if(emailExists){
+      throw Exception('Email này đã được sử dụng, vui lòng chọn email khác.');
+      }
+
+      // Upload ảnh CCCD nếu có
       String? frontUrl = model.nationalIdFront;
       String? backUrl = model.nationalIdBack;
 
-      // Upload ảnh CCCD nếu có
       if (front != null) {
         frontUrl = await GalleryUtil.uploadImageToFirebase(
           front,
@@ -155,19 +161,28 @@ class StorestaffViewmodel extends ChangeNotifier {
         );
       }
 
+      // Tạo tài khoản hoặc dùng ID cũ
       final isAddNew = model.employeeId.isEmpty;
-
       String docId = model.employeeId;
+
       if (isAddNew) {
-        userCredential = await _auth.createUserWithEmailAndPassword(
+           try {
+          userCredential = await _auth.createUserWithEmailAndPassword(
           email: model.email,
           password: password,
         );
         docId = userCredential.user?.uid ?? '';
-      } else {
-        docId = model.employeeId;
+        } on FirebaseAuthException catch (e) {
+          if (e.code == "email-already-in-use") {
+            throw Exception('Email này đã được sử dụng, vui lòng chọn email khác.');
+        }
+        else{
+          throw Exception('Lỗi tạo tài khoản: ${e.message}');
+        }
+        }
       }
 
+      // Cập nhật model
       final updated = model.copyWith(
         employeeId: docId,
         nationalIdFront: frontUrl,
@@ -175,10 +190,7 @@ class StorestaffViewmodel extends ChangeNotifier {
         createdAt: model.createdAt,
       );
 
-      if (updated.shopId.isEmpty) {
-        throw Exception('shopId trống. Vui lòng cung cấp shopId hợp lệ trước khi lưu nhân viên.');
-      }
-
+      // Lưu vào Firestore
       await _firestore
           .collection('shops')
           .doc(updated.shopId)
@@ -186,12 +198,11 @@ class StorestaffViewmodel extends ChangeNotifier {
           .doc(docId)
           .set(updated.toFirestoreMap());
 
-      // B5. Cập nhật list cục bộ
-      final exists = staffs.any((s) => s.employeeId == updated.employeeId);
-      if (exists) {
-        final index = staffs.indexWhere(
-          (s) => s.employeeId == updated.employeeId,
-        );
+      // Cập nhật list cục bộ
+      final index = staffs.indexWhere(
+        (s) => s.employeeId == updated.employeeId,
+      );
+      if (index != -1) {
         staffs[index] = updated;
       } else {
         staffs.add(updated);
@@ -200,23 +211,15 @@ class StorestaffViewmodel extends ChangeNotifier {
       filteredStaffs = List.from(staffs);
 
       return updated;
-    } on FirebaseAuthException catch (e) {
-      // Provide a clearer message for common auth errors
-      if (e.code == 'email-already-in-use' || e.code == 'email-already-in-use') {
-        throw Exception('Email này đã được sử dụng bởi tài khoản khác.');
-      }
-      throw Exception(e.message ?? 'Lỗi xác thực: ${e.code}');
-    } on PlatformException catch (e) {
-      // On some platforms the plugin throws PlatformException
-      if (e.code.toLowerCase().contains('email') || e.message?.toLowerCase().contains('email') == true) {
-        throw Exception('Email này đã được sử dụng bởi tài khoản khác.');
-      }
-      throw Exception(e.message ?? e.code);
     } catch (e) {
       rethrow;
     } finally {
       isLoading = false;
       notifyListeners();
     }
+    
+  }
+  Future<bool> isStaffEmailExists(String email , String shopId) async {
+    return await _repo.isStaffEmailExists(email,shopId);
   }
 }

@@ -24,6 +24,8 @@ class ValidatedTextFieldFromRequest extends StatelessWidget {
     this.onChanged,
   });
 
+  
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -44,7 +46,7 @@ class ValidatedTextFieldFromRequest extends StatelessWidget {
           onChanged: onChanged,
           maxLength: maxLength,
           decoration: InputDecoration(
-            counterText: "", // ẩn bộ đếm ký tự
+            counterText: "", 
             prefixIcon: Icon(icon, color: Colors.blueAccent),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -67,14 +69,8 @@ class ValidatedTextFieldFromRequest extends StatelessWidget {
             errorText: hasError ? errorMessage : null,
           ),
         ),
-        if (hasError && errorMessage != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 4, left: 4),
-            child: Text(
-              errorMessage!,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
-            ),
-          ),
+        // Error text is shown via `InputDecoration.errorText` above.
+        // Avoid rendering a second duplicate error label here.
       ],
     );
   }

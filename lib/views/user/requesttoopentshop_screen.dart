@@ -1,13 +1,10 @@
 import 'dart:io';
-
-import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/core/widget/vaidatedtextfielfromrequest.dart';
 import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:fashion_app/data/models/requesttoopentshop_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class RequestToOpenStoreScreen extends StatefulWidget {
