@@ -1,11 +1,19 @@
 import 'package:fashion_app/data/models/User.dart';
+import 'package:fashion_app/data/models/requesttoopentshop_model.dart';
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
+import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
+// shop viewmodel not needed in this file after refactor
+import 'package:fashion_app/views/user/approved_shop_dialog.dart';
+import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:fashion_app/views/user/requesttoopentshop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 class UserprofileScreen extends StatefulWidget {
-    final String? idUser;
+  final String? idUser;
+
+  const UserprofileScreen({super.key, this.idUser});
 
   const UserprofileScreen({super.key,  this.idUser});
 
@@ -16,78 +24,81 @@ class UserprofileScreen extends StatefulWidget {
 
 class _UserprofileScreenState extends State<UserprofileScreen> {
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController phoneControler = TextEditingController();
-  final TextEditingController addressControler = TextEditingController();
-  String? requestStatus;
-  late  AuthViewModel auth;
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+
   User? currentUser;
-  bool isLoading = false;
+  bool isLoading = true;
   String? errorMessage;
-  bool _hasLoadedData = false; 
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      auth = AuthViewModel();
-      loadUserData();
-    }
-  );
+    _initializeData();
   }
 
   @override
   void dispose() {
-
     nameController.dispose();
-    phoneControler.dispose();
-    addressControler.dispose();
+    phoneController.dispose();
+    addressController.dispose();
     super.dispose();
   }
 
-  Future<void> loadUserData() async {
-    // Tránh load nhiều lần
-    if (_hasLoadedData) return;
-    _hasLoadedData = true;
+  Future<void> _initializeData() async {
+    if (widget.idUser == null || widget.idUser!.isEmpty) {
+      setState(() {
+        isLoading = false;
+        errorMessage = "ID người dùng không hợp lệ";
+      });
+      return;
+    }
 
     try {
-      setState(() {
-        isLoading = true;
-        errorMessage = null;
-      });
-
-      final id = widget.idUser;
-      if (id == null || id.isEmpty) {
-        if (!mounted) return;
-        setState(() {
-          isLoading = false;
-        });
-        return;
-      }
-
-      final user = await auth.FetchUserById(id);
+      final authVM = AuthViewModel();
+      final user = await authVM.FetchUserById(widget.idUser!);
 
       if (!mounted) return;
-      
+
+      if (user != null) {
+        nameController.text = user.name ?? '';
+        phoneController.text =
+            user.phoneNumbers.isNotEmpty ? user.phoneNumbers[0] : '';
+        addressController.text =
+            user.addresses.isNotEmpty ? user.addresses[0] : '';
+      }
+
       setState(() {
-        if (user != null) {
-          currentUser = user;
-          nameController.text = user.name ?? '';
-          if (user.phoneNumbers.isNotEmpty) {
-            phoneControler.text = user.phoneNumbers[0];
-          }
-          if (user.addresses.isNotEmpty) {
-            addressControler.text = user.addresses[0];
-          }
-        }
+        currentUser = user;
         isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        errorMessage = "Lỗi khi lấy thông tin người dùng: $e";
+        errorMessage = "Lỗi khi lấy thông tin: $e";
         isLoading = false;
       });
+    }
+  }
+
+  // Xử lý chuyển đến màn hình shop
+  Future<void> _navigateToShop() async {
+    if (currentUser == null) return;
+    try {
+      final selected = await ApprovedShopDialog.show(context, currentUser!.id);
+      if (selected != null && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ShopScreen(idShop: selected.shopId),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
     }
   }
 
@@ -118,141 +129,175 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
         ),
         elevation: 0.0,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                // Avatar và button
-                CircleAvatar(
-                  radius: 60,
-                  backgroundImage: const AssetImage(
-                    'assets/images/logo_person.png',
-                  ),
-                ),
-                const SizedBox(height: 10),
-                OutlinedButton(
-                  onPressed: () async {
-                    // Xử lý đăng kí shop
-                    print("Đăng kí shop :${widget.idUser}");
-                    
-                    final result = await Navigator.push(context, MaterialPageRoute(builder: (context)=>
-                      RequestToOpenStoreScreen(uid: currentUser?.id)
-                    ));
-                    if(result == "pending"){
-                      setState(() {
-                        requestStatus = "pending";
-                      });
-                    }
-                  },
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.all(
-                      requestStatus == "pending" ? Colors.grey : Colors.blue
-                    ),
-                    side: WidgetStateProperty.all(
-                      const BorderSide(color: Colors.blue),
-                    ),
-                  ),
-                  child: Text(
-                    requestStatus == "pending" ? "Yêu cầu đang chờ xử lí" : "Đăng kí shop",
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                
-                // Form fields
-                _buildTextField(
-                  label: "Email",
-                  hintText: currentUser?.email ?? '',
-                  icon: Icons.email_outlined,
-                  enabled: false, // Email thường không cho edit
-                ),
-                const SizedBox(height: 16),
-                
-                _buildTextField(
-                  label: "Họ và tên",
-                  controller: nameController,
-                  hintText: currentUser?.name ?? '',
-                  icon: Icons.person_2_outlined,
-                ),
-                const SizedBox(height: 16),
-                
-                _buildPhoneField(),
-                const SizedBox(height: 16),
-                
-                _buildTextField(
-                  label: "Địa chỉ",
-                  controller: addressControler,
-                  hintText: currentUser?.addresses.isNotEmpty == true 
-                      ? currentUser!.addresses[0] 
-                      : '',
-                ),
-                const SizedBox(height: 24),
-                
-                // Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          ),
-                          child: const Text(
-                            "Hủy",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: ElevatedButton(
-                          onPressed: _updateUserInfo,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          ),
-                          child: const Text(
-                            "Cập nhật",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  isLoading = true;
+                  errorMessage = null;
+                });
+                _initializeData();
+              },
+              child: const Text('Thử lại'),
             ),
+          ],
+        ),
+      );
+    }
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: _buildContent(),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    final requestVM = Provider.of<RequestToOpenShopViewModel>(
+      context,
+      listen: false,
+    );
+
+    return StreamBuilder<List<RequesttoopentshopModel>>(
+      stream: requestVM.streamUserRequests(currentUser!.id),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final hasRequest = snapshot.hasData && snapshot.data!.isNotEmpty;
+        final request = hasRequest ? snapshot.data!.first : null;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(request),
+              const SizedBox(height: 24),
+              _buildForm(),
+              const SizedBox(height: 24),
+
+              _buildActionButtons(),
+            ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader(RequesttoopentshopModel? request) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      // Ảnh logo tròn
+      ClipOval(
+        child: Image.asset(
+          "assets/images/logo_default.png",
+          width: 70,
+          height: 70,
+          fit: BoxFit.cover,
         ),
       ),
+      const SizedBox(height: 16),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Nút yêu cầu mở shop
+          ElevatedButton(
+            onPressed: () {
+              print("✅ User ID for request: ${currentUser!.id}");
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => RequestToOpenStoreScreen(
+                   uid: currentUser!.id,
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                vertical: 12,
+                horizontal: 16,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text(
+              'Yêu cầu mở shop',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+      
+          if (request?.status == 'approved')
+            ElevatedButton.icon(
+              onPressed: _navigateToShop,
+              icon: const Icon(Icons.store, size: 16),
+              label: const Text(
+                'Chọn shop',
+                style: TextStyle(fontSize: 12),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ],
+  );
+}
+
+  Widget _buildForm() {
+    return Column(
+      children: [
+        _buildTextField(
+          label: "Email",
+          hintText: currentUser?.email ?? '',
+          icon: Icons.email_outlined,
+          enabled: false,
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          label: "Họ và tên",
+          controller: nameController,
+          icon: Icons.person_2_outlined,
+        ),
+        const SizedBox(height: 16),
+        _buildPhoneField(),
+        const SizedBox(height: 16),
+        _buildTextField(label: "Địa chỉ", controller: addressController),
+      ],
     );
   }
 
@@ -283,9 +328,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
             border: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(16)),
             ),
-            prefixIcon: icon != null
-                ? Icon(icon, color: Colors.blue)
-                : null,
+            prefixIcon: icon != null ? Icon(icon, color: Colors.blue) : null,
           ),
         ),
       ],
@@ -306,7 +349,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
         ),
         const SizedBox(height: 8),
         TextField(
-          controller: phoneControler,
+          controller: phoneController,
           keyboardType: TextInputType.phone,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
@@ -324,16 +367,51 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
             border: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(16)),
             ),
-            hintText: currentUser?.phoneNumbers.isNotEmpty == true
-                ? currentUser!.phoneNumbers[0]
-                : '',
           ),
         ),
       ],
     );
   }
 
-  Future<void> _updateUserInfo() async {
-   
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text(
+              "Hủy",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text(
+              "Cập nhật",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

@@ -23,10 +23,9 @@ class AuthViewModel {
       message = null;
 
       final newUser = User(
-        id: const Uuid().v4(), // tạm thời, sẽ thay bằng UID của Firebase Auth
+        id: const Uuid().v4(),
         name: null,
         email: email,
-        password: password,
         avatar: null,
         phoneNumbers: [phone],
         addresses: [],

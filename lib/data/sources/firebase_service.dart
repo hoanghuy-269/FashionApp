@@ -8,13 +8,18 @@ class FirebaseService {
   final _firestore = FirebaseFirestore.instance;
   final _auth = fb_auth.FirebaseAuth.instance;
   final _collection = 'users';
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // ---------------------------------------------------------------------------
+  /// 🟢 Thêm hoặc cập nhật user vào Firestore (tự đồng bộ)
+  Future<void> addOrUpdateUser(model.User user) async {
+    final ref = _firestore.collection(_collection).doc(user.id);
+    final doc = await ref.get();
 
-  /// 🟢 Thêm user vào Firestore
-  Future<void> addUser(model.User user) async {
-    await _firestore
-        .collection(_collection)
-        .doc(user.id)
-        .set(user.toFirestore());
+    if (doc.exists) {
+      await ref.update(user.toFirestore());
+    } else {
+      await ref.set(user.toFirestore());
+    }
   }
 
   /// 🔵 Lấy tất cả user
@@ -53,7 +58,6 @@ class FirebaseService {
       id: firebaseUser.uid,
       name: user.name,
       email: user.email,
-      password: password,
       avatar: user.avatar,
       phoneNumbers: user.phoneNumbers,
       addresses: user.addresses,
@@ -61,10 +65,12 @@ class FirebaseService {
       roleId: 'customer',
     );
 
-    await addUser(newUser);
+    // ✅ Lưu thông tin vào Firestore
+    await addOrUpdateUser(newUser);
   }
 
-  /// 🔐 Đăng nhập bằng email & mật khẩu
+  // ---------------------------------------------------------------------------
+  // 🔑 Đăng nhập bằng email & mật khẩu
   Future<model.User?> signInWithEmail(String email, String password) async {
     try {
       final credential = await _auth.signInWithEmailAndPassword(
@@ -72,14 +78,27 @@ class FirebaseService {
         password: password,
       );
 
-      final uid = credential.user!.uid;
-      final user = await getUserById(uid);
-      return user;
+      final firebaseUser = credential.user!;
+      final uid = firebaseUser.uid;
+
+      // 🔄 Đồng bộ lại thông tin mới nhất của Auth vào Firestore
+      await addOrUpdateUser(
+        model.User(
+          id: uid,
+          name: firebaseUser.displayName,
+          email: firebaseUser.email,
+          avatar: firebaseUser.photoURL,
+          phoneNumbers: [],
+          addresses: [],
+          loginMethodId: 'local',
+          roleId: 'customer',
+        ),
+      );
+
+      // ✅ Lấy thông tin người dùng trong Firestore
+      return await getUserById(uid);
     } on fb_auth.FirebaseAuthException catch (e) {
       print("⚠️ Lỗi đăng nhập Firebase Auth: ${e.message}");
-      rethrow;
-    } catch (e) {
-      print("⚠️ Lỗi không xác định khi đăng nhập: $e");
       rethrow;
     }
   }
@@ -87,11 +106,10 @@ class FirebaseService {
   // ---------------------------------------------------------------------------
   // 🔹 Đăng nhập Google
   Future<model.User?> signInWithGoogle() async {
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
     if (googleUser == null) return null;
 
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
+    final googleAuth = await googleUser.authentication;
     final credential = fb_auth.GoogleAuthProvider.credential(
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
@@ -101,35 +119,19 @@ class FirebaseService {
     final firebaseUser = userCredential.user;
     if (firebaseUser == null) return null;
 
-    // 🔹 Kiểm tra xem user có tồn tại trong Firestore chưa
-    final userDoc =
-        await _firestore.collection(_collection).doc(firebaseUser.uid).get();
-    if (!userDoc.exists) {
-      final newUser = model.User(
-        id: firebaseUser.uid,
-        name: firebaseUser.displayName,
-        email: firebaseUser.email ?? '',
-        password: '',
-        avatar: firebaseUser.photoURL,
-        phoneNumbers: [firebaseUser.phoneNumber ?? ''],
-        addresses: [],
-        loginMethodId: 'google',
-        roleId: 'customer',
-      );
-      await addUser(newUser);
-    }
+    final newUser = model.User(
+      id: firebaseUser.uid,
+      name: firebaseUser.displayName,
+      email: firebaseUser.email,
+      avatar: firebaseUser.photoURL,
+      phoneNumbers: [firebaseUser.phoneNumber ?? ''],
+      addresses: [],
+      loginMethodId: 'google',
+      roleId: 'customer',
+    );
 
-    // ✅ Dùng fromMap thay vì fromFirestore
-    return model.User.fromMap({
-      'id': firebaseUser.uid,
-      'name': firebaseUser.displayName,
-      'email': firebaseUser.email,
-      'avatar': firebaseUser.photoURL,
-      'loginMethodId': 'google',
-      'phoneNumbers': [firebaseUser.phoneNumber ?? ''],
-      'addresses': [],
-      'roleId': 'customer',
-    });
+    await addOrUpdateUser(newUser);
+    return newUser;
   }
 
   // ---------------------------------------------------------------------------
@@ -143,38 +145,25 @@ class FirebaseService {
       final credential = fb_auth.FacebookAuthProvider.credential(
         result.accessToken!.tokenString,
       );
+
       final userCredential = await _auth.signInWithCredential(credential);
       final firebaseUser = userCredential.user;
       if (firebaseUser == null) return null;
 
-      final userDoc =
-          await _firestore.collection(_collection).doc(firebaseUser.uid).get();
-      if (!userDoc.exists) {
-        final newUser = model.User(
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName,
-          email: firebaseUser.email ?? '',
-          password: '',
-          avatar: firebaseUser.photoURL,
-          phoneNumbers: [firebaseUser.phoneNumber ?? ''],
-          addresses: [],
-          loginMethodId: 'facebook',
-          roleId: 'customer',
-        );
-        await addUser(newUser);
-      }
+      final newUser = model.User(
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName,
+        email: firebaseUser.email ?? '',
+        avatar: firebaseUser.photoURL,
+        phoneNumbers: [firebaseUser.phoneNumber ?? ''],
+        addresses: [],
+        loginMethodId: 'facebook',
+        roleId: 'customer',
+      );
 
-      // 🔹 Trả về user từ dữ liệu Auth (Map)
-      return model.User.fromMap({
-        'id': firebaseUser.uid,
-        'name': firebaseUser.displayName,
-        'email': firebaseUser.email,
-        'avatar': firebaseUser.photoURL,
-        'loginMethodId': 'facebook',
-        'phoneNumbers': [firebaseUser.phoneNumber ?? ''],
-        'addresses': [],
-        'roleId': 'customer',
-      });
+      // 🔄 Đồng bộ Auth → Firestore
+      await addOrUpdateUser(newUser);
+      return newUser;
     } else {
       throw Exception('Facebook login failed: ${result.status}');
     }
@@ -197,8 +186,20 @@ class FirebaseService {
 
   /// 🚪 Đăng xuất
   Future<void> signOut() async {
-    await _auth.signOut();
-    await GoogleSignIn().signOut();
-    await FacebookAuth.instance.logOut();
+    try {
+      // Đăng xuất Firebase
+      await _auth.signOut();
+
+      // Nếu có đăng nhập Google
+      if (await _googleSignIn.isSignedIn()) {
+        await _googleSignIn.signOut();
+        await _googleSignIn.disconnect();
+      }
+
+      // Nếu có đăng nhập Facebook
+      await FacebookAuth.instance.logOut();
+    } catch (e) {
+      print('⚠️ Lỗi khi đăng xuất: $e');
+    }
   }
 }

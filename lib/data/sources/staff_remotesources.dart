@@ -6,52 +6,68 @@ class StaffRemotesources {
   final _db = FirebaseFirestore.instance;
 
   Future<void> addStaff(StorestaffModel staff) async {
-    await _db.collection('storestaffs').doc(staff.employeeId).set(staff.toMap());
+    final id = staff.employeeId;
+    await _db
+        .collection('shops')
+        .doc(staff.shopId)
+        .collection('staff')
+        .doc(id)
+        .set(staff.toFirestoreMap());
   }
   
   Future<void> updateStaff(StorestaffModel staff) async {
-    await _db.collection('storestaffs').doc(staff.employeeId).update(staff.toMap());
+    final id = staff.employeeId;
+    await _db
+        .collection('shops')
+        .doc(staff.shopId)
+        .collection('staff')
+        .doc(id)
+        .update(staff.toFirestoreMap(useServerTimestamp: false));
   }
 
   Future<List<StorestaffModel>> getStaffs() async {
-    final query = await _db.collection("storestaffs").get();
+    final query = await _db.collectionGroup('staff').get();
     return query.docs.map((e) {
-      final data = e.data();
+      final data = Map<String, dynamic>.from(e.data());
       data['employeeId'] = e.id;
       return StorestaffModel.fromMap(data);
     }).toList();
   }
 
   Future<StorestaffModel?> getStaffById(String employeeId) async {
-    final doc = await _db.collection('storestaffs').doc(employeeId).get();
-
-    if (doc.exists) {
-      final data = doc.data()!;
-      data['employeeId'] = doc.id;
-      return StorestaffModel.fromMap(data);
-    }
-    return null;
+    final snaps = await _db.collectionGroup('staff').where(FieldPath.documentId, isEqualTo: employeeId).get();
+    if (snaps.docs.isEmpty) return null;
+    final e = snaps.docs.first;
+    final data = Map<String, dynamic>.from(e.data());
+    data['employeeId'] = e.id;
+    return StorestaffModel.fromMap(data);
   }
   Future<List<StorestaffModel>> getStaffsByShop(String shopId) async {
    try {
     final q = await _db
-        .collection('storestaffs')
-        .where('shopId', isEqualTo: shopId)
+        .collection('shops')
+        .doc(shopId)
+        .collection('staff')
         .get();
 
     return q.docs.map((e) {
-      final data = e.data();
+      final data = Map<String, dynamic>.from(e.data());
       data['employeeId'] = e.id;
       return StorestaffModel.fromMap(data);
     }).toList();
   } catch (e, st) {
-    debugPrint('🔥 Lỗi khi getStaffsByShop: $e');
+    debugPrint(' Lỗi khi getStaffsByShop: $e');
     debugPrint('StackTrace:\n$st');
     rethrow;
   }
 
   }
-  Future<void> deleteStaff(String employeeId) async {
-    await _db.collection('storestaffs').doc(employeeId).delete();
+  Future<void> deleteStaff(String shopId,String employeeId) async {
+   await _db
+   .collection('shops')
+    .doc(shopId) 
+    .collection('staff')
+    .doc(employeeId)
+    .delete();
   }
 }

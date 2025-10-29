@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+// removed unused import
 import 'package:fashion_app/data/models/requesttoopentshop_model.dart';
-import 'package:fashion_app/data/repositories/requesttoopent_repositories.dart';
+import 'package:fashion_app/data/repositories/requesttoopent_repository.dart';
 
 class RequestToOpenShopViewModel extends ChangeNotifier {
   final RequestToOpenShopRepository _repo = RequestToOpenShopRepository();
@@ -129,7 +129,6 @@ class RequestToOpenShopViewModel extends ChangeNotifier {
   }
 
   Future<List<RequesttoopentshopModel>> fetchRequestsByStatus(
-
     String status,
   ) async {
     try {
@@ -141,11 +140,8 @@ class RequestToOpenShopViewModel extends ChangeNotifier {
       debugPrint('RequestToOpenShopViewModel.fetchRequestsByStatus: got=${data.length} for status=$status');
       return data;
     } catch (e, st) {
-      errorMessage = e.toString();
-      debugPrint('Error fetching requests by status: $e\n$st');
       return [];
     } finally {
-      isLoading = false;
       notifyListeners();
     }
   }
@@ -171,5 +167,53 @@ class RequestToOpenShopViewModel extends ChangeNotifier {
     }
   }
 
-  getRequestsByUserId(String s) {}
+  Future<void> updateStatusWithShop(String requestId, String newStatus, String shopId) async {
+    try {
+      isLoading = true;
+      errorMessage = null;
+      notifyListeners();
+
+      await _repo.updateRequestStatusWithShop(requestId, newStatus, shopId);
+
+      final index = requests.indexWhere((r) => r.requestId == requestId);
+      if (index != -1) {
+        requests[index] = requests[index].copyWith(status: newStatus, shopId: shopId);
+      }
+    } catch (e, st) {
+      errorMessage = e.toString();
+      debugPrint('Error updating request status with shop: $e\n$st');
+      rethrow;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<List<RequesttoopentshopModel>?> fetchApprovedRequestsByUserId(
+    String userId,
+  ) async {
+    try {
+      isLoading = true;
+      errorMessage = null;
+      notifyListeners();
+
+      final data = await _repo.getApprovedRequestsByUserId(userId);
+      isLoading = false;
+      notifyListeners();
+
+      return data;
+    } catch (e) {
+      errorMessage = e.toString();
+      isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Stream<List<RequesttoopentshopModel>> streamUserRequests(String userId) {
+    return _repo.streamRequestsByUser(userId);
+  }
+
+
+ 
 }

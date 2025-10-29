@@ -27,8 +27,7 @@ class GalleryUtil {
   static Future<String?> uploadImageToFirebase(File imageFile,
       {String folderName = 'uploads'}) async {
     try {
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
       final ref = FirebaseStorage.instance.ref().child('$folderName/$fileName');
 
       // Upload ảnh lên Firebase Storage
