@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:fashion_app/core/utils/gallery_util.dart';
+import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
 import 'package:fashion_app/core/widget/vaidatedtextfielfromrequest.dart';
-import 'package:fashion_app/data/models/User.dart';
 import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
@@ -97,7 +97,7 @@ class _RequestToOpenStoreScreenState extends State<RequestToOpenStoreScreen> {
     bool isFront = false,
     bool isLiscense = false,
   }) async {
-    final File? image = await GalleryUtil.pickImageFromGallery();
+    final File? image = await showPickImageBottomSheet(context);
     if (image != null && mounted) {
       setState(() {
         if (isLiscense) {
@@ -420,7 +420,6 @@ class _RequestToOpenStoreScreenState extends State<RequestToOpenStoreScreen> {
                   : Stack(
                     fit: StackFit.expand,
                     children: [
-                      // ✅ Hiển thị ảnh MỚI (File) hoặc ảnh CŨ (URL)
                       if (file != null)
                         Image.file(
                           file,
