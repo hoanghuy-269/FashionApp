@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:flutter/material.dart';
 import 'admin_discount_screen.dart';
 import 'admin_manageshop_screen.dart';
@@ -101,7 +102,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const AdminConfirmScreen(),
+                            builder: (context) => const AdminrequestshopScreen(),
                           ),
                         );
                       },
@@ -186,7 +187,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                                   MaterialPageRoute(
                                     builder:
                                         (context) =>
-                                            const AdminShopaccountScreeen(),
+                                            const AdminShopaccountScreen(),
                                   ),
                                 );
                               },
@@ -235,7 +236,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                                   MaterialPageRoute(
                                     builder:
                                         (context) =>
-                                            const AdminShopaccountScreeen(),
+                                            const AdminShopaccountScreen(),
                                   ),
                                 );
                               },

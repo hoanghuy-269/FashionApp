@@ -35,75 +35,122 @@ class _AdminDiscountScreenState extends State<AdminDiscountScreen> {
     final amountCtl = TextEditingController(text: isEdit ? discount?.soTien : "");
     final soLuongCtl = TextEditingController(text: isEdit ? discount?.soLuong?.toString() : "");
 
+    // Ngày bắt đầu mặc định là ngày hiện tại
+    DateTime startDate = isEdit
+        ? discount!.ngayBatDau.toDate()
+        : DateTime.now();
+    DateTime? endDate = isEdit
+        ? discount?.ngayKetThuc.toDate()
+        : null;
+
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(isEdit ? 'Sửa mã giảm giá' : 'Thêm mã giảm giá'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: codeCtl,
-                decoration: const InputDecoration(
-                    labelText: 'Mã', prefixIcon: Icon(Icons.confirmation_number_outlined)),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập mã' : null,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(isEdit ? 'Sửa mã giảm giá' : 'Thêm mã giảm giá'),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: codeCtl,
+                    decoration: const InputDecoration(
+                        labelText: 'Mã', prefixIcon: Icon(Icons.confirmation_number_outlined)),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập mã' : null,
+                  ),
+                  const SizedBox(height: 5),
+                  TextFormField(
+                    controller: nameCtl,
+                    decoration: const InputDecoration(
+                        labelText: 'Tên', prefixIcon: Icon(Icons.label_important_outline)),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập tên' : null,
+                  ),
+                  const SizedBox(height: 5),
+                  TextFormField(
+                    controller: amountCtl,
+                    decoration: const InputDecoration(
+                        labelText: 'Số tiền', prefixIcon: Icon(Icons.sell_outlined)),
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.%đĐ\s]'))],
+                  ),
+                  const SizedBox(height: 5),
+                  TextFormField(
+                    controller: soLuongCtl,
+                    decoration: const InputDecoration(
+                        labelText: 'Số lượng', prefixIcon: Icon(Icons.format_list_numbered)),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 10),
+                  // Ngày bắt đầu - tự động lấy ngày hiện tại
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.today_outlined, color: Colors.blue),
+                    title: Text(
+                      'Ngày bắt đầu: ${startDate.day}/${startDate.month}/${startDate.year}',
+                    ),
+                    subtitle: const Text('(Tự động lấy ngày hiện tại)'),
+                  ),
+                  // Ngày kết thúc - chọn ngày
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.event_outlined, color: Colors.blue),
+                    title: Text(
+                      endDate != null
+                          ? 'Ngày kết thúc: ${endDate?.day}/${endDate?.month}/${endDate?.year}'
+                          : 'Chọn ngày kết thúc',
+                      style: TextStyle(
+                        color: endDate != null ? Colors.black : Colors.grey[600],
+                      ),
+                    ),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: endDate ?? DateTime.now().add(const Duration(days: 7)),
+                        firstDate: startDate,
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setState(() => endDate = picked);
+                      }
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 5),
-              TextFormField(
-                controller: nameCtl,
-                decoration: const InputDecoration(
-                    labelText: 'Tên', prefixIcon: Icon(Icons.label_important_outline)),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập tên' : null,
-              ),
-              const SizedBox(height: 5),
-              TextFormField(
-                controller: amountCtl,
-                decoration: const InputDecoration(
-                    labelText: 'Số tiền', prefixIcon: Icon(Icons.sell_outlined)),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.%đĐ\s]'))],
-              ),
-              const SizedBox(height: 5),
-              TextFormField(
-                controller: soLuongCtl,
-                decoration: const InputDecoration(
-                    labelText: 'Số lượng', prefixIcon: Icon(Icons.format_list_numbered)),
-                keyboardType: TextInputType.number,
-              ),
-            ],
+            ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+            ElevatedButton(
+              onPressed: () async {
+                if (!formKey.currentState!.validate()) return;
+                final v = Voucher(
+                  voucherId: isEdit ? discount!.voucherId : 'new_id',
+                  maVoucher: codeCtl.text.trim(),
+                  tenVoucher: nameCtl.text.trim(),
+                  soTien: amountCtl.text.trim(),
+                  soLuong: int.tryParse(soLuongCtl.text.trim()),
+                  daSuDung: 0,
+                  ngayBatDau: Timestamp.fromDate(startDate),
+                  ngayKetThuc: endDate != null
+                      ? Timestamp.fromDate(endDate!)
+                      : Timestamp.fromDate(DateTime.now().add(const Duration(days: 30))),
+                  trangThaiVoucher: 'Đang hoạt động',
+                  trangThaiId: '1',
+                );
+                if (isEdit) {
+                  await _vm.update(discount!.voucherId, v);
+                } else {
+                  await _vm.add(v);
+                }
+                if (mounted) Navigator.pop(context);
+                setState(() {});
+              },
+              child: Text(isEdit ? 'Lưu' : 'Thêm'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
-          ElevatedButton(
-            onPressed: () async {
-              if (!formKey.currentState!.validate()) return;
-              final v = Voucher(
-                voucherId: isEdit ? discount!.voucherId : 'new_id',
-                shopId: isEdit ? discount!.shopId : 'S001',
-                maVoucher: codeCtl.text.trim(),
-                tenVoucher: nameCtl.text.trim(),
-                soTien: amountCtl.text.trim(),
-                soLuong: int.tryParse(soLuongCtl.text.trim()),
-                daSuDung: 0,
-                ngayBatDau: Timestamp.now(),
-                ngayKetThuc: Timestamp.fromDate(DateTime.now().add(const Duration(days: 30))),
-                trangThaiVoucher: 'Đang hoạt động',
-                trangThaiId: '1',
-              );
-              if (isEdit) {
-                await _vm.update(discount!.voucherId, v);
-              } else {
-                await _vm.add(v);
-              }
-              if (mounted) Navigator.pop(context);
-              setState(() {});
-            },
-            child: Text(isEdit ? 'Lưu' : 'Thêm'),
-          ),
-        ],
       ),
     );
   }

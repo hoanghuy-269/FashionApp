@@ -221,6 +221,22 @@ class FirebaseService {
     }
   }
 
+  Future<void> lockAccount(String userId) async {
+    await _firestore.collection(_collection).doc(userId).update({
+      'status': false,
+    });
+  }
+
+  // Unlock a user's account
+  Future<void> unlockAccount(String userId) async {
+    await _firestore.collection(_collection).doc(userId).update({
+      'status': true,
+    });
+  }
+
+
+
+  /// 🚪 Đăng xuất
   Future<void> signOut() async {
     try {
       // Đăng xuất Firebase

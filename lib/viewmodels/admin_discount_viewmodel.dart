@@ -51,6 +51,6 @@ class AdminDiscountViewModel extends ChangeNotifier {
     await fetch();
   }
 
-  // Helper function: Return the amount or fallback to description or an empty string.
+  
   String amountString(Voucher v) => v.amount ?? (v.soTien ?? '');
 }

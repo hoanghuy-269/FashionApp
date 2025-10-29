@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Voucher {
   String voucherId; // Unique ID of the voucher
-  String shopId; // ID of the shop that the voucher belongs to
+
   String maVoucher; // Voucher code
   String tenVoucher; // Name of the voucher
   String? soTien; // The amount (number) of the voucher (use this as the money field)
@@ -16,7 +16,7 @@ class Voucher {
   // Constructor
   Voucher({
     required this.voucherId,
-    required this.shopId,
+
     required this.maVoucher,
     required this.tenVoucher,
     this.soTien,
@@ -32,7 +32,7 @@ class Voucher {
   factory Voucher.fromMap(Map<String, dynamic> data, String documentId) {
     return Voucher(
       voucherId: documentId, // Firestore document ID
-      shopId: data['shop_id'] ?? '',
+    
       maVoucher: data['ma_voucher'] ?? '',
       tenVoucher: data['ten_voucher'] ?? '',
       soTien: data['so_tien'], // Changed to 'soTien'
@@ -42,7 +42,7 @@ class Voucher {
       ngayKetThuc: data['ngay_ket_thuc'],
       trangThaiVoucher: data['TrangThaiVoucher'] ?? '',
       trangThaiId: data['trang_thai_id'] ?? '',
-    );
+    );  
   }
 
   // Getter for amount (returns the value of soTien if not null)
@@ -51,7 +51,7 @@ class Voucher {
   // Convert Voucher object to Firestore map
   Map<String, dynamic> toMap() {
     return {
-      'shop_id': shopId,
+    
       'ma_voucher': maVoucher,
       'ten_voucher': tenVoucher,
       'so_tien': soTien, // Store the soTien value in Firestore
