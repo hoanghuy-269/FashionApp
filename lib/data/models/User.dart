@@ -35,7 +35,7 @@ class User {
       phoneNumbers: List<String>.from(data['phoneNumbers'] ?? []),
       addresses: List<String>.from(data['addresses'] ?? []),
       loginMethodId: data['loginMethodId'] ?? 'local',
-      roleId: data['roleId'] ?? 'customer',
+      roleId: data['roleId'] ?? 'role002',
       createdAt: data['createdAt'],
       status: data['status'] ?? true,
     );
