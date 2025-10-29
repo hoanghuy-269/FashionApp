@@ -1,11 +1,8 @@
-import 'package:fashion_app/data/models/User.dart';
-import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:fashion_app/views/shop/shop_personnal_screen.dart';
 import 'package:fashion_app/views/shop/shop_profile_screen.dart';
 import 'package:fashion_app/views/shop/storerevenue_detail_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -129,6 +126,7 @@ class _ShopScreenState extends State<ShopScreen> {
               _buildSectionTitle("Quản lí cửa hàng", width),
               SizedBox(height: height * 0.02),
               _buildFeatureGrid(width),
+
             ],
           ),
         ),

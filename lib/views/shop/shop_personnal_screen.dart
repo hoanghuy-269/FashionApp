@@ -109,13 +109,10 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              //  Search 
               _buildSearchBar(),
 
-              //  số lượng nhân viên
               _buildStaffHeader(),
 
-              //  Danh sách nhân viên
               Expanded(child: _buildStaffList()),
             ],
           ),
@@ -155,7 +152,6 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
     );
   }
 
-  //  Header hiển thị số nhân viên
   Widget _buildStaffHeader() {
     return Consumer<StorestaffViewmodel>(
       builder: (context, vm, _) {
@@ -173,7 +169,6 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
     );
   }
 
-  //  Danh sách nhân viên với loading state
   Widget _buildStaffList() {
     return Consumer<StorestaffViewmodel>(
       builder: (context, vm, _) {
@@ -184,7 +179,6 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
           );
         }
 
-        //  Empty state
         if (vm.filteredStaffs.isEmpty) {
           return Center(
             child: Column(
@@ -290,11 +284,11 @@ class _ShopPersonnalScreenState extends State<ShopPersonnalScreen> {
   void _showEditDialog(dynamic staff) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (_) => ShopUpdatestaffScreen(staffToEdit: staff),
     );
   }
 
-  //  Show delete confirmation dialog
   void _showDeleteDialog(dynamic staff) {
     showDialog(
       context: context,

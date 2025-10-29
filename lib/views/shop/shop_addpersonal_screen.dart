@@ -22,7 +22,9 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController cccdControler = TextEditingController();
-  
+  String okAction = "OKE";
+  String continueAction = "CONTINUE";
+
   String selectedRole = "";
   bool isLoading = false;
 
@@ -161,10 +163,15 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     if (shopId == null) {
       throw Exception('Không tìm thấy cửa hàng hiện tại.');
     }
-    
+      String generateRequestId() {
+      final now = DateTime.now();
+      final formattedDate = "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}";
+      final timestamp = now.millisecondsSinceEpoch.toString().substring(10);
+      return 'staff_${formattedDate}_$timestamp';
+      }
 
     final model = StorestaffModel(
-      employeeId: '',
+      employeeId: generateRequestId(),
       shopId: shopId,
       fullName: nameController.text.trim(),
       email: emailController.text.trim(),
@@ -186,34 +193,35 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     setState(() => isLoading = false);
 
     // Hiển thị AlertDialog thành công
-    await showDialog(
+    final action = await showDialog<String?>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Thành công'),
-        content: Text('Thêm nhân viên thành công'),
+        title: const Text('Thành công'),
+        content: const Text('Thêm nhân viên thành công'),
         actions: [
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('OK'),
+                onPressed: () => Navigator.of(context).pop(okAction),
+                child: const Text('OK'),
               ),
               TextButton(
-                onPressed: () {
-                  clearFields();
-                },
-                child: Text('Thêm mới'),
+                onPressed: () => Navigator.of(context).pop(continueAction),
+                child: const Text('Tiếp tục'),
               ),
             ],
-
           )
         ],
       ),
     );
 
     if (!mounted) return;
-    Navigator.of(context).pop(true);
+    if (action == okAction) {
+      Navigator.of(context).pop(true);
+    } else if (action == continueAction) {
+      clearFields();
+    }
 
   } catch (e) {
     if (!mounted) return;

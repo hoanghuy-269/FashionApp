@@ -25,6 +25,6 @@ class EmployeeroleRepositories {
       await collection.doc(role.roleId).set(role.toMap());
     }
 
-    print("✅ Đã thêm dữ liệu mẫu lên Firestore thành công!");
+    print(" Đã thêm dữ liệu mẫu lên Firestore thành công!");
   }
 }

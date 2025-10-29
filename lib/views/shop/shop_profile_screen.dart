@@ -160,26 +160,28 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildProfileAvatar(),
-            const SizedBox(height: 20),
-            _buildNameField(),
-            const SizedBox(height: 16),
-            _buildPhoneField(),
-            const SizedBox(height: 16),
-            _buildCCCDField(),
-            const SizedBox(height: 16),
-            _buildIDImagesSection(),
-            const SizedBox(height: 16),
-            _buildLicenseSection(),
-            const SizedBox(height: 16),
-            _buildAddressField(),
-            const SizedBox(height: 30),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProfileAvatar(),
+              const SizedBox(height: 20),
+              _buildNameField(),
+              const SizedBox(height: 16),
+              _buildPhoneField(),
+              const SizedBox(height: 16),
+              _buildCCCDField(),
+              const SizedBox(height: 16),
+              _buildIDImagesSection(),
+              const SizedBox(height: 16),
+              _buildLicenseSection(),
+              const SizedBox(height: 16),
+              _buildAddressField(),
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
     );

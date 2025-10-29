@@ -36,17 +36,6 @@ class StorestaffViewmodel extends ChangeNotifier {
     }
   }
 
-  Future<void> updateStaff(StorestaffModel staff) async {
-    await _repo.updateStaff(staff);
-
-    final update = staffs.indexWhere((s) => s.employeeId == staff.employeeId);
-    if (update >= 0) {
-      staffs[update] = staff;
-      filteredStaffs = List.from(staffs);
-    }
-    notifyListeners();
-  }
-
   Future<void> fetchStaffs(StorestaffModel staff) async {
     isLoading = true;
     notifyListeners();
@@ -128,7 +117,6 @@ class StorestaffViewmodel extends ChangeNotifier {
   }
 
   Future<StorestaffModel> saveStaffWithAuth(
-
     StorestaffModel model, {
     required String password,
     File? front,
@@ -138,10 +126,16 @@ class StorestaffViewmodel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final isAddNew = model.employeeId.isEmpty;
 
-      final emailExists = await isStaffEmailExists(model.email , model.shopId);
-      if(emailExists){
-      throw Exception('Email này đã được sử dụng, vui lòng chọn email khác.');
+      // CHỈ kiểm tra email exists khi THÊM MỚI
+      if (isAddNew) {
+        final emailExists = await isStaffEmailExists(model.email, model.shopId);
+        if (emailExists) {
+          throw Exception(
+            'Email này đã được sử dụng, vui lòng chọn email khác.',
+          );
+        }
       }
 
       // Upload ảnh CCCD nếu có
@@ -161,24 +155,24 @@ class StorestaffViewmodel extends ChangeNotifier {
         );
       }
 
-      // Tạo tài khoản hoặc dùng ID cũ
-      final isAddNew = model.employeeId.isEmpty;
+      // Tạo tài khoản CHỈ khi THÊM MỚI
       String docId = model.employeeId;
 
       if (isAddNew) {
-           try {
-          userCredential = await _auth.createUserWithEmailAndPassword(
-          email: model.email,
-          password: password,
-        );
-        docId = userCredential.user?.uid ?? '';
+        try {
+          final userCredential = await _auth.createUserWithEmailAndPassword(
+            email: model.email,
+            password: password,
+          );
+          docId = userCredential.user?.uid ?? '';
         } on FirebaseAuthException catch (e) {
           if (e.code == "email-already-in-use") {
-            throw Exception('Email này đã được sử dụng, vui lòng chọn email khác.');
-        }
-        else{
-          throw Exception('Lỗi tạo tài khoản: ${e.message}');
-        }
+            throw Exception(
+              'Email này đã được sử dụng, vui lòng chọn email khác.',
+            );
+          } else {
+            throw Exception('Lỗi tạo tài khoản: ${e.message}');
+          }
         }
       }
 
@@ -217,9 +211,71 @@ class StorestaffViewmodel extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
-    
   }
-  Future<bool> isStaffEmailExists(String email , String shopId) async {
-    return await _repo.isStaffEmailExists(email,shopId);
+
+  Future<StorestaffModel> updateStaff(
+    StorestaffModel model, {
+    File? front,
+    File? back,
+  }) async {
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      if (model.employeeId.isEmpty) {
+        throw Exception('Employee ID không được để trống khi cập nhật.');
+      }
+
+      // Upload ảnh CCCD nếu có ảnh mới
+      String? frontUrl = model.nationalIdFront;
+      String? backUrl = model.nationalIdBack;
+
+      if (front != null) {
+        frontUrl = await GalleryUtil.uploadImageToFirebase(
+          front,
+          folderName: 'staff_ids/front',
+        );
+      }
+      if (back != null) {
+        backUrl = await GalleryUtil.uploadImageToFirebase(
+          back,
+          folderName: 'staff_ids/back',
+        );
+      }
+
+      // Cập nhật model với dữ liệu mới
+      final updated = model.copyWith(
+        nationalIdFront: frontUrl,
+        nationalIdBack: backUrl,
+      );
+
+      // Cập nhật vào Firestore
+      await _firestore
+          .collection('shops')
+          .doc(updated.shopId)
+          .collection('staff')
+          .doc(updated.employeeId)
+          .update(updated.toFirestoreMap());
+
+      // Cập nhật list cục bộ
+      final index = staffs.indexWhere(
+        (s) => s.employeeId == updated.employeeId,
+      );
+      if (index != -1) {
+        staffs[index] = updated;
+        filteredStaffs = List.from(staffs);
+      }
+
+      return updated;
+    } catch (e) {
+      rethrow;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> isStaffEmailExists(String email, String shopId) async {
+    return await _repo.isStaffEmailExists(email, shopId);
   }
 }
