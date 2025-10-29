@@ -1,4 +1,6 @@
+import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
+import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:flutter/material.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import './enter_phonenumber_screen.dart';
@@ -180,12 +182,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   if (user != null) {
                     // ✅ Kiểm tra role
-                    if (_authViewModel.currentUser?.roleId == 'r2') {
+                    if (_authViewModel.currentUser?.roleId == 'r1') {
                       // 👉 Nếu là shop
+                      print('DEBUG → roleId: ${_authViewModel.currentUser?.roleId}');
+            print('DEBUG → id: ${_authViewModel.currentUser?.id}');
+
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const ShopScreen(),
+                          builder: (_) => UserprofileScreen(idUser:_authViewModel.currentUser?.id),
                         ),
                       );
                     } else {
@@ -193,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const RegisterScreen(),
+                          builder: (_) => const AdminrequestshopScreen(),
                         ),
                       );
                     }
@@ -361,13 +366,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Color.fromARGB(255, 82, 80, 80),
                       ),
                     ),
-
-                    const Text(
-                      ' Đăng ký',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.normal,
-                        color: Colors.blue,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        ' Đăng ký',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.blue,
+                        ),
                       ),
                     ),
                   ],

@@ -1,26 +1,31 @@
 import 'dart:io';
 
+import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
-import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:fashion_app/data/models/requesttoopentshop_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-class ShopProfileScreen extends StatefulWidget {
-  const ShopProfileScreen({super.key});
+class RequestToOpenStoreScreen extends StatefulWidget {
+  final String? uid;
+  const RequestToOpenStoreScreen({super.key, this.uid});
 
   @override
-  State<ShopProfileScreen> createState() => _ShopProfileScreenState();
+  State<RequestToOpenStoreScreen> createState() =>
+      _RequestToOpenStoreScreenState();
 }
 
-class _ShopProfileScreenState extends State<ShopProfileScreen> {
+class _RequestToOpenStoreScreenState extends State<RequestToOpenStoreScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneControler = TextEditingController();
   final TextEditingController cccdControler = TextEditingController();
   final TextEditingController addressControler = TextEditingController();
   final GalleryUtil galleryUti = GalleryUtil();
   bool inited = false;
+  File? logo;
   File? frontID;
   File? backID;
   File? license;
@@ -32,38 +37,6 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (inited) return;
-
-    final shopVm = Provider.of<ShopViewModel>(context, listen: false);
-    final requestVm = Provider.of<RequestToOpenShopViewModel>(
-      context,
-      listen: false,
-    );
-    final shop = shopVm.currentShop;
-
-    if (shop != null) {
-      nameController.text = shop.shopName;
-      phoneControler.text = shop.phoneNumber?.toString() ?? '';
-      addressControler.text = shop.address ?? '';
-
-      final requestId = shop.requestId;
-      if (requestId != null && requestId.isNotEmpty) {
-        if (!mounted) return;
-        WidgetsBinding.instance.addPostFrameCallback((_) async {
-          final request = await requestVm.fetchRequestById(requestId);
-          if (!mounted || request == null) return;
-
-          setState(() {
-            cccdControler.text = request.nationalId;
-            frontUrl =
-                "${request.idnationFront}?ts=${DateTime.now().millisecondsSinceEpoch}";
-            backUrl =
-                "${request.idnationBack}?ts=${DateTime.now().millisecondsSinceEpoch}";
-            licenseUrl = null;
-          });
-        });
-      }
-    }
-
     inited = true;
   }
 
@@ -76,11 +49,18 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     super.dispose();
   }
 
-  Future<void> pickImage(bool isFront, {bool isLiscense = false}) async {
+  Future<void> pickImage(
+   { bool isFront = false,
+    bool isLogo = false, 
+    bool isLiscense = false,
+  }) async {
     final File? image = await GalleryUtil.pickImageFromGallery();
     if (image != null) {
+      if (!mounted) return;
       setState(() {
-        if (isLiscense) {
+        if (isLogo) {
+          logo = image;
+        } else if (isLiscense) {
           license = image;
         } else if (isFront) {
           frontID = image;
@@ -97,7 +77,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
       backgroundColor: Colors.white,
 
       appBar: AppBar(
-        title: const Text("Cập nhật thông tin "),
+        title: const Text("Đăng kí Shop "),
         centerTitle: true,
         backgroundColor: Colors.white,
       ),
@@ -109,12 +89,15 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
             children: [
               Center(
                 child: GestureDetector(
+                  onTap:  () async {
+                    await pickImage(isLogo: true);
+                  },
                   child: CircleAvatar(child: Icon(Icons.person, size: 50)),
                 ),
               ),
               const SizedBox(height: 20),
               const Text(
-                "Họ và tên ",
+                "Nhập vào tên Shop ",
                 style: TextStyle(
                   color: Colors.grey,
                   fontSize: 14,
@@ -132,12 +115,12 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
-                  hintText: "Hiển thị tên Shop ",
+                  hintText: "Nhập vào tên Shop dự kiến ",
                 ),
               ),
               const SizedBox(height: 10),
               Text(
-                " Hiển thị số điện thoại ",
+                " số điện thoại ",
                 style: TextStyle(
                   color: Colors.grey,
                   fontSize: 14,
@@ -156,7 +139,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                   prefixIcon: Padding(
                     padding: const EdgeInsets.all(8),
                     child: Image.asset(
-                      "assets/images/logo_vietnam.png",
+                      "assets/icons/vietnam.png",
                       width: 24,
                       height: 24,
                     ),
@@ -164,7 +147,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
-                  hintText: "Hiển thị số điện thoại",
+                  hintText: "Nhập vào số điện thoại shop ",
                 ),
               ),
               const SizedBox(height: 10),
@@ -180,7 +163,6 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
               TextField(
                 controller: cccdControler,
                 keyboardType: TextInputType.phone,
-                readOnly: true,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(12),
@@ -193,7 +175,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
-                  hintText: "hiển thị căn cước công dân",
+                  hintText: "Căn cước công dân ",
                 ),
               ),
               const SizedBox(height: 10),
@@ -204,13 +186,13 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                     "Mặt trước",
                     file: frontID,
                     url: frontUrl,
-                    onTap: () => pickImage(true),
+                    onTap: () => pickImage(isFront: true),
                   ),
                   buildImageBox(
                     "Mặt sau",
                     file: backID,
                     url: backUrl,
-                    onTap: () => pickImage(false),
+                    onTap: () => pickImage(),
                   ),
                 ],
               ),
@@ -228,9 +210,11 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                 "Giấ phép kinh doanh ",
                 file: license,
                 url: licenseUrl,
-                onTap: () => pickImage(true, isLiscense: true),
+                onTap: () => pickImage(isLiscense: true),
                 width: double.infinity,
               ),
+
+              const SizedBox(height: 10),
               Text(
                 "Địa chỉ",
                 style: TextStyle(
@@ -250,7 +234,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
-                  hintText: "hiển thị địa chỉ",
+                  hintText: "Địa chỉ shop ",
                 ),
               ),
               const SizedBox(height: 30),
@@ -258,69 +242,69 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    final shopVm = Provider.of<ShopViewModel>(
-                      context,
-                      listen: false,
-                    );
                     final requestVm = Provider.of<RequestToOpenShopViewModel>(
                       context,
                       listen: false,
                     );
-                    if (shopVm.currentShop == null) return;
 
-                    final updateShop = shopVm.currentShop!.copyWith(
-                      shopName: nameController.text,
-                      phoneNumber: int.tryParse(phoneControler.text.trim()),
-                      address: addressControler.text,
-                    );
-                    await shopVm.updateShop(updateShop);
+                    // gather inputs
+                    final shopName = nameController.text.trim();
+                    final nationalId = cccdControler.text.trim();
 
-                    if (shopVm.currentShop!.requestId != null) {
-                      final requestId = shopVm.currentShop!.requestId!;
-                      final currentRequest = requestVm.currentUserRequest;
-
-                      if (currentRequest != null &&
-                          currentRequest.requestId == requestId) {
-                        String frontUrl = currentRequest.idnationFront;
-                        String backUrl = currentRequest.idnationBack;
-
-                        /// Upload ảnh mới nếu có
-                        if (frontID != null) {
-                          final uploadedFront =
-                              await GalleryUtil.uploadImageToFirebase(frontID!);
-                          if (uploadedFront != null) frontUrl = uploadedFront;
-                        }
-
-                        if (backID != null) {
-                          final uploadedBack =
-                              await GalleryUtil.uploadImageToFirebase(backID!);
-                          if (uploadedBack != null) backUrl = uploadedBack;
-                        }
-
-                        /// 3. Update request lên Firestore
-                        final updateRequest = currentRequest.copyWith(
-                          shopName: nameController.text,
-                          nationalId: cccdControler.text,
-                          idnationFront: frontUrl,
-                          idnationBack: backUrl,
-                        );
-
-                        await requestVm.updateRequest(updateRequest);
-                      }
+                    // upload images if present
+                    String? uploadedFront;
+                    String? uploadedBack;
+                    String? uploadedLicense;
+                    if (frontID != null) {
+                      uploadedFront = await GalleryUtil.uploadImageToFirebase(
+                        frontID!,
+                      );
+                    }
+                    if (backID != null) {
+                      uploadedBack = await GalleryUtil.uploadImageToFirebase(
+                        backID!,
+                      );
+                    }
+                    if (license != null) {
+                      uploadedLicense = await GalleryUtil.uploadImageToFirebase(
+                        license!,
+                      );
                     }
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Cập nhật thông tin thành công"),
-                      ),
+                    // build request model
+                    final uid =
+                        fb_auth.FirebaseAuth.instance.currentUser?.uid ?? '';
+                    final requestId =
+                        DateTime.now().millisecondsSinceEpoch.toString();
+                    final request = RequesttoopentshopModel(
+                      requestId: requestId,
+                      userId: uid,
+                      shopName: shopName,
+                      businessLicense: uploadedLicense,
+                      address: addressControler.text.trim(),
+                      nationalId: nationalId,
+                      idnationFront: uploadedFront ?? '',
+                      idnationBack: uploadedBack ?? '',
+                      status: 'pending',
+                      rejectionReason: null,
+                      createdAt: DateTime.now(),
+                      approvedAt: null,
                     );
+
+                    await requestVm.createRequest(request);
+
+                    if (!mounted) return;
+                     context.showSuccess("Gửi yêu cầu mở shop thành công ");
+                    Future.delayed(const Duration(seconds: 2), () {
+                      Navigator.of(context).pop('đang gửi yêu cầu ');
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     backgroundColor: Colors.blue,
                   ),
                   child: const Text(
-                    "Cập nhật ",
+                    "Gửi yêu cầu mở shop ",
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -347,7 +331,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
       onTap: onTap,
       child: Container(
         width: width,
-        height: 100,
+        height: 150,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: Colors.grey.shade400),

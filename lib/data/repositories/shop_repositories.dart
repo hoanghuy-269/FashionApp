@@ -15,4 +15,6 @@ class ShopRepositories {
   Future<ShopModel?> getShopByOwnerId(String ownerId) => _remoteSources.getShopByOwnerId(ownerId);
 
   Future<void> deleteShop(String shopId) => _remoteSources.deleteShop(shopId);
+
+  Future<void> updateShop(ShopModel shop) => _remoteSources.updateShop(shop);
 }
