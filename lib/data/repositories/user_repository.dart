@@ -70,7 +70,8 @@ class UserRepository {
   Future<User?> loginWithFacebook() => _service.signInWithFacebook();
   Future<StorestaffModel?> loginStaff(String email, String password) async {
     return await _service.signInStaffWithEmail(email, password);
-  
+  }
+
   Future<void> lockAccount(String userId) async {
     await _service.lockAccount(userId);
   }
