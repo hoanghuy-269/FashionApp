@@ -16,9 +16,6 @@ class UserprofileScreen extends StatefulWidget {
 
   const UserprofileScreen({super.key, this.idUser});
 
-  const UserprofileScreen({super.key,  this.idUser});
-
- 
   @override
   State<UserprofileScreen> createState() => _UserprofileScreenState();
 }
@@ -112,9 +109,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
           title: const Text('Thông tin người dùng'),
           centerTitle: true,
         ),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
