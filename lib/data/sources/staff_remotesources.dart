@@ -14,7 +14,7 @@ class StaffRemotesources {
         .doc(id)
         .set(staff.toFirestoreMap());
   }
-  
+
   Future<void> updateStaff(StorestaffModel staff) async {
     final id = staff.employeeId;
     await _db
@@ -35,39 +35,54 @@ class StaffRemotesources {
   }
 
   Future<StorestaffModel?> getStaffById(String employeeId) async {
-    final snaps = await _db.collectionGroup('staff').where(FieldPath.documentId, isEqualTo: employeeId).get();
+    final snaps =
+        await _db
+            .collectionGroup('staff')
+            .where(FieldPath.documentId, isEqualTo: employeeId)
+            .get();
     if (snaps.docs.isEmpty) return null;
     final e = snaps.docs.first;
     final data = Map<String, dynamic>.from(e.data());
     data['employeeId'] = e.id;
     return StorestaffModel.fromMap(data);
   }
+
   Future<List<StorestaffModel>> getStaffsByShop(String shopId) async {
-   try {
-    final q = await _db
+    try {
+      final q =
+          await _db.collection('shops').doc(shopId).collection('staff').get();
+
+      return q.docs.map((e) {
+        final data = Map<String, dynamic>.from(e.data());
+        data['employeeId'] = e.id;
+        return StorestaffModel.fromMap(data);
+      }).toList();
+    } catch (e, st) {
+      debugPrint(' Lỗi khi getStaffsByShop: $e');
+      debugPrint('StackTrace:\n$st');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteStaff(String shopId, String employeeId) async {
+    await _db
         .collection('shops')
         .doc(shopId)
         .collection('staff')
-        .get();
-
-    return q.docs.map((e) {
-      final data = Map<String, dynamic>.from(e.data());
-      data['employeeId'] = e.id;
-      return StorestaffModel.fromMap(data);
-    }).toList();
-  } catch (e, st) {
-    debugPrint(' Lỗi khi getStaffsByShop: $e');
-    debugPrint('StackTrace:\n$st');
-    rethrow;
+        .doc(employeeId)
+        .delete();
   }
 
-  }
-  Future<void> deleteStaff(String shopId,String employeeId) async {
-   await _db
-   .collection('shops')
-    .doc(shopId) 
-    .collection('staff')
-    .doc(employeeId)
-    .delete();
+  Future<bool> isStaffEmailExists(String email, String shopId) async {
+    final query =
+        await _db
+            .collection('shops')
+            .doc(shopId)
+            .collection('staff')
+            .where('email', isEqualTo: email.trim())
+            .limit(1)
+            .get();
+
+    return query.docs.isNotEmpty;
   }
 }

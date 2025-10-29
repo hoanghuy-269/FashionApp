@@ -1,4 +1,3 @@
-import 'package:fashion_app/data/models/User.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -30,7 +29,6 @@ class _ApprovedShopDialogState extends State<ApprovedShopDialog> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      
       _loadShops();
     });
   }
@@ -42,10 +40,15 @@ class _ApprovedShopDialogState extends State<ApprovedShopDialog> {
     });
 
     try {
-      final requestVm = Provider.of<RequestToOpenShopViewModel>(context, listen: false);
+      final requestVm = Provider.of<RequestToOpenShopViewModel>(
+        context,
+        listen: false,
+      );
       final shopVm = Provider.of<ShopViewModel>(context, listen: false);
 
-      final approvedRequests = await requestVm.fetchApprovedRequestsByUserId(widget.userId);
+      final approvedRequests = await requestVm.fetchApprovedRequestsByUserId(
+        widget.userId,
+      );
       if (!mounted) return;
 
       if (approvedRequests == null || approvedRequests.isEmpty) {
@@ -56,11 +59,12 @@ class _ApprovedShopDialogState extends State<ApprovedShopDialog> {
         return;
       }
 
-      final shopIds = approvedRequests
-        .map((r) => r.shopId)
-          .where((id) => id != null && id.isNotEmpty)
-          .cast<String>()
-          .toList();
+      final shopIds =
+          approvedRequests
+              .map((r) => r.shopId)
+              .where((id) => id != null && id.isNotEmpty)
+              .cast<String>()
+              .toList();
 
       List<ShopModel> shops = [];
 
@@ -68,8 +72,9 @@ class _ApprovedShopDialogState extends State<ApprovedShopDialog> {
         final allUserShops = await shopVm.fetchShopsByUserId(widget.userId);
         print(' thong All user shops: $allUserShops');
         shops = allUserShops.where((s) => shopIds.contains(s.shopId)).toList();
+        print("✅ Approved shops: $shops");
       }
-
+      if (!mounted) return;
       setState(() {
         _shops = shops;
         _isLoading = false;
@@ -87,10 +92,7 @@ class _ApprovedShopDialogState extends State<ApprovedShopDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Chọn Shop đã được duyệt'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: _buildContent(),
-      ),
+      content: SizedBox(width: double.maxFinite, child: _buildContent()),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(null),
@@ -102,7 +104,10 @@ class _ApprovedShopDialogState extends State<ApprovedShopDialog> {
 
   Widget _buildContent() {
     if (_isLoading) {
-      return const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()));
+      return const SizedBox(
+        height: 120,
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
     if (_error != null) {
       return Column(
@@ -110,10 +115,7 @@ class _ApprovedShopDialogState extends State<ApprovedShopDialog> {
         children: [
           Text(_error!, style: const TextStyle(color: Colors.red)),
           const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: _loadShops,
-            child: const Text('Thử lại'),
-          ),
+          ElevatedButton(onPressed: _loadShops, child: const Text('Thử lại')),
         ],
       );
     }
@@ -137,9 +139,12 @@ class _ApprovedShopDialogState extends State<ApprovedShopDialog> {
           subtitle: Text(shop.address ?? ''),
           onTap: () {
             print("Selected shop: ${shop.shopId}");
-            Navigator.push(context, MaterialPageRoute(
-              builder: (context) => ShopScreen(idShop: shop.shopId),
-            ));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ShopScreen(idShop: shop.shopId),
+              ),
+            );
           },
         );
       },

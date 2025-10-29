@@ -1,3 +1,4 @@
+import 'package:fashion_app/core/widget/validatedtextfield.dart';
 import 'package:flutter/material.dart';
 import '../../core/utils/validator.dart';
 import '../../viewmodels/auth_viewmodel.dart';
