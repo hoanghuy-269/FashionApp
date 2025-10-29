@@ -2,6 +2,7 @@ import 'package:fashion_app/core/widget/validatedtextfield.dart';
 import 'package:flutter/material.dart';
 import '../../core/utils/validator.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../../core/utils/flushbar_extension.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -50,20 +51,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
     setState(() => _isLoading = false);
 
-    if (mounted) {
-      await showDialog(
-        context: context,
-        builder:
-            (_) => AlertDialog(
-              title: const Text('Kết quả đăng ký'),
-              content: Text(_authViewModel.message ?? ''),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
+    if (success) {
+      _emailController.clear();
+      _phoneController.clear();
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+
+      context.showSuccess('🎉 Tạo tài khoản thành công!');
+    } else {
+      context.showError(
+        _authViewModel.message ?? 'Đăng ký thất bại, vui lòng thử lại.',
       );
     }
   }
@@ -71,25 +68,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_outlined, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'ĐĂNG KÝ',
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue,
+          ),
+        ),
+        centerTitle: true,
+      ),
       backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: SingleChildScrollView(
           child: Column(
             children: [
-              const SizedBox(height: 40),
-              const Text(
-                'ĐĂNG KÝ',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // ✅ Gọi hàm chung
-              ValidatedTextField(
+              //Nhap email
+              _buildValidatedField(
                 label: 'Email',
                 controller: _emailController,
                 icon: Icons.email,
@@ -101,7 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 20),
 
-              ValidatedTextField(
+              _buildValidatedField(
                 label: 'Số điện thoại',
                 controller: _phoneController,
                 icon: Icons.phone,
@@ -113,7 +116,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 20),
 
-              ValidatedTextField(
+              _buildValidatedField(
                 label: 'Mật khẩu',
                 controller: _passwordController,
                 icon: Icons.lock,
@@ -128,7 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 20),
 
-              ValidatedTextField(
+              _buildValidatedField(
                 label: 'Xác nhận mật khẩu',
                 controller: _confirmPasswordController,
                 icon: Icons.lock_outline,
@@ -172,6 +175,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildValidatedField({
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    required bool error,
+    required String errorMessage,
+    required bool Function(String) validator,
+    required VoidCallback onChanged,
+    bool isPassword = false,
+    bool obscureText = false,
+    VoidCallback? toggleObscure,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 16)),
+        const SizedBox(height: 5),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          onChanged: (_) => onChanged(),
+          decoration: InputDecoration(
+            hintText: 'Nhập $label',
+            prefixIcon: Icon(icon),
+            suffixIcon:
+                isPassword
+                    ? IconButton(
+                      icon: Icon(
+                        obscureText ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: toggleObscure,
+                    )
+                    : null,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: error ? Colors.red : Colors.deepPurple,
+                width: 2,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: error ? Colors.red : Colors.grey,
+                width: 1.5,
+              ),
+            ),
+            errorText: error ? errorMessage : null,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -14,7 +14,8 @@ class EmployeeroleRepositories {
   }
   Future<void> addSampleRoles() async {
     final sampleRoles = [
-      EmployeeroleModel(roleId: 'R01', roleName: 'Ship'),
+      
+            EmployeeroleModel(roleId: 'R01', roleName: 'Ship'),
       EmployeeroleModel(roleId: 'R02', roleName: 'Thu Ngân'),
       EmployeeroleModel(roleId: 'R03', roleName: 'Quản lí kho'),
     ];

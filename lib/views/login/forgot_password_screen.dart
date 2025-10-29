@@ -25,13 +25,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     try {
       setState(() => _isSending = true);
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      print('✅ Đã gửi email reset!');
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đã gửi email đặt lại mật khẩu!')),
       );
-
-      Navigator.pop(context); // Quay lại trang đăng nhập
     } on FirebaseAuthException catch (e) {
       String message = 'Có lỗi xảy ra. Vui lòng thử lại.';
       if (e.code == 'user-not-found') {
@@ -91,6 +88,31 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // 🔹 Nút "Xong"
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Quay lại trang đăng nhập
+                },
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.blue, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Xong',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ],

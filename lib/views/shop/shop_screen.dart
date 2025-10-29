@@ -1,4 +1,6 @@
+import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
+import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:fashion_app/views/shop/shop_personnal_screen.dart';
 import 'package:fashion_app/views/shop/shop_profile_screen.dart';
 import 'package:fashion_app/views/shop/storerevenue_detail_screen.dart';
@@ -19,6 +21,7 @@ class ShopScreen extends StatefulWidget {
 }
 
 class _ShopScreenState extends State<ShopScreen> {
+  final _authViewModel = AuthViewModel();
   @override
   void initState() {
     super.initState();
@@ -109,6 +112,49 @@ class _ShopScreenState extends State<ShopScreen> {
     final height = size.height;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Thông tin người dùng'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Đăng xuất',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder:
+                    (context) => AlertDialog(
+                      title: const Text('Xác nhận'),
+                      content: const Text('Bạn có chắc muốn đăng xuất không?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Hủy'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Đăng xuất'),
+                        ),
+                      ],
+                    ),
+              );
+
+              if (confirm == true) {
+                await _authViewModel.logout(); // Đăng xuất khỏi Firebase
+                if (context.mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                    (route) => false, // Xóa toàn bộ stack
+                  );
+                }
+              }
+            },
+          ),
+        ],
+      ),
       backgroundColor: Colors.grey.shade100,
       body: SafeArea(
         child: SingleChildScrollView(
