@@ -1,7 +1,7 @@
-import 'package:fashion_app/data/models/adminShopAccount.dart';
+import 'package:fashion_app/data/models/storestaff_model.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import '../models/User.dart';
-import '../sources/firebase_service.dart';
+import '../sources/auth_source.dart';
 
 class UserRepository {
   final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
@@ -29,6 +29,7 @@ class UserRepository {
     );
 
     await _service.addOrUpdateUser(userWithUid);
+    await _auth.signOut();
   }
 
   /// Đăng nhập bằng email + password
@@ -67,6 +68,8 @@ class UserRepository {
   Future<void> deleteUser(String id) => _service.deleteUser(id);
   Future<User?> loginWithGoogle() => _service.signInWithGoogle();
   Future<User?> loginWithFacebook() => _service.signInWithFacebook();
+  Future<StorestaffModel?> loginStaff(String email, String password) async {
+    return await _service.signInStaffWithEmail(email, password);
   
   Future<void> lockAccount(String userId) async {
     await _service.lockAccount(userId);

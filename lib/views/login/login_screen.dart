@@ -1,8 +1,8 @@
-<<<<<<< HEAD
-=======
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/viewmodels/role_viewmodel.dart';
->>>>>>> c9f66af7c55dcac1d76fd3238ab0d71dd9bfab53
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
+import 'package:fashion_app/views/admin_home_screen.dart';
+import 'package:fashion_app/views/login/staff_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +11,7 @@ import './enter_phonenumber_screen.dart';
 import '.././login/register_screen.dart';
 import '.././login/forgot_password_screen.dart';
 import '../../core/utils/validator.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,87 +23,148 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _accountController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  final _authViewModel = AuthViewModel();
+  final _roleViewModel = RoleViewModel();
+  final _storage = const FlutterSecureStorage();
+
   bool _isShopLogin = false;
-  final AuthViewModel _authViewModel = AuthViewModel();
-  final RoleViewModel _roleViewModel = RoleViewModel();
+  bool _obscurePassword = true;
+  bool _isLoading = false;
   bool _emailError = false;
   bool _passwordError = false;
-  bool _isLoading = false;
+  List<String> _savedEmails = [];
 
+  FocusNode _emailFocus = FocusNode();
+  OverlayEntry? _overlayEntry;
+
+  @override
+  void dispose() {
+    _emailFocus.dispose();
+    _overlayEntry?.remove();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedLogin();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(_emailFocus);
+    });
+  }
+
+  Future<void> _loadSavedLogin() async {
+    final emails = await _storage.read(key: 'emails');
+
+    setState(() {
+      if (emails != null && emails.isNotEmpty) {
+        _savedEmails = emails.split(',');
+      }
+    });
+  }
+
+  //  Khi đăng nhập
   Future<void> _login() async {
-    final username = _accountController.text.trim();
+    final email = _accountController.text.trim();
     final password = _passwordController.text.trim();
-    const roleAdmin = 'role001';
-    const roleCustomer = 'role002';
-    const roleShop = 'role003';
 
-    // ⚠️ Kiểm tra hợp lệ
-    if (username.isEmpty || !Validator.isValidEmail(username)) {
+    if (email.isEmpty || !Validator.isValidEmail(email)) {
       setState(() => _emailError = true);
-      _showError('Email không hợp lệ');
       return;
     }
-
     if (password.isEmpty) {
       setState(() => _passwordError = true);
-      _showError(
-        'Mật khẩu phải có ít nhất 6 ký tự, chữ hoa, số và ký tự đặc biệt',
-      );
       return;
     }
 
-    // Bật loading toàn màn hình
     setState(() => _isLoading = true);
 
-    // Gọi hàm đăng nhập
-    final user = await _authViewModel.login(
-      email: username,
-      password: password,
-    );
+    bool isLogin = false;
 
-    // Tắt loading
+    if (_isShopLogin) {
+      // Nhân viên
+      isLogin = await _authViewModel.loginStaff(
+        email: email,
+        password: password,
+      );
+    } else {
+      // Người dùng (User / Shop / Admin)
+      isLogin = await _authViewModel.login(email: email, password: password);
+    }
+    if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (user != null) {
-      await _roleViewModel.fetchRoleById(_authViewModel.currentUser?.roleId);
-      final role = _roleViewModel.currentRole;
+    if (!isLogin) {
+      _showError(_authViewModel.message ?? 'Đăng nhập thất bại');
+      return;
+    }
 
-      if (role == null) {
-        _showError('Không tìm thấy quyền của người dùng!');
+    await _storage.write(key: 'pwd_$email', value: password);
+    final existingEmails = await _storage.read(key: 'emails');
+    List<String> emailList = existingEmails?.split(',') ?? [];
+
+    if (!emailList.contains(email)) {
+      emailList.add(email);
+      await _storage.write(key: 'emails', value: emailList.join(','));
+    }
+
+    if (_isShopLogin) {
+      final staff = _authViewModel.currentStaff;
+      if (staff == null) {
+        _showError('Không tìm thấy thông tin nhân viên!');
         return;
       }
 
-      // Điều hướng theo role
-      if (role.id.toLowerCase() == roleCustomer) {
+      print('✅ Nhân viên: ${staff.fullName}, Shop: ${staff.shopId}');
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const StaffScreen()),
+      );
+
+      _showSuccess('Đăng nhập nhân viên thành công!');
+      return;
+    }
+
+    final user = _authViewModel.currentUser;
+    if (user == null) {
+      _showError('Không tìm thấy thông tin người dùng!');
+      return;
+    }
+
+    await _roleViewModel.fetchRoleById(user.roleId);
+    final role = _roleViewModel.currentRole;
+
+    if (role == null) {
+      _showError('Vui lòng đăng nhập đúng tài khoản!');
+      return;
+    }
+
+    switch (role.id) {
+      case 'role002':
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder:
-                (_) =>
-                    UserprofileScreen(idUser: _authViewModel.currentUser?.id),
-          ),
+          MaterialPageRoute(builder: (_) => UserprofileScreen(idUser: user.id)),
         );
-      } else if (role.id.toLowerCase() == roleShop) {
+        break;
+      case 'role003':
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => ShopScreen(idUser: _authViewModel.currentUser?.id),
-          ),
+          MaterialPageRoute(builder: (_) => ShopScreen(idUser: user.id)),
         );
-      } else if (role.id.toLowerCase() == roleAdmin) {
+        break;
+      case 'role001':
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const AdminrequestshopScreen()),
         );
-      } else {
-        _showError('Không xác định được quyền đăng nhập');
-      }
-
-      _showSuccess('Đăng nhập thành công!');
-    } else {
-      _showError(_authViewModel.message ?? 'Đăng nhập thất bại');
+        break;
+      default:
+        _showError('Không xác định được vai trò người dùng!');
+        return;
     }
+
+    _showSuccess('Đăng nhập thành công!');
   }
 
   void _showError(String message) {
@@ -115,6 +177,21 @@ class _LoginScreenState extends State<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
+  }
+
+  void _handleEmailSelected(String selectedEmail) async {
+    _accountController.text = selectedEmail;
+
+    final savedPassword = await _storage.read(key: 'pwd_$selectedEmail');
+    if (savedPassword != null) {
+      setState(() {
+        _passwordController.text = savedPassword;
+      });
+    }
+
+    print("➡️ Email đã chọn: $selectedEmail");
+    final allData = await _storage.readAll();
+    print("🔍 Dữ liệu hiện tại: $allData");
   }
 
   @override
@@ -188,11 +265,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   TextField(
                     controller: _accountController,
+                    focusNode: _emailFocus,
                     keyboardType: TextInputType.emailAddress,
                     autofillHints: const [AutofillHints.email],
                     decoration: InputDecoration(
-                      hintText: 'Nhập tài khoản...',
-                      prefixIcon: const Icon(Icons.person),
+                      hintText: 'Nhập email',
+                      prefixIcon: const Icon(Icons.email),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -210,14 +288,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 1.5,
                         ),
                       ),
-                      errorText:
-                          _emailError ? '⚠️ Vui lòng nhập email hợp lệ' : null,
+                      errorText: _emailError ? '⚠️ Email không hợp lệ' : null,
                     ),
-                    onChanged: (_) {
-                      setState(() {
-                        _emailError = false;
-                      });
-                    },
+                    onChanged: (_) => setState(() => _emailError = false),
                   ),
 
                   const SizedBox(height: 20),
@@ -354,14 +427,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () async {
                         final success =
                             await _authViewModel.loginWithFacebook();
+                        if (!mounted) return;
+
                         if (success) {
+                          final user = _authViewModel.currentUser;
+                          if (user == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Không tìm thấy thông tin người dùng!',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const OtpRequestScreen(),
+                              builder:
+                                  (_) => UserprofileScreen(idUser: user.id),
                             ),
                           );
+
+                          print("✅ Đăng nhập Google thành công: ${user.id}");
                         } else {
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
@@ -400,15 +491,32 @@ class _LoginScreenState extends State<LoginScreen> {
                     OutlinedButton.icon(
                       onPressed: () async {
                         final success = await _authViewModel.loginWithGoogle();
+                        if (!mounted) return;
+
                         if (success) {
+                          final user = _authViewModel.currentUser;
+                          if (user == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Không tìm thấy thông tin người dùng!',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const OtpRequestScreen(),
+                              builder:
+                                  (_) => UserprofileScreen(idUser: user.id),
                             ),
                           );
-                          print("huy");
+
+                          print("✅ Đăng nhập Google thành công: ${user.id}");
                         } else {
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(

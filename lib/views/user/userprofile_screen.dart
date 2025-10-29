@@ -9,6 +9,7 @@ import 'package:fashion_app/views/user/requesttoopentshop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../login/login_screen.dart';
 
 class UserprofileScreen extends StatefulWidget {
   final String? idUser;
@@ -26,7 +27,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
-
+  final _authViewModel = AuthViewModel();
   User? currentUser;
   bool isLoading = true;
   String? errorMessage;
@@ -121,14 +122,47 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
       appBar: AppBar(
         title: const Text('Thông tin người dùng'),
         centerTitle: true,
-        leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          icon: const Icon(Icons.arrow_back),
-        ),
-        elevation: 0.0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Đăng xuất',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder:
+                    (context) => AlertDialog(
+                      title: const Text('Xác nhận'),
+                      content: const Text('Bạn có chắc muốn đăng xuất không?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Hủy'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Đăng xuất'),
+                        ),
+                      ],
+                    ),
+              );
+
+              if (confirm == true) {
+                await _authViewModel.logout(); // Đăng xuất khỏi Firebase
+                if (context.mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                    (route) => false, // Xóa toàn bộ stack
+                  );
+                }
+              }
+            },
+          ),
+        ],
       ),
+
       body: _buildBody(),
     );
   }
@@ -203,65 +237,35 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
   }
 
   Widget _buildHeader(RequesttoopentshopModel? request) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      // Ảnh logo tròn
-      ClipOval(
-        child: Image.asset(
-          "assets/images/logo_default.png",
-          width: 70,
-          height: 70,
-          fit: BoxFit.cover,
-        ),
-      ),
-      const SizedBox(height: 16),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Nút yêu cầu mở shop
-          ElevatedButton(
-            onPressed: () {
-              print("✅ User ID for request: ${currentUser!.id}");
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => RequestToOpenStoreScreen(
-                   uid: currentUser!.id,
-                  ),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                vertical: 12,
-                horizontal: 16,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: const Text(
-              'Yêu cầu mở shop',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Ảnh logo tròn
+        ClipOval(
+          child: Image.asset(
+            "assets/images/logo_default.png",
+            width: 70,
+            height: 70,
+            fit: BoxFit.cover,
           ),
-          const SizedBox(width: 8),
-      
-          if (request?.status == 'approved')
-            ElevatedButton.icon(
-              onPressed: _navigateToShop,
-              icon: const Icon(Icons.store, size: 16),
-              label: const Text(
-                'Chọn shop',
-                style: TextStyle(fontSize: 12),
-              ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Nút yêu cầu mở shop
+            ElevatedButton(
+              onPressed: () {
+                print("✅ User ID for request: ${currentUser!.id}");
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder:
+                        (_) => RequestToOpenStoreScreen(uid: currentUser!.id),
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.orange,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   vertical: 12,
@@ -271,12 +275,35 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
+              child: const Text(
+                'Yêu cầu mở shop',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
             ),
-        ],
-      ),
-    ],
-  );
-}
+            const SizedBox(width: 8),
+
+            if (request?.status == 'approved')
+              ElevatedButton.icon(
+                onPressed: _navigateToShop,
+                icon: const Icon(Icons.store, size: 16),
+                label: const Text('Chọn shop', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
 
   Widget _buildForm() {
     return Column(
