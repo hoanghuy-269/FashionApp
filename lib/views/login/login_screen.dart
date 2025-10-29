@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/viewmodels/role_viewmodel.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
-import 'package:fashion_app/views/admin_home_screen.dart';
+import 'package:fashion_app/views/admin/admin_home_screen.dart';
 import 'package:fashion_app/views/login/staff_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
