@@ -1,3 +1,4 @@
+import 'package:fashion_app/data/models/adminShopAccount.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import '../models/User.dart';
 import '../sources/firebase_service.dart';
@@ -66,4 +67,13 @@ class UserRepository {
   Future<void> deleteUser(String id) => _service.deleteUser(id);
   Future<User?> loginWithGoogle() => _service.signInWithGoogle();
   Future<User?> loginWithFacebook() => _service.signInWithFacebook();
+  
+  Future<void> lockAccount(String userId) async {
+    await _service.lockAccount(userId);
+  }
+
+  // Unlock a user's account
+  Future<void> unlockAccount(String userId) async {
+    await _service.unlockAccount(userId);
+  }
 }

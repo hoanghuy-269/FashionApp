@@ -15,6 +15,9 @@ class UserprofileScreen extends StatefulWidget {
 
   const UserprofileScreen({super.key, this.idUser});
 
+  const UserprofileScreen({super.key,  this.idUser});
+
+ 
   @override
   State<UserprofileScreen> createState() => _UserprofileScreenState();
 }
@@ -101,10 +104,30 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Hiển thị loading state
+    if (isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Thông tin người dùng'),
+          centerTitle: true,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Thông tin người dùng'),
         centerTitle: true,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: const Icon(Icons.arrow_back),
+        ),
+        elevation: 0.0,
       ),
       body: _buildBody(),
     );

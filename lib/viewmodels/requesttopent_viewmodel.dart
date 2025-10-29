@@ -137,12 +137,11 @@ class RequestToOpenShopViewModel extends ChangeNotifier {
       notifyListeners();
 
       final data = await _repo.fetchRequestsByStatus(status);
+      debugPrint('RequestToOpenShopViewModel.fetchRequestsByStatus: got=${data.length} for status=$status');
       return data;
     } catch (e, st) {
-      debugPrint('Error fetching requests by status: $e\n$st');
       return [];
     } finally {
-      isLoading = false;
       notifyListeners();
     }
   }

@@ -1,4 +1,7 @@
+<<<<<<< HEAD
+=======
 import 'package:fashion_app/viewmodels/role_viewmodel.dart';
+>>>>>>> c9f66af7c55dcac1d76fd3238ab0d71dd9bfab53
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
@@ -475,7 +478,243 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ],
               ),
+<<<<<<< HEAD
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () async {
+                  final username = _accountController.text.trim();
+                  final password = _passwordController.text.trim();
+
+                  if (username.isEmpty || password.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Vui lòng nhập đầy đủ thông tin'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  setState(() => _authViewModel.isLoading = true);
+
+                  // ✅ Gọi login (hàm này trả về User hoặc null)
+                  final user = await _authViewModel.login(
+                    email: username,
+                    password: password,
+                  );
+
+                  setState(() => _authViewModel.isLoading = false);
+
+                  if (user != null) {
+                    // ✅ Kiểm tra role
+                    if (_authViewModel.currentUser?.roleId == 'r1') {
+                      // 👉 Nếu là shop
+                      print('DEBUG → roleId: ${_authViewModel.currentUser?.roleId}');
+            print('DEBUG → id: ${_authViewModel.currentUser?.id}');
+
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => UserprofileScreen(idUser:_authViewModel.currentUser?.id),
+                        ),
+                      );
+                    } else {
+                      // 👉 Nếu là khách hàng
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminrequestshopScreen(),
+                        ),
+                      );
+                    }
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Đăng nhập thành công!')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          _authViewModel.message ?? 'Đăng nhập thất bại',
+                        ),
+                      ),
+                    );
+                  }
+                },
+
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF208AE0),
+                  minimumSize: const Size(double.infinity, 55),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 4,
+                  shadowColor: Colors.black.withOpacity(0.2),
+                ),
+                child: const Text(
+                  'Đăng nhập',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+
+              if (!_isShopLogin) ...[
+                const SizedBox(height: 30),
+                Row(
+                  children: const [
+                    Expanded(
+                      child: Divider(
+                        thickness: 1,
+                        color: Colors.grey,
+                        endIndent: 10,
+                      ),
+                    ),
+                    Text('Hoặc', style: TextStyle(color: Colors.grey)),
+                    Expanded(
+                      child: Divider(
+                        thickness: 1,
+                        color: Colors.grey,
+                        indent: 10,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                // Nút Facebook
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final success = await _authViewModel.loginWithFacebook();
+                    if (success) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const OtpRequestScreen(),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            _authViewModel.message ?? 'Đăng nhập thất bại',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.facebook,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                  label: const Text(
+                    "Tiếp tục với Facebook",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: const Color(
+                      0xFF1877F2,
+                    ), // xanh Facebook chuẩn
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                    shadowColor: Colors.black45,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final success = await _authViewModel.loginWithGoogle();
+                    if (success) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const OtpRequestScreen(),
+                        ),
+                      );
+                      print("huy");
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            _authViewModel.message ?? 'Đăng nhập thất bại',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  icon: Image.asset(
+                    'assets/icons/google.png',
+                    height: 24,
+                    width: 24,
+                  ),
+                  label: const Text(
+                    "Tiếp tục với Google    ",
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.grey, width: 1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 1,
+                    shadowColor: Colors.black12,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Bạn chưa có tài khoản?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.normal,
+                        color: Color.fromARGB(255, 82, 80, 80),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        ' Đăng ký',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+=======
             ),
+>>>>>>> c9f66af7c55dcac1d76fd3238ab0d71dd9bfab53
           ),
           // Overlay loading toàn màn hình
           if (_isLoading)

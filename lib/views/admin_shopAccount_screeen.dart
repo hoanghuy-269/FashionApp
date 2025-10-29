@@ -1,782 +1,468 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 
-extension StringExtension on String {
-  String get initials {
-    List<String> nameParts = this.split(' ');
-    if (nameParts.isNotEmpty) {
-      return nameParts.map((part) => part[0]).take(2).join().toUpperCase();
-    }
-    return '';
-  }
-}
+class AdminShopaccountScreen extends StatefulWidget {
+  const AdminShopaccountScreen({super.key});
 
-Map<String, dynamic> _coerceMap(dynamic v) {
-  if (v is Map<String, dynamic>) return v;
-  if (v is Map) return Map<String, dynamic>.from(v);
-  if (v is List && v.isNotEmpty && v.first is Map) {
-    return Map<String, dynamic>.from(v.first as Map);
-  }
-  return <String, dynamic>{};
-}
-
-List<String> _coerceList(dynamic v) {
-  if (v is List) return v.map((e) => (e ?? '').toString()).where((s) => s.isNotEmpty).toList();
-  if (v is String && v.isNotEmpty) return [v];
-  return <String>[];
-}
-
-class AdminShopaccountScreeen extends StatefulWidget {
-  const AdminShopaccountScreeen({super.key});
   @override
-  State<AdminShopaccountScreeen> createState() => _AdminShopaccountScreeenState();
+  State<AdminShopaccountScreen> createState() => _AdminShopaccountScreenState();
 }
 
-class _AdminShopaccountScreeenState extends State<AdminShopaccountScreeen> {
+class _AdminShopaccountScreenState extends State<AdminShopaccountScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();  // ✅ Thêm FocusNode
+  final FocusNode _searchFocusNode = FocusNode();
   String _searchTerm = '';
-  bool _isLoading = false;
 
   @override
   void dispose() {
     _searchController.dispose();
-    _searchFocusNode.dispose();  // ✅ Dispose FocusNode
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
-  // ✅ Helper method để dismiss keyboard an toàn
   void _dismissKeyboard() {
-    if (_searchFocusNode.hasFocus) {
-      _searchFocusNode.unfocus();
-    }
+    _searchFocusNode.unfocus();
     FocusScope.of(context).unfocus();
   }
 
-  // ✅ Delay sau khi dismiss keyboard để tránh conflict
   Future<void> _dismissKeyboardAndWait() async {
     _dismissKeyboard();
     await Future.delayed(const Duration(milliseconds: 150));
   }
 
-  // Xử lý xác nhận khóa tài khoản
-  Future<void> _confirmLock(Map<String, String> acc) async {
-    await _dismissKeyboardAndWait();  // ✅ Dismiss keyboard trước
+  /// 🔹 Hiển thị chi tiết người dùng
+  Future<void> _showUserDetails(
+      Map<String, dynamic> userData, String userId, AuthViewModel viewModel) async {
+    await _dismissKeyboardAndWait();
     if (!mounted) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    final phones = (userData['phoneNumbers'] as List?) ?? [];
+    final name = userData['name'] ?? 'Không có tên';
+    final email = userData['email'] ?? 'Không có email';
+    final status = userData['status'] ?? true;
+    final createdAt = userData['createdAt'];
+    final address = userData['address'] ?? 'Chưa cập nhật';
 
-    final ok = await showDialog<bool>(
+    showDialog(
       context: context,
-      barrierDismissible: false,  // ✅ Tránh dismiss không mong muốn
+      builder: (context) {
+        final isActive = status == true;
+        final gradientColors = isActive
+            ? [Colors.green.shade400, Colors.green.shade600]
+            : [Colors.red.shade400, Colors.red.shade600];
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          contentPadding: EdgeInsets.zero,
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 🔹 Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: gradientColors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          isActive ? Icons.person : Icons.lock_person,
+                          size: 48,
+                          color: isActive ? Colors.green : Colors.red,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        name,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6),
+                      _statusChip(isActive),
+                    ],
+                  ),
+                ),
+
+                // 🔹 Chi tiết người dùng
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      _detailItem(Icons.badge_outlined, 'User ID', userId),
+                      _detailItem(Icons.email_outlined, 'Email', email),
+                      _detailItem(Icons.phone_outlined, 'Số điện thoại',
+                          phones.isEmpty ? 'Chưa cập nhật' : phones.join(', ')),
+                      _detailItem(Icons.location_on_outlined, 'Địa chỉ', address),
+                      _detailItem(Icons.calendar_today_outlined, 'Ngày tạo',
+                          createdAt != null ? _formatTimestamp(createdAt) : 'Không có'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            if (isActive)
+              TextButton.icon(
+                icon: const Icon(Icons.lock_outline, color: Colors.red),
+                label: const Text('Khóa tài khoản', style: TextStyle(color: Colors.red)),
+                onPressed: () {
+                  Navigator.pop(context);
+                  _confirmLock({'id': userId, 'name': name}, viewModel);
+                },
+              ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Đóng')),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _statusChip(bool active) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(active ? Icons.check_circle : Icons.lock,
+                size: 14, color: Colors.white),
+            const SizedBox(width: 6),
+            Text(active ? 'Hoạt động' : 'Đã khóa',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      );
+
+  Widget _detailItem(IconData icon, String title, String value) => Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.blue.shade700),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 2),
+                    Text(value,
+                        style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87)),
+                  ]),
+            ),
+          ],
+        ),
+      );
+
+  String _formatTimestamp(dynamic timestamp) {
+    if (timestamp is Timestamp) {
+      final d = timestamp.toDate();
+      return '${d.day}/${d.month}/${d.year}';
+    }
+    return 'Không có';
+  }
+
+  Future<void> _confirmLock(Map<String, String> acc, AuthViewModel vm) async {
+    await _dismissKeyboardAndWait();
+    if (!mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: const Text('Khóa tài khoản'),
         content: Text('Bạn có chắc muốn khóa tài khoản "${acc['name']}"?'),
         actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context, false);
-            },
-            child: const Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context, true);
-            },
-            child: const Text('Khóa', style: TextStyle(color: Colors.red)),
-          ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Khóa', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
 
-    if (!mounted) return;
-
-    if (ok == true) {
+    if (confirm == true) {
       try {
-        await FirebaseFirestore.instance.collection('users').doc(acc['id']).update({
-          'status': false,
-          'lockedAt': FieldValue.serverTimestamp(),
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Đã khóa tài khoản "${acc['name']}"'),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
+        await vm.lockUser(acc['id']!);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Đã khóa tài khoản "${acc['name']}"'),
+            backgroundColor: Colors.green));
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi khi khóa tài khoản: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Lỗi khi khóa: $e'), backgroundColor: Colors.red));
       }
     }
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  // Hiển thị tài khoản bị khóa
-  Future<void> _showLockedAccounts() async {
-    await _dismissKeyboardAndWait();  // ✅ Dismiss keyboard trước
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final qs = await FirebaseFirestore.instance
-          .collection('users')
-          .where('status', isEqualTo: false)
-          .get();
-      
-      if (!mounted) return;
-
-      var docs = qs.docs;
-      
-      await showDialog(
-        context: context,
-        barrierDismissible: true,
-        builder: (_) {
-          return StatefulBuilder(builder: (dialogContext, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              title: const Text('Tài khoản bị khóa'),
-              content: docs.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Text('Không có tài khoản nào bị khóa.'),
-                    )
-                  : SizedBox(
-                      width: 420,
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: docs.length,
-                        itemBuilder: (context, i) {
-                          final d = docs[i];
-                          final raw = d.data();
-                          final name = (raw['name'] ?? d.id).toString();
-                          final phones = _coerceList(raw['phoneNumbers']);
-                          final phone = phones.isNotEmpty ? phones.first : '';
-                          
-                          return ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.red.shade100,
-                              child: Icon(Icons.lock, color: Colors.red.shade700, size: 20),
-                            ),
-                            title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                            subtitle: Text(phone.isEmpty ? 'Không có SĐT' : phone),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.lock_open, color: Colors.green),
-                              tooltip: 'Mở khóa',
-                              onPressed: () async {
-                                try {
-                                  await FirebaseFirestore.instance
-                                      .collection('users')
-                                      .doc(d.id)
-                                      .update({
-                                    'status': true,
-                                    'unlockedAt': FieldValue.serverTimestamp(),
-                                    'lockedAt': FieldValue.delete(),
-                                  });
-                                  
-                                  setDialogState(() {
-                                    docs = List.from(docs)..removeAt(i);
-                                  });
-                                  
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Đã mở khóa "$name"')),
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Lỗi khi mở khóa: $e'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                  },
-                  child: const Text('Đóng'),
-                ),
-              ],
-            );
-          });
-        },
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi tải danh sách bị khóa: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Stream<QuerySnapshot<Map<String, dynamic>>> _usersStream() {
-    return FirebaseFirestore.instance
-        .collection('users')
-        .snapshots(includeMetadataChanges: true);
-  }
-
-  bool _matchesSearch(String id, String name, String term) {
-    if (term.isEmpty) return true;
-    final t = term.toLowerCase();
-    return id.toLowerCase().contains(t) || name.toLowerCase().contains(t);
   }
 
   @override
   Widget build(BuildContext context) {
-    final titleSize = MediaQuery.of(context).size.width / 375;
-    final pagePadding = EdgeInsets.all(16.0);
+    final vm = Provider.of<AuthViewModel>(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
 
-    return GestureDetector(
-      // ✅ Tap vùng trống để dismiss keyboard
-      onTap: () => _dismissKeyboard(),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF3F5F7),
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          centerTitle: true,
-          scrolledUnderElevation: 4,
-          shadowColor: Colors.black.withOpacity(.08),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
-            onPressed: () {
-              _dismissKeyboard();
-              Navigator.pop(context);
-            },
+    return Scaffold(
+      backgroundColor: const Color(0xFFF3F5F7),
+      appBar: AppBar(
+        title: const Text('Quản lý tài khoản user',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.lock, color: Colors.black54),
+            tooltip: 'Tài khoản bị khóa',
+            onPressed: () => _showLockedAccounts(vm),
           ),
-          title: Text(
-            'Quản lý tài khoản user',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: titleSize * 18,
-              letterSpacing: .2,
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.lock, color: Colors.black54),
-              tooltip: 'Tài khoản bị khóa',
-              onPressed: _showLockedAccounts,
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            // ✅ Modern Search Bar
-            Container(
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: TextField(
+        ],
+      ),
+      body: GestureDetector(
+        onTap: _dismissKeyboard,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              // 🔍 Ô tìm kiếm
+              TextField(
                 controller: _searchController,
                 focusNode: _searchFocusNode,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
                 decoration: InputDecoration(
                   hintText: 'Tìm kiếm theo tên hoặc ID...',
-                  hintStyle: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  prefixIcon: Container(
-                    padding: const EdgeInsets.all(14),
-                    child: Icon(
-                      Icons.search_rounded,
-                      color: _searchFocusNode.hasFocus 
-                          ? Theme.of(context).colorScheme.primary 
-                          : Colors.grey.shade400,
-                      size: 22,
-                    ),
-                  ),
+                  prefixIcon: const Icon(Icons.search_rounded),
                   suffixIcon: _searchTerm.isNotEmpty
-                      ? Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          child: IconButton(
-                            icon: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close_rounded,
-                                size: 16,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _searchTerm = '');
-                              _dismissKeyboard();
-                            },
-                            splashRadius: 20,
-                          ),
+                      ? IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchTerm = '');
+                          },
                         )
                       : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Colors.grey.shade100,
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                      width: 2,
-                    ),
-                  ),
                   filled: true,
                   fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 ),
                 onChanged: (v) => setState(() => _searchTerm = v.trim()),
-                textInputAction: TextInputAction.search,
-                onSubmitted: (_) => _dismissKeyboard(),
               ),
-            ),
-            
-            // ✅ Search result count (optional)
-            if (_searchTerm.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                child: Text(
-                  'Đang tìm kiếm: "$_searchTerm"',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
-            
-            // ✅ List with proper scroll behavior
-            Expanded(
-              child: NotificationListener<ScrollNotification>(
-                onNotification: (notification) {
-                  // ✅ Dismiss keyboard khi scroll
-                  if (notification is ScrollStartNotification) {
-                    if (_searchFocusNode.hasFocus) {
-                      _dismissKeyboard();
-                    }
-                  }
-                  return false;
-                },
-                child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: _usersStream(),
+
+              const SizedBox(height: 10),
+
+              // 📋 Danh sách người dùng
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: vm.usersStream(),
                   builder: (context, snap) {
-                    if (snap.connectionState == ConnectionState.waiting && !snap.hasData) {
+                    if (snap.connectionState == ConnectionState.waiting || vm.isLoading) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    
-                    if (_isLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    
+
                     if (snap.hasError) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
-                              const SizedBox(height: 16),
-                              Text('Lỗi Firestore: ${snap.error}'),
-                            ],
-                          ),
-                        ),
-                      );
+                      return Center(child: Text('Lỗi: ${snap.error}'));
                     }
 
                     final docs = snap.data?.docs ?? [];
-                    if (docs.isEmpty) {
-                      final isFromCache = snap.data?.metadata.isFromCache ?? false;
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Text(
-                            isFromCache
-                                ? 'Không có user trong cache (đang offline).'
-                                : 'Chưa có user nào trong Firestore.',
-                            textAlign: TextAlign.center,
+                    final activeUsers = docs
+                        .where((d) => (d.data() as Map<String, dynamic>)['status'] == true)
+                        .toList();
+
+                    final filtered = _searchTerm.isEmpty
+                        ? activeUsers
+                        : activeUsers.where((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            final text = _searchTerm.toLowerCase();
+                            return (data['name'] ?? '').toString().toLowerCase().contains(text) ||
+                                (data['email'] ?? '').toString().toLowerCase().contains(text) ||
+                                doc.id.toLowerCase().contains(text);
+                          }).toList();
+
+                    if (filtered.isEmpty) {
+                      return const Center(child: Text('Không tìm thấy kết quả phù hợp'));
+                    }
+
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isWide = constraints.maxWidth > 700;
+                        final crossAxisCount = isWide ? 2 : 1;
+
+                        return GridView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            childAspectRatio: isWide ? 4 : 3.6,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
                           ),
-                        ),
-                      );
-                    }
+                          itemCount: filtered.length,
+                          itemBuilder: (context, i) {
+                            final doc = filtered[i];
+                            final data = doc.data() as Map<String, dynamic>;
+                            final phones = (data['phoneNumbers'] as List?) ?? [];
+                            final phone =
+                                phones.isNotEmpty ? phones.first : 'Không có SĐT';
+                            final name = data['name'] ?? 'Không có tên';
+                            final email = data['email'] ?? 'Không có email';
 
-                    final visibleDocs = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
-                    for (final d in docs) {
-                      final raw = d.data();
-                      final hasStatus = raw.containsKey('status');
-                      final isLocked = hasStatus && raw['status'] == false;
-                      if (isLocked) continue;
-
-                      final addr = _coerceMap(raw['addresses']);
-                      final name = (addr['name'] ?? raw['name'] ?? d.id).toString();
-
-                      if (_matchesSearch(d.id, name, _searchTerm)) {
-                        visibleDocs.add(d);
-                      }
-                    }
-
-                    if (visibleDocs.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.search_off, size: 48, color: Colors.grey.shade400),
-                              const SizedBox(height: 16),
-                              Text(
-                                _searchTerm.isEmpty
-                                    ? 'Không có user hiển thị (tất cả bị khóa).'
-                                    : 'Không tìm thấy user phù hợp với "$_searchTerm"',
-                                textAlign: TextAlign.center,
+                            return InkWell(
+                              onTap: () => _showUserDetails(data, doc.id, vm),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Card(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                elevation: 2,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: isTablet ? 34 : 28,
+                                        backgroundColor: Colors.green.shade100,
+                                        child: Icon(Icons.person,
+                                            size: isTablet ? 34 : 26,
+                                            color: Colors.green.shade700),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(name,
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis),
+                                            Text(email,
+                                                style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontSize: 14)),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.phone, size: 14),
+                                                const SizedBox(width: 4),
+                                                Expanded(
+                                                  child: Text(phone,
+                                                      style: TextStyle(
+                                                          color: Colors.grey.shade600,
+                                                          fontSize: 13),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.info_outline,
+                                            color: Colors.blueAccent),
+                                        onPressed: () =>
+                                            _showUserDetails(data, doc.id, vm),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-
-                    return ListView.builder(
-                      padding: pagePadding,
-                      itemCount: visibleDocs.length,
-                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,  // ✅ Auto dismiss khi drag
-                      itemBuilder: (_, i) {
-                        final d = visibleDocs[i];
-                        final raw = d.data();
-
-                        final addr = _coerceMap(raw['addresses']);
-                        final name = (addr['name'] ?? raw['name'] ?? d.id).toString();
-                        final email = (addr['email'] ?? raw['email'] ?? '').toString();
-                        final loginMethodId = (addr['loginMethodId'] ?? raw['loginMethodId'] ?? '').toString();
-                        final password = (addr['password'] ?? raw['password'] ?? '').toString();
-
-                        final phones = _coerceList(raw['phoneNumbers']);
-                        final phone = phones.isNotEmpty ? phones.first : '';
-
-                        final user = <String, String>{
-                          'id': d.id,
-                          'name': name,
-                          'email': email,
-                          'phone': phone,
-                          'loginMethodId': loginMethodId,
-                          'password': password,
-                        };
-
-                        return _AccountCard(
-                          data: user,
-                          onLock: () => _confirmLock({'id': d.id, 'name': name, 'phone': phone}),
-                          onDismissKeyboard: _dismissKeyboard,  // ✅ Pass callback
+                            );
+                          },
                         );
                       },
                     );
                   },
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AccountCard extends StatefulWidget {
-  const _AccountCard({
-    required this.data,
-    required this.onLock,
-    required this.onDismissKeyboard,  // ✅ Nhận callback
-  });
-  
-  final Map<String, String> data;
-  final VoidCallback onLock;
-  final VoidCallback onDismissKeyboard;  // ✅ Callback để dismiss keyboard
-
-  @override
-  State<_AccountCard> createState() => _AccountCardState();
-}
-
-class _AccountCardState extends State<_AccountCard> {
-  bool _hover = false;
-
-  Future<void> _showDetailDialog() async {
-    widget.onDismissKeyboard();  // ✅ Dismiss keyboard
-    await Future.delayed(const Duration(milliseconds: 150));  // ✅ Đợi keyboard đóng
-    
-    if (!mounted) return;
-    
-    final d = widget.data;
-    
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: Row(
-          children: [
-            Icon(Icons.person, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 8),
-            const Text('Thông tin người dùng'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _kv('Tên', d['name']),
-              _kv('Gmail', d['email']),
-              _kv('Số điện thoại', d['phone']),
-              _kv('Phương thức đăng nhập', d['loginMethodId']),
-              _kv('Mật khẩu', d['password']),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
-        ],
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final sx = MediaQuery.of(context).size.width / 375;
-    final name = widget.data['name'] ?? '';
-    final id = widget.data['id'] ?? '';
-    final phone = widget.data['phone'] ?? '';
+  /// 🔹 Dialog xem danh sách tài khoản bị khóa (rút gọn version)
+  Future<void> _showLockedAccounts(AuthViewModel vm) async {
+    await _dismissKeyboardAndWait();
+    if (!mounted) return;
+    vm.isLoading = true;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        margin: EdgeInsets.only(bottom: sx * 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(sx * 16),
-          border: Border.all(color: const Color(0xFFE8ECF2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(_hover ? .08 : .04),
-              blurRadius: sx * 10,
-              offset: const Offset(0, 4),
-            )
+    try {
+      final qs = await FirebaseFirestore.instance
+          .collection('users')
+          .where('status', isEqualTo: false)
+          .get();
+      final docs = qs.docs;
+
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Tài khoản bị khóa (${docs.length})'),
+          content: docs.isEmpty
+              ? const Text('Không có tài khoản nào bị khóa.')
+              : SizedBox(
+                  width: double.maxFinite,
+                  height: 400,
+                  child: ListView.builder(
+                    itemCount: docs.length,
+                    itemBuilder: (_, i) {
+                      final d = docs[i];
+                      final name = d['name'] ?? d.id;
+                      return ListTile(
+                        leading:
+                            const Icon(Icons.lock, color: Colors.redAccent),
+                        title: Text(name),
+                        subtitle: Text(d['email'] ?? 'Không có email'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.lock_open, color: Colors.green),
+                          onPressed: () async {
+                            await vm.unlockUser(d.id);
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('Đã mở khóa "$name"'),
+                                  backgroundColor: Colors.green),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Đóng'))
           ],
         ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(sx * 16),
-          onTap: _showDetailDialog,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: sx * 14, vertical: sx * 12),
-            child: Row(
-              children: [
-                Container(
-                  width: sx * 5,
-                  height: sx * 56,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(.9),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(sx * 16),
-                      bottomLeft: Radius.circular(sx * 16),
-                    ),
-                  ),
-                ),
-                SizedBox(width: sx * 12),
-                CircleAvatar(
-                  radius: sx * 22,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(.12),
-                  child: Text(
-                    name.initials,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: sx * 14,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-                SizedBox(width: sx * 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              name,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: sx * 16,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          SizedBox(width: sx * 8),
-                          Chip(
-                            label: Text(
-                              'ID: $id',
-                              style: TextStyle(fontSize: sx * 12.5),
-                            ),
-                            side: BorderSide(
-                              color: Theme.of(context).colorScheme.outlineVariant,
-                            ),
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            padding: EdgeInsets.symmetric(horizontal: sx * 6),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: sx * 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.phone_outlined,
-                            size: sx * 16.5,
-                            color: Colors.black54,
-                          ),
-                          SizedBox(width: sx * 6),
-                          Expanded(
-                            child: Text(
-                              phone.isEmpty ? 'Không có SĐT' : phone,
-                              style: TextStyle(
-                                fontSize: sx * 13.5,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // ✅ PopupMenuButton với dismiss keyboard
-                PopupMenuButton<String>(
-                  tooltip: 'Tùy chọn',
-                  onOpened: () => widget.onDismissKeyboard(),  // ✅ Dismiss khi mở menu
-                  onSelected: (v) {
-                    if (v == 'lock') {
-                      widget.onLock();
-                    }
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(
-                      value: 'lock',
-                      child: Row(
-                        children: [
-                          Icon(Icons.lock, size: 18, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Khóa tài khoản'),
-                        ],
-                      ),
-                    ),
-                  ],
-                  child: Padding(
-                    padding: EdgeInsets.all(sx * 6),
-                    child: Icon(
-                      Icons.more_vert,
-                      color: Colors.black54,
-                      size: sx * 22,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _kv(String label, String? value) {
-    final v = (value ?? '').isEmpty ? '—' : value!;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 150,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              v,
-              style: const TextStyle(color: Colors.black54),
-            ),
-          ),
-        ],
-      ),
-    );
+      );
+    } finally {
+      vm.isLoading = false;
+    }
   }
 }
