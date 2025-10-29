@@ -56,10 +56,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _loadSavedLogin() async {
     final emails = await _storage.read(key: 'emails');
 
-    setState(() {
-      if (emails != null && emails.isNotEmpty) {
-        _savedEmails = emails.split(',');
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_){
+      setState(() {
+        if (emails != null && emails.isNotEmpty) {
+          _savedEmails = emails.split(',');
+        }
+      });
     });
   }
 

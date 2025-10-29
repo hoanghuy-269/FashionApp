@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
+import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
 import 'package:fashion_app/core/widget/vaidatedtextfielfromrequest.dart';
 import 'package:fashion_app/data/models/storestaff_model.dart';
 import 'package:fashion_app/viewmodels/employeerole_viewmodel.dart';
@@ -58,7 +58,7 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
   }
 
   Future<void> pickImage(bool isFront) async {
-    final File? image = await GalleryUtil.pickImageFromGallery();
+    final File? image = await showPickImageBottomSheet(context);  
     if (image != null) {
       setState(() {
         if (isFront) {

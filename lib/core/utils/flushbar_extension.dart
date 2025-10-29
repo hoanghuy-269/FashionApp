@@ -7,17 +7,14 @@ extension FlushbarExtension on BuildContext {
     required String message,
     Color backgroundColor = Colors.blue,
     IconData icon = Icons.info,
-    int durationSeconds = 2,
   }) {
     Flushbar(
       message: message,
-      duration: Duration(seconds: durationSeconds),
       icon: Icon(icon, size: 28.0, color: Colors.white),
       flushbarPosition: FlushbarPosition.TOP,
       backgroundColor: backgroundColor,
     ).show(this);
   }
-
   /// Thông báo lỗi
   void showError(String message) {
     showFlushMessage(

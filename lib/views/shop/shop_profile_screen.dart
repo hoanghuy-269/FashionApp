@@ -1,12 +1,13 @@
 import 'dart:io';
 
 import 'package:fashion_app/core/utils/gallery_util.dart';
+import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-enum ImageType { front, back, license }
+enum ImageType { front, back, license,avatar}
 
 class ShopProfileScreen extends StatefulWidget {
   const ShopProfileScreen({super.key});
@@ -24,10 +25,12 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
   File? _frontID;
   File? _backID;
   File? _license;
+  File? avatarImage;
 
   String? _frontUrl;
   String? _backUrl;
   String? _licenseUrl;
+  String? avatarURL;
 
   bool _isLoading = false;
   bool _isInitialized = false;
@@ -74,7 +77,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
   }
 
   Future<void> _pickImage(ImageType type) async {
-    final image = await GalleryUtil.pickImageFromGallery();
+    final image = await showPickImageBottomSheet(context);
     if (image != null && mounted) {
       setState(() {
         switch (type) {
@@ -87,7 +90,11 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
           case ImageType.license:
             _license = image;
             break;
+          case ImageType.avatar:
+            avatarImage = image;
+            break;  
         }
+       
       });
     }
   }
@@ -221,8 +228,60 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
   }
 
   Widget _buildProfileAvatar() {
-    return const Center(
-      child: CircleAvatar(radius: 40, child: Icon(Icons.person, size: 50)),
+    return GestureDetector(
+      onTap: (){
+        _pickImage(ImageType.avatar);
+      },
+      child: Center(
+        child: Stack(
+          children: [
+            ClipOval(
+              child: avatarImage != null
+                  ? Image.file(
+                      avatarImage!,
+                      width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        )
+                      : (avatarURL != null && avatarURL!.isNotEmpty
+                          ? Image.network(
+                              avatarURL!,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Image.asset(
+                                'assets/images/logo_default.png',
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Image.asset(
+                              'assets/images/logo_default.png',
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            )),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+      ),
     );
   }
 

@@ -23,6 +23,24 @@ class GalleryUtil {
       _isPicking = false;
     }
   }
+
+  static Future<File?> pickImageFromCamera() async{
+    if(_isPicking) return null;
+    _isPicking = true;
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        return File(image.path);
+      } else {
+        return null;
+      }
+    } finally {
+      _isPicking = false;
+    }
+  }
   /// Upload ảnh lên Firebase Storage, trả về URL 
   static Future<String?> uploadImageToFirebase(File imageFile,
       {String folderName = 'uploads'}) async {
