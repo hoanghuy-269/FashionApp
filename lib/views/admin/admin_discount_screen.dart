@@ -2,7 +2,7 @@ import 'package:fashion_app/viewmodels/admin_discount_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../data/models/voucher.dart';
+import '../../data/models/voucher.dart';
 
 class AdminDiscountScreen extends StatefulWidget {
   const AdminDiscountScreen({super.key});
