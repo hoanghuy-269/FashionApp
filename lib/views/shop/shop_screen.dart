@@ -1,6 +1,4 @@
-import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
-import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:fashion_app/views/shop/shop_personnal_screen.dart';
 import 'package:fashion_app/views/shop/shop_profile_screen.dart';
 import 'package:fashion_app/views/shop/storerevenue_detail_screen.dart';
@@ -21,7 +19,6 @@ class ShopScreen extends StatefulWidget {
 }
 
 class _ShopScreenState extends State<ShopScreen> {
-  final _authViewModel = AuthViewModel();
   @override
   void initState() {
     super.initState();
@@ -318,18 +315,13 @@ class _ShopScreenState extends State<ShopScreen> {
           count: 1,
         ),
         _buildGridItem(
-          "Đóng gói",
-          LucideIcons.packageCheck,
-          Colors.blue,
-          count: 1,
-        ),
-        _buildGridItem(
           "Kho",
           LucideIcons.warehouse,
           Colors.green,
+          count: 1,
         ),
         _buildGridItem(
-          "Thanh toán/Trả",
+          "Yêu cầu  nhập hàng",
           LucideIcons.creditCard,
           Colors.purple,
         ),

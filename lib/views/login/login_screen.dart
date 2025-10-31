@@ -1,13 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fashion_app/data/models/brands_model.dart';
 import 'package:fashion_app/viewmodels/role_viewmodel.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
-import 'package:fashion_app/views/admin/admin_home_screen.dart';
 import 'package:fashion_app/views/login/staff_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:flutter/material.dart';
 import '../../viewmodels/auth_viewmodel.dart';
-import './enter_phonenumber_screen.dart';
 import '.././login/register_screen.dart';
 import '.././login/forgot_password_screen.dart';
 import '../../core/utils/validator.dart';
@@ -56,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _loadSavedLogin() async {
     final emails = await _storage.read(key: 'emails');
 
-    WidgetsBinding.instance.addPostFrameCallback((_){
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
         if (emails != null && emails.isNotEmpty) {
           _savedEmails = emails.split(',');
@@ -583,6 +582,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ],
