@@ -1,17 +1,18 @@
 import 'dart:io';
-
-import 'package:fashion_app/core/utils/flushbar_extension.dart';
 import 'package:fashion_app/core/utils/gallery_util.dart';
+import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
+import 'package:fashion_app/core/widget/vaidatedtextfielfromrequest.dart';
 import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
-import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:fashion_app/data/models/requesttoopentshop_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class RequestToOpenStoreScreen extends StatefulWidget {
   final String? uid;
-  const RequestToOpenStoreScreen({super.key, this.uid});
+  final String? shopId;
+  const RequestToOpenStoreScreen({super.key, this.uid, this.shopId});
 
   @override
   State<RequestToOpenStoreScreen> createState() =>
@@ -23,21 +24,28 @@ class _RequestToOpenStoreScreenState extends State<RequestToOpenStoreScreen> {
   final TextEditingController phoneControler = TextEditingController();
   final TextEditingController cccdControler = TextEditingController();
   final TextEditingController addressControler = TextEditingController();
-  final GalleryUtil galleryUti = GalleryUtil();
-  bool inited = false;
-  File? logo;
+
+  bool isLoading = false;
+
   File? frontID;
   File? backID;
   File? license;
+
   String? frontUrl;
   String? backUrl;
   String? licenseUrl;
 
+  String? nameError;
+  String? phoneError;
+  String? cccdError;
+  String? addressError;
+
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (inited) return;
-    inited = true;
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadShopData();
+    });
   }
 
   @override
@@ -49,18 +57,50 @@ class _RequestToOpenStoreScreenState extends State<RequestToOpenStoreScreen> {
     super.dispose();
   }
 
-  Future<void> pickImage(
-   { bool isFront = false,
-    bool isLogo = false, 
+  Future<void> _loadShopData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final shopVM = context.read<ShopViewModel>();
+
+      if (shopVM.currentShop == null && widget.shopId != null) {
+        await shopVM.fetchShopById(widget.shopId!);
+      }
+
+      final shop = shopVM.currentShop;
+      if (shop != null && mounted) {
+        setState(() {
+          nameController.text = shop.shopName;
+          phoneControler.text = shop.phoneNumber?.toString() ?? '';
+          cccdControler.text = shop.nationalId;
+          addressControler.text = shop.address ?? '';
+
+          frontUrl = shop.idnationFront;
+          backUrl = shop.idnationBack;
+          licenseUrl = shop.businessLicense;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading shop data: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> pickImage({
+    bool isFront = false,
     bool isLiscense = false,
   }) async {
-    final File? image = await GalleryUtil.pickImageFromGallery();
-    if (image != null) {
-      if (!mounted) return;
+    final File? image = await showPickImageBottomSheet(context);
+    if (image != null && mounted) {
       setState(() {
-        if (isLogo) {
-          logo = image;
-        } else if (isLiscense) {
+        if (isLiscense) {
           license = image;
         } else if (isFront) {
           frontID = image;
@@ -71,251 +111,271 @@ class _RequestToOpenStoreScreenState extends State<RequestToOpenStoreScreen> {
     }
   }
 
+  bool _validateForm() {
+    setState(() {
+      nameError =
+          nameController.text.trim().isEmpty
+              ? "Tên shop không được để trống"
+              : null;
+
+      phoneError =
+          phoneControler.text.trim().length != 10
+              ? "Số điện thoại phải có 10 số"
+              : null;
+
+      cccdError =
+          cccdControler.text.trim().length != 12
+              ? "CCCD/CMND phải có 12 số"
+              : null;
+
+      addressError =
+          addressControler.text.trim().isEmpty
+              ? "Địa chỉ shop không được để trống"
+              : null;
+    });
+
+    return nameError == null &&
+        phoneError == null &&
+        cccdError == null &&
+        addressError == null;
+  }
+
+  Future<void> _submitRequest() async {
+    if (!_validateForm()) {
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final requestVm = Provider.of<RequestToOpenShopViewModel>(
+        context,
+        listen: false,
+      );
+
+      String? uploadedFront = frontUrl;
+      String? uploadedBack = backUrl;
+      String? uploadedLicense = licenseUrl;
+
+      if (frontID != null) {
+        uploadedFront = await GalleryUtil.uploadImageToFirebase(
+          frontID!,
+          folderName: 'requests/national_ids',
+        );
+      }
+
+      if (backID != null) {
+        uploadedBack = await GalleryUtil.uploadImageToFirebase(
+          backID!,
+          folderName: 'requests/national_ids',
+        );
+      }
+
+      if (license != null) {
+        uploadedLicense = await GalleryUtil.uploadImageToFirebase(
+          license!,
+          folderName: 'requests/licenses',
+        );
+      }
+
+      String generateRequestId() {
+        final now = DateTime.now();
+        final formattedDate =
+            "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}";
+        final timestamp = now.millisecondsSinceEpoch.toString().substring(10);
+        return 'RQ_${formattedDate}_$timestamp';
+      }
+
+      final uid = auth.FirebaseAuth.instance.currentUser?.uid ?? '';
+
+      final request = RequesttoopentshopModel(
+        requestId: generateRequestId(),
+        userId: uid,
+        shopName: nameController.text.trim(),
+        businessLicense: uploadedLicense,
+        address: addressControler.text.trim(),
+        nationalId: cccdControler.text.trim(),
+        idnationFront: uploadedFront ?? '',
+        idnationBack: uploadedBack ?? '',
+        status: 'pending',
+        rejectionReason: null,
+        createdAt: DateTime.now(),
+        approvedAt: null,
+      );
+
+      await requestVm.createRequest(request);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gửi yêu cầu thành công!')));
+
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
-      appBar: AppBar(
-        title: const Text("Đăng kí Shop "),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: GestureDetector(
-                  onTap:  () async {
-                    await pickImage(isLogo: true);
-                  },
-                  child: CircleAvatar(child: Icon(Icons.person, size: 50)),
-                ),
+      appBar:
+          isLoading
+              ? null
+              : AppBar(
+                title: const Text("Đăng ký Shop"),
+                centerTitle: true,
+                backgroundColor: Colors.white,
               ),
-              const SizedBox(height: 20),
-              const Text(
-                "Nhập vào tên Shop ",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 5),
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(
-                    Icons.person_2_outlined,
-                    color: Colors.blueAccent,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                  hintText: "Nhập vào tên Shop dự kiến ",
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                " số điện thoại ",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 5),
-              TextField(
-                controller: phoneControler,
-                keyboardType: TextInputType.phone,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly, // nhập Số
-                  LengthLimitingTextInputFormatter(12), // giới hạn
-                ],
-                decoration: InputDecoration(
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Image.asset(
-                      "assets/icons/vietnam.png",
-                      width: 24,
-                      height: 24,
-                    ),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                  hintText: "Nhập vào số điện thoại shop ",
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                "Căn cước công dân",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 5),
-              TextField(
-                controller: cccdControler,
-                keyboardType: TextInputType.phone,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(12),
-                ],
-                decoration: InputDecoration(
-                  prefixIcon: Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Icon(Icons.badge, color: Colors.blue),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                  hintText: "Căn cước công dân ",
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  buildImageBox(
-                    "Mặt trước",
-                    file: frontID,
-                    url: frontUrl,
-                    onTap: () => pickImage(isFront: true),
+                  const SizedBox(height: 20),
+                  ValidatedTextFieldFromRequest(
+                    controller: nameController,
+                    label: "Tên shop",
+                    hint: "Nhập tên shop",
+                    icon: Icons.store,
+                    keyboardType: TextInputType.text,
+                    hasError: nameError != null,
+                    errorMessage: nameError ?? "",
+                    onChanged: (value) {
+                      if (nameError != null) {
+                        setState(() => nameError = null);
+                      }
+                    },
                   ),
+                  const SizedBox(height: 10),
+                  ValidatedTextFieldFromRequest(
+                    controller: phoneControler,
+                    label: "Số điện thoại",
+                    hint: "Nhập số điện thoại",
+                    icon: Icons.phone,
+                    maxLength: 10,
+                    keyboardType: TextInputType.phone,
+                    hasError: phoneError != null,
+                    errorMessage: phoneError ?? "",
+                    onChanged: (value) {
+                      if (phoneError != null) {
+                        setState(() => phoneError = null);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  ValidatedTextFieldFromRequest(
+                    controller: cccdControler,
+                    label: "Số CCCD/CMND",
+                    hint: "Nhập số CCCD/CMND",
+                    icon: Icons.credit_card,
+                    maxLength: 12,
+                    keyboardType: TextInputType.number,
+                    hasError: cccdError != null,
+                    errorMessage: cccdError ?? "",
+                    onChanged: (value) {
+                      if (cccdError != null) {
+                        setState(() => cccdError = null);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      buildImageBox(
+                        "Mặt trước",
+                        file: frontID,
+                        url: frontUrl,
+                        onTap: () => pickImage(isFront: true),
+                      ),
+                      buildImageBox(
+                        "Mặt sau",
+                        file: backID,
+                        url: backUrl,
+                        onTap: () => pickImage(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Giấy phép kinh doanh (không bắt buộc)",
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   buildImageBox(
-                    "Mặt sau",
-                    file: backID,
-                    url: backUrl,
-                    onTap: () => pickImage(),
+                    "Giấy phép kinh doanh",
+                    file: license,
+                    url: licenseUrl,
+                    onTap: () => pickImage(isLiscense: true),
+                    width: double.infinity,
+                  ),
+                  const SizedBox(height: 10),
+                  ValidatedTextFieldFromRequest(
+                    controller: addressControler,
+                    label: "Địa chỉ shop",
+                    hint: "Nhập địa chỉ shop",
+                    icon: Icons.location_on,
+                    keyboardType: TextInputType.text,
+                    hasError: addressError != null,
+                    errorMessage: addressError ?? "",
+                    onChanged: (value) {
+                      if (addressError != null) {
+                        setState(() => addressError = null);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : _submitRequest,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: Colors.blue,
+                        disabledBackgroundColor: Colors.grey,
+                      ),
+                      child: const Text(
+                        "Gửi yêu cầu mở shop",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              const Text(
-                "Giáy phép kinh doanh",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              buildImageBox(
-                "Giấ phép kinh doanh ",
-                file: license,
-                url: licenseUrl,
-                onTap: () => pickImage(isLiscense: true),
-                width: double.infinity,
-              ),
-
-              const SizedBox(height: 10),
-              Text(
-                "Địa chỉ",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 5),
-              TextField(
-                controller: addressControler,
-                decoration: InputDecoration(
-                  prefixIcon: Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Icon(Icons.map, color: Colors.blue),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                  hintText: "Địa chỉ shop ",
-                ),
-              ),
-              const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final requestVm = Provider.of<RequestToOpenShopViewModel>(
-                      context,
-                      listen: false,
-                    );
-
-                    // gather inputs
-                    final shopName = nameController.text.trim();
-                    final nationalId = cccdControler.text.trim();
-
-                    // upload images if present
-                    String? uploadedFront;
-                    String? uploadedBack;
-                    String? uploadedLicense;
-                    if (frontID != null) {
-                      uploadedFront = await GalleryUtil.uploadImageToFirebase(
-                        frontID!,
-                      );
-                    }
-                    if (backID != null) {
-                      uploadedBack = await GalleryUtil.uploadImageToFirebase(
-                        backID!,
-                      );
-                    }
-                    if (license != null) {
-                      uploadedLicense = await GalleryUtil.uploadImageToFirebase(
-                        license!,
-                      );
-                    }
-
-                    // build request model
-                    final uid =
-                        fb_auth.FirebaseAuth.instance.currentUser?.uid ?? '';
-                    final requestId =
-                        DateTime.now().millisecondsSinceEpoch.toString();
-                    final request = RequesttoopentshopModel(
-                      requestId: requestId,
-                      userId: uid,
-                      shopName: shopName,
-                      businessLicense: uploadedLicense,
-                      address: addressControler.text.trim(),
-                      nationalId: nationalId,
-                      idnationFront: uploadedFront ?? '',
-                      idnationBack: uploadedBack ?? '',
-                      status: 'pending',
-                      rejectionReason: null,
-                      createdAt: DateTime.now(),
-                      approvedAt: null,
-                    );
-
-                    await requestVm.createRequest(request);
-
-                    if (!mounted) return;
-                     context.showSuccess("Gửi yêu cầu mở shop thành công ");
-                    Future.delayed(const Duration(seconds: 2), () {
-                      Navigator.of(context).pop('đang gửi yêu cầu ');
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: Colors.blue,
-                  ),
-                  child: const Text(
-                    "Gửi yêu cầu mở shop ",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          if (isLoading)
+            Container(
+              color: Colors.black45,
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+        ],
       ),
     );
   }
@@ -325,8 +385,10 @@ class _RequestToOpenStoreScreenState extends State<RequestToOpenStoreScreen> {
     File? file,
     String? url,
     required VoidCallback onTap,
-    double width = 150,
+    double? width = 150,
   }) {
+    final hasImage = file != null || (url != null && url.isNotEmpty);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -335,46 +397,116 @@ class _RequestToOpenStoreScreenState extends State<RequestToOpenStoreScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: Colors.grey.shade400),
-          image:
-              file != null
-                  ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
-                  : (url != null
-                      ? DecorationImage(
-                        image: NetworkImage(url),
-                        fit: BoxFit.cover,
-                      )
-                      : null),
         ),
-        child:
-            (file == null && url == null)
-                ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.add_a_photo, color: Colors.grey),
-                    const SizedBox(height: 5),
-                    Text(label, style: const TextStyle(color: Colors.grey)),
-                  ],
-                )
-                : Stack(
-                  children: [
-                    Positioned(
-                      right: 5,
-                      top: 5,
-                      child: InkWell(
-                        onTap: onTap,
-                        child: const CircleAvatar(
-                          radius: 12,
-                          backgroundColor: Colors.black,
-                          child: Icon(
-                            Icons.close,
-                            size: 15,
-                            color: Colors.white,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child:
+              !hasImage
+                  ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.add_a_photo, color: Colors.grey),
+                      const SizedBox(height: 5),
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  )
+                  : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (file != null)
+                        Image.file(
+                          file,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(Icons.error, color: Colors.red),
+                            );
+                          },
+                        )
+                      else if (url != null && url.isNotEmpty)
+                        Image.network(
+                          url,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey.shade200,
+                              child: const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.broken_image,
+                                    color: Colors.grey,
+                                    size: 40,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Không thể tải ảnh',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      // ✅ Nút xóa ảnh
+                      Positioned(
+                        right: 5,
+                        top: 5,
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              if (label.contains("trước")) {
+                                frontID = null;
+                                frontUrl = null;
+                              } else if (label.contains("sau")) {
+                                backID = null;
+                                backUrl = null;
+                              } else {
+                                license = null;
+                                licenseUrl = null;
+                              }
+                            });
+                          },
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            padding: const EdgeInsets.all(6),
+                            child: const Icon(
+                              Icons.close,
+                              size: 15,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+        ),
       ),
     );
   }

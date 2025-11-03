@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -12,6 +11,24 @@ class GalleryUtil {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        return File(image.path);
+      } else {
+        return null;
+      }
+    } finally {
+      _isPicking = false;
+    }
+  }
+
+  static Future<File?> pickImageFromCamera() async{
+    if(_isPicking) return null;
+    _isPicking = true;
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
         imageQuality: 85,
       );
       if (image != null) {

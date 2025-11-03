@@ -1,10 +1,13 @@
 import 'dart:io';
 
 import 'package:fashion_app/core/utils/gallery_util.dart';
+import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+
+enum ImageType { front, back, license,avatar}
 
 class ShopProfileScreen extends StatefulWidget {
   const ShopProfileScreen({super.key});
@@ -18,14 +21,17 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
   final _phoneController = TextEditingController();
   final _cccdController = TextEditingController();
   final _addressController = TextEditingController();
-  
+
   File? _frontID;
   File? _backID;
   File? _license;
+  File? avatarImage;
+
   String? _frontUrl;
   String? _backUrl;
   String? _licenseUrl;
-  
+  String? avatarURL;
+
   bool _isLoading = false;
   bool _isInitialized = false;
 
@@ -37,27 +43,6 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     _loadShopData();
   }
 
-  Future<void> _loadShopData() async {
-    final shopVm = context.read<ShopViewModel>();
-    final shop = shopVm.currentShop;
-
-    if (shop == null) return;
-
-    _nameController.text = shop.shopName;
-    _phoneController.text = shop.phoneNumber?.toString() ?? '';
-    _addressController.text = shop.address ?? '';
-    setState(() {
-      _cccdController.text = shop.nationalId;
-      _frontUrl = shop.idnationFront != null && shop.idnationFront.isNotEmpty
-          ? "${shop.idnationFront}?ts=${DateTime.now().millisecondsSinceEpoch}"
-          : null;
-      _backUrl = shop.idnationBack != null && shop.idnationBack.isNotEmpty
-          ? "${shop.idnationBack}?ts=${DateTime.now().millisecondsSinceEpoch}"
-          : null;
-      _licenseUrl = shop.businessLicense;
-    });
-  }
-
   @override
   void dispose() {
     _nameController.dispose();
@@ -67,8 +52,32 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     super.dispose();
   }
 
+  void _loadShopData() {
+    final shopVm = context.read<ShopViewModel>();
+    final shop = shopVm.currentShop;
+
+    if (shop == null) return;
+
+    _nameController.text = shop.shopName;
+    _phoneController.text = shop.phoneNumber?.toString() ?? '';
+    _cccdController.text = shop.nationalId;
+    _addressController.text = shop.address ?? '';
+
+    setState(() {
+      _frontUrl =
+          shop.idnationFront.isNotEmpty
+              ? "${shop.idnationFront}?ts=${DateTime.now().millisecondsSinceEpoch}"
+              : null;
+      _backUrl =
+          shop.idnationBack.isNotEmpty
+              ? "${shop.idnationBack}?ts=${DateTime.now().millisecondsSinceEpoch}"
+              : null;
+      _licenseUrl = shop.businessLicense;
+    });
+  }
+
   Future<void> _pickImage(ImageType type) async {
-    final image = await GalleryUtil.pickImageFromGallery();
+    final image = await showPickImageBottomSheet(context);
     if (image != null && mounted) {
       setState(() {
         switch (type) {
@@ -81,42 +90,48 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
           case ImageType.license:
             _license = image;
             break;
+          case ImageType.avatar:
+            avatarImage = image;
+            break;  
         }
+       
       });
     }
+  }
+
+  Future<String?> _uploadImageIfNeeded(File? file, String currentUrl) async {
+    if (file == null) return currentUrl;
+    final uploadedUrl = await GalleryUtil.uploadImageToFirebase(file);
+    return uploadedUrl ?? currentUrl;
   }
 
   Future<void> _updateShopProfile() async {
     if (_isLoading) return;
 
     final shopVm = context.read<ShopViewModel>();
-    if (shopVm.currentShop == null) return;
+    final currentShop = shopVm.currentShop;
+
+    if (currentShop == null) return;
 
     setState(() => _isLoading = true);
 
     try {
-      // Cập nhật thông tin shop
-      String frontUrl = shopVm.currentShop!.idnationFront;
-      String backUrl = shopVm.currentShop!.idnationBack;
-      String? licenseUrl = shopVm.currentShop!.businessLicense;
+      // Upload các ảnh mới nếu có
+      final frontUrl = await _uploadImageIfNeeded(
+        _frontID,
+        currentShop.idnationFront,
+      );
+      final backUrl = await _uploadImageIfNeeded(
+        _backID,
+        currentShop.idnationBack,
+      );
+      final licenseUrl = await _uploadImageIfNeeded(
+        _license,
+        currentShop.businessLicense ?? '',
+      );
 
-      // Upload ảnh mới nếu có
-      if (_frontID != null) {
-        final uploadedFront = await GalleryUtil.uploadImageToFirebase(_frontID!);
-        if (uploadedFront != null) frontUrl = uploadedFront;
-      }
-
-      if (_backID != null) {
-        final uploadedBack = await GalleryUtil.uploadImageToFirebase(_backID!);
-        if (uploadedBack != null) backUrl = uploadedBack;
-      }
-
-      if (_license != null) {
-        final uploadedLicense = await GalleryUtil.uploadImageToFirebase(_license!);
-        if (uploadedLicense != null) licenseUrl = uploadedLicense;
-      }
-
-      final updatedShop = shopVm.currentShop!.copyWith(
+      // Tạo shop đã update
+      final updatedShop = currentShop.copyWith(
         shopName: _nameController.text.trim(),
         phoneNumber: int.tryParse(_phoneController.text.trim()),
         address: _addressController.text.trim(),
@@ -128,23 +143,12 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
 
       await shopVm.updateShop(updatedShop);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Cập nhật thông tin thành công"),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      if (!mounted) return;
+
+      _showSnackBar("Cập nhật thông tin thành công", Colors.green);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Lỗi: ${e.toString()}"),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      _showSnackBar("Lỗi: ${e.toString()}", Colors.red);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -152,137 +156,223 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     }
   }
 
+  void _showSnackBar(String message, Color backgroundColor) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: backgroundColor),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("Cập nhật thông tin"),
-        centerTitle: true,
-        backgroundColor: Colors.white,
+      appBar: _buildAppBar(),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProfileAvatar(),
+              const SizedBox(height: 20),
+              _buildNameField(),
+              const SizedBox(height: 16),
+              _buildPhoneField(),
+              const SizedBox(height: 16),
+              _buildCCCDField(),
+              const SizedBox(height: 16),
+              _buildIDImagesSection(),
+              const SizedBox(height: 16),
+              _buildLicenseSection(),
+              const SizedBox(height: 16),
+              _buildAddressField(),
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Center(
-                  child: CircleAvatar(
-                    radius: 40,
-                    child: Icon(Icons.person, size: 50),
-                  ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      title: const Text(
+        "Cập nhật thông tin",
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      centerTitle: true,
+      backgroundColor: Colors.white,
+      leading: IconButton(
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+        icon: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+      ),
+      actions: [
+        IconButton(
+          onPressed: () {
+            _updateShopProfile();
+          },
+          icon: Icon(
+            Icons.save,
+            color: _isLoading ? Colors.grey : Colors.black,
+            size: 24,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileAvatar() {
+    return GestureDetector(
+      onTap: (){
+        _pickImage(ImageType.avatar);
+      },
+      child: Center(
+        child: Stack(
+          children: [
+            ClipOval(
+              child: avatarImage != null
+                  ? Image.file(
+                      avatarImage!,
+                      width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        )
+                      : (avatarURL != null && avatarURL!.isNotEmpty
+                          ? Image.network(
+                              avatarURL!,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Image.asset(
+                                'assets/images/logo_default.png',
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Image.asset(
+                              'assets/images/logo_default.png',
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            )),
                 ),
-                const SizedBox(height: 20),
-                _buildTextField(
-                  label: "Họ và tên",
-                  controller: _nameController,
-                  icon: Icons.person_2_outlined,
-                  hint: "Hiển thị tên Shop",
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  label: "Số điện thoại",
-                  controller: _phoneController,
-                  icon: Icons.phone,
-                  hint: "Hiển thị số điện thoại",
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(12),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  label: "Căn cước công dân",
-                  controller: _cccdController,
-                  icon: Icons.badge,
-                  hint: "Căn cước công dân",
-                  readOnly: true,
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: _buildImageBox(
-                        "Mặt trước",
-                        file: _frontID,
-                        url: _frontUrl,
-                        onTap: () => _pickImage(ImageType.front),
-                      ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildImageBox(
-                        "Mặt sau",
-                        file: _backID,
-                        url: _backUrl,
-                        onTap: () => _pickImage(ImageType.back),
-                      ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      color: Colors.white,
+                      size: 20,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  "Giấy phép kinh doanh",
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _buildImageBox(
-                  "Giấy phép kinh doanh",
-                  file: _license,
-                  url: _licenseUrl,
-                  onTap: () => _pickImage(ImageType.license),
-                  width: double.infinity,
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  label: "Địa chỉ",
-                  controller: _addressController,
-                  icon: Icons.map,
-                  hint: "Hiển thị địa chỉ",
-                ),
-                const SizedBox(height: 30),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _updateShopProfile,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.blue,
-                      disabledBackgroundColor: Colors.grey,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            "Cập nhật",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
       ),
+    );
+  }
+
+  Widget _buildNameField() {
+    return _buildTextField(
+      label: "Họ và tên",
+      controller: _nameController,
+      icon: Icons.person_2_outlined,
+      hint: "Hiển thị tên Shop",
+    );
+  }
+
+  Widget _buildPhoneField() {
+    return _buildTextField(
+      label: "Số điện thoại",
+      controller: _phoneController,
+      icon: Icons.phone,
+      hint: "Hiển thị số điện thoại",
+      keyboardType: TextInputType.phone,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(12),
+      ],
+    );
+  }
+
+  Widget _buildCCCDField() {
+    return _buildTextField(
+      label: "Căn cước công dân",
+      controller: _cccdController,
+      icon: Icons.badge,
+      hint: "Căn cước công dân",
+      readOnly: true,
+      keyboardType: TextInputType.number,
+    );
+  }
+
+  Widget _buildIDImagesSection() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildImageBox(
+            "Mặt trước",
+            file: _frontID,
+            url: _frontUrl,
+            onTap: () => _pickImage(ImageType.front),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildImageBox(
+            "Mặt sau",
+            file: _backID,
+            url: _backUrl,
+            onTap: () => _pickImage(ImageType.back),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLicenseSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Giấy phép kinh doanh",
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildImageBox(
+          "Giấy phép kinh doanh",
+          file: _license,
+          url: _licenseUrl,
+          onTap: () => _pickImage(ImageType.license),
+          width: double.infinity,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAddressField() {
+    return _buildTextField(
+      label: "Địa chỉ",
+      controller: _addressController,
+      icon: Icons.map,
+      hint: "Hiển thị địa chỉ",
     );
   }
 
@@ -331,6 +421,8 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     required VoidCallback onTap,
     double? width,
   }) {
+    final hasImage = file != null || url != null;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -339,45 +431,50 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: Colors.grey.shade400),
-          image: file != null
-              ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
-              : (url != null
-                  ? DecorationImage(
-                      image: NetworkImage(url),
-                      fit: BoxFit.cover,
-                    )
-                  : null),
+          image:
+              file != null
+                  ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
+                  : (url != null
+                      ? DecorationImage(
+                        image: NetworkImage(url),
+                        fit: BoxFit.cover,
+                      )
+                      : null),
         ),
-        child: (file == null && url == null)
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.add_a_photo, color: Colors.grey),
-                  const SizedBox(height: 5),
-                  Text(
-                    label,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              )
-            : Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: const EdgeInsets.all(5),
-                  child: InkWell(
-                    onTap: onTap,
-                    child: const CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Colors.black54,
-                      child: Icon(Icons.edit, size: 15, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
+        child: hasImage ? _buildEditIcon(onTap) : _buildPlaceholder(label),
       ),
     );
   }
-}
 
-enum ImageType { front, back, license }
+  Widget _buildEditIcon(VoidCallback onTap) {
+    return Align(
+      alignment: Alignment.topRight,
+      child: Padding(
+        padding: const EdgeInsets.all(5),
+        child: InkWell(
+          onTap: onTap,
+          child: const CircleAvatar(
+            radius: 12,
+            backgroundColor: Colors.black54,
+            child: Icon(Icons.edit, size: 15, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder(String label) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.add_a_photo, color: Colors.grey),
+        const SizedBox(height: 5),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.grey, fontSize: 12),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}

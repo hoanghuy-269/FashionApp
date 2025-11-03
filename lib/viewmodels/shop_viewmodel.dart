@@ -16,53 +16,61 @@ class ShopViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<ShopModel?> createAndAddShop(ShopModel shop) async {
-    isLoading = true;
+  Future<ShopModel?> createAddShop(ShopModel shop) async {
+  isLoading = true;
+  notifyListeners();
+
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+
+   
+    final ownerId = shop.userId.trim().isNotEmpty
+        ? shop.userId.trim()
+        : (user?.uid ?? '');
+
+    final ownerEmail = shop.ownerEmail?.isNotEmpty == true
+        ? shop.ownerEmail
+        : user?.email;
+
+    final data = shop.toMap();
+    data['userId'] = ownerId;
+    data['ownerEmail'] = ownerEmail;
+
+    final generatedShopId = await _repo.createShopFromMap(data);
+
+    final createdShop = ShopModel(
+      shopId: generatedShopId,
+      userId: ownerId,
+      requestId: shop.requestId,
+      shopName: shop.shopName,
+      logo: shop.logo,
+      businessLicense: shop.businessLicense,
+      nationalId: shop.nationalId,
+      idnationFront: shop.idnationFront,
+      idnationBack: shop.idnationBack,
+      phoneNumber: shop.phoneNumber,
+      address: shop.address,
+      totalProducts: shop.totalProducts,
+      totalOrders: shop.totalOrders,
+      revenue: shop.revenue,
+      createdAt: DateTime.now(),
+      activityStatusId: shop.activityStatusId,
+      ownerEmail: ownerEmail,
+    );
+
+    shops.add(createdShop);
+    currentShop = createdShop;
+
+    isLoading = false;
     notifyListeners();
-
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      final ownerId = user?.uid ?? shop.userId;
-      final ownerEmail = user?.email ?? shop.ownerEmail;
-
-      final data = shop.toMap();
-      data['userId'] = ownerId;
-      data['ownerEmail'] = ownerEmail;
-
-      final generatedShopId = await _repo.createShopFromMap(data);
-
-      final createdShop = ShopModel(
-        shopId: generatedShopId,
-        userId: ownerId,
-        requestId: shop.requestId,
-        shopName: shop.shopName,
-        logo: shop.logo,
-        businessLicense: shop.businessLicense,
-        nationalId: shop.nationalId,
-        idnationFront: shop.idnationFront,
-        idnationBack: shop.idnationBack,
-        phoneNumber: shop.phoneNumber,
-        address: shop.address,
-        totalProducts: shop.totalProducts,
-        totalOrders: shop.totalOrders,
-        revenue: shop.revenue,
-        createdAt: DateTime.now(),
-        activityStatusId: shop.activityStatusId,
-        ownerEmail: ownerEmail,
-      );
-      shops.add(createdShop);
-
-      currentShop = createdShop;
-      isLoading = false;
-      notifyListeners();
-
-      return createdShop;
-    } catch (e) {
-      isLoading = false;
-      notifyListeners();
-      rethrow;
-    }
+    return createdShop;
+  } catch (e) {
+    isLoading = false;
+    notifyListeners();
+    rethrow;
   }
+}
+
   Future<void> fetchShops() async {
     isLoading = true;
     notifyListeners();
@@ -139,10 +147,8 @@ class ShopViewModel extends ChangeNotifier {
     }
   }
 
-  /// Fetch shop by its shopId (useful when caller passes shopId explicitly)
   Future<ShopModel?> fetchShopById(String shopId) async {
     if (shopId.isEmpty) return null;
-
     isLoading = true;
     notifyListeners();
 
@@ -186,8 +192,7 @@ class ShopViewModel extends ChangeNotifier {
 
     try {
       final result = await _repo.getShopsByOwnerId(userId);
-      // optionally update local cache
-      // do not overwrite shops list here to avoid side effects
+
       return result;
     } catch (e) {
       debugPrint('Lỗi fetchShopsByUserId: $e');

@@ -10,7 +10,6 @@ class ShopRepositories {
 
   Future<List<ShopModel>> getShops() => _remoteSources.getShops(); 
 
-  // getShopById is available in ShopSources if direct access needed; removed wrapper here because not used.
   Future<ShopModel?> getShopById(String shopId) => _remoteSources.getShopById(shopId);
   Future<ShopModel?> getShopByOwnerId(String ownerId) => _remoteSources.getShopByOwnerId(ownerId);
 
