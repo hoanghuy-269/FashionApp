@@ -163,15 +163,15 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     if (shopId == null) {
       throw Exception('Không tìm thấy cửa hàng hiện tại.');
     }
-      String generateRequestId() {
-      final now = DateTime.now();
-      final formattedDate = "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}";
-      final timestamp = now.millisecondsSinceEpoch.toString().substring(10);
-      return 'staff_${formattedDate}_$timestamp';
-      }
+      // String generateRequestId() {
+      // final now = DateTime.now();
+      // final formattedDate = "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}";
+      // final timestamp = now.millisecondsSinceEpoch.toString().substring(10);
+      // return 'staff_${formattedDate}_$timestamp';
+      // }
 
     final model = StorestaffModel(
-      employeeId: generateRequestId(),
+      employeeId: '',
       shopId: shopId,
       fullName: nameController.text.trim(),
       email: emailController.text.trim(),

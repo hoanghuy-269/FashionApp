@@ -31,7 +31,6 @@ class UserRepository {
     await _service.addOrUpdateUser(userWithUid);
     await _auth.signOut();
   }
-
   /// Đăng nhập bằng email + password
   Future<User?> login(String email, String password) async {
     try {

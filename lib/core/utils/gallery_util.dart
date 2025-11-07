@@ -58,4 +58,49 @@ class GalleryUtil {
       return null;
     }
   }
+  static Future<List<String>> uploadProductImages({
+    required String productId,
+    required String detailId,
+    required List<File> images,
+    Function(int current, int total)? onProgress,
+  }) async {
+    List<String> uploadedUrls = [];
+
+    try {
+      for (int i = 0; i < images.length; i++) {
+        final file = images[i];
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final fileName = 'image_${i + 1}_$timestamp.jpg';
+        final path = 'products/$productId/$detailId/$fileName';
+
+        // Upload file
+        final ref = FirebaseStorage.instance.ref().child(path);
+        await ref.putFile(file);
+
+        // Lấy download URL
+        final downloadUrl = await ref.getDownloadURL();
+        uploadedUrls.add(downloadUrl);
+
+        onProgress?.call(i + 1, images.length);
+
+        print(' Uploaded (${i + 1}/${images.length}): $fileName');
+      }
+    } catch (e) {
+      print(' Lỗi upload ảnh sản phẩm: $e');
+      rethrow;
+    }
+
+    return uploadedUrls;
+  }
+  
+  static Future<void> deleteImageByUrl(String imageUrl) async {
+      try {
+        final ref = FirebaseStorage.instance.refFromURL(imageUrl);
+        await ref.delete();
+        print('🗑️ Deleted image: ${ref.name}');
+      } catch (e) {
+        print('❌ Lỗi xóa ảnh: $e');
+      }
+    }
+
 }

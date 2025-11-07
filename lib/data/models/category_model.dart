@@ -16,8 +16,9 @@ class CategoryModel {
       logoUrl: json['logoUrl'] ?? '',
     );
   }
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toMap() {
     return {
+      'categoryID': categoryID,
       'categoryName': categoryName,
       'logoUrl': logoUrl,
     };

@@ -6,6 +6,7 @@ import 'package:fashion_app/data/models/User.dart';
 import 'package:fashion_app/data/models/requesttoopentshop_model.dart';
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
+import 'package:fashion_app/views/staff/warehouse_screen.dart';
 import 'package:fashion_app/views/user/approved_shop_dialog.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:fashion_app/views/user/requesttoopentshop_screen.dart';
@@ -245,7 +246,9 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Đăng xuất',
-            onPressed: _handleLogout,
+            onPressed: (){
+              _handleLogout();
+            },
           ),
         ],
       ),

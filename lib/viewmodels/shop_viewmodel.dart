@@ -133,14 +133,19 @@ class ShopViewModel extends ChangeNotifier {
   Future<ShopModel?> fetchShopForCurrentUser() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
+    print('fetchShopForCurrentUser: currentUser=${user.uid}');
 
     isLoading = true;
     notifyListeners();
 
     try {
       final shop = await _repo.getShopByOwnerId(user.uid);
+      print('fetchShopForCurrentUser: fetched shop=$shop');
       currentShop = shop;
       return shop;
+    } catch (e) {
+      print('fetchShopForCurrentUser error: $e');
+      rethrow;
     } finally {
       isLoading = false;
       notifyListeners();

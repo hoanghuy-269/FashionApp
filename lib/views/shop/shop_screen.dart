@@ -1,4 +1,5 @@
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
+import 'package:fashion_app/views/shop/importgoods_creen.dart';
 import 'package:fashion_app/views/shop/shop_personnal_screen.dart';
 import 'package:fashion_app/views/shop/shop_profile_screen.dart';
 import 'package:fashion_app/views/shop/storerevenue_detail_screen.dart';
@@ -212,7 +213,6 @@ class _ShopScreenState extends State<ShopScreen> {
   }
  Widget _buildLogOut(double width) {
   final _shopViewModel = Provider.of<ShopViewModel>(context, listen: false);
-  print("User ID: ${_shopViewModel.currentShop?.userId}");
   return GestureDetector(
     onTap: () async {
       final userId = _shopViewModel.currentShop?.userId;
@@ -313,6 +313,9 @@ class _ShopScreenState extends State<ShopScreen> {
           LucideIcons.fileText,
           Colors.orange,
           count: 1,
+          onTap: () {
+           
+          },
         ),
         _buildGridItem(
           "Kho",
@@ -324,6 +327,14 @@ class _ShopScreenState extends State<ShopScreen> {
           "Yêu cầu  nhập hàng",
           LucideIcons.creditCard,
           Colors.purple,
+          onTap: (){
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ImportgoodsCreen(),
+              ),
+            );
+          }
         ),
         _buildGridItem(
           "Quản lí nhân viên",
