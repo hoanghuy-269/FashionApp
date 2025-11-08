@@ -4,8 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:uuid/uuid.dart';
 import '../data/models/User.dart';
 import '../data/repositories/user_repository.dart';
+import 'package:flutter/foundation.dart';
 
-class AuthViewModel {
+class AuthViewModel extends ChangeNotifier {
   final UserRepository _userRepository = UserRepository();
 
   bool isLoading = false;
@@ -49,22 +50,36 @@ class AuthViewModel {
   Future<bool> login({required String email, required String password}) async {
     try {
       isLoading = true;
+      notifyListeners();
       message = null;
 
       final user = await _userRepository.login(email, password);
-      if (user != null) {
-        currentUser = user;
-        message = 'Đăng nhập thành công!';
-        return true;
-      } else {
+      if (user == null) {
         message = 'Email hoặc mật khẩu không chính xác.';
+        isLoading = false;
+        notifyListeners();
         return false;
       }
+
+      print('🔒 User status: ${user.status}');
+
+      if (user.status == false) {
+        message = 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.';
+        isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      currentUser = user;
+      message = 'Đăng nhập thành công!';
+      isLoading = false;
+      notifyListeners();
+      return true;
     } catch (e) {
       message = 'Lỗi đăng nhập: $e';
-      return false;
-    } finally {
       isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 
@@ -172,27 +187,16 @@ class AuthViewModel {
   Future<void> checkCurrentUser() async {
     final fbUser = _userRepository.currentUser;
     if (fbUser != null) {
-      currentUser = await _userRepository.getUserById(fbUser.uid);
+      currentUser = await _userRepository.getUserById(fbUser.uid).first;
     }
   }
 
-  Future<User?> FetchUserById(String userId) async {
+  Stream<User?> getUserById(String userId) {
     try {
-      isLoading = true;
-      message = null;
-      final user = await _userRepository.getUserById(userId);
-      if (user != null) {
-        currentUser = user;
-        return user;
-      } else {
-        message = 'Không tìm thấy người dùng.';
-        return null;
-      }
+      return _userRepository.getUserById(userId);
     } catch (e) {
       message = 'Lỗi khi lấy thông tin người dùng: $e';
-      return null;
-    } finally {
-      isLoading = false;
+      return const Stream.empty();
     }
   }
 
@@ -255,5 +259,39 @@ class AuthViewModel {
     } finally {
       isLoading = false;
     }
+  }
+
+  Future<bool> changePassword(String newPassword) async {
+    try {
+      isLoading = true;
+      message = null;
+
+      await _userRepository.changePassword(newPassword);
+
+      message = "Đổi mật khẩu thành công!";
+      return true;
+    } catch (e) {
+      message = "Đổi mật khẩu thất bại: $e";
+      return false;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  Future<void> updateUserProfile({
+    required String userId,
+    required String name,
+    required String phone,
+    required String address,
+    required String? avatar,
+  }) async {
+    final data = {
+      "name": name,
+      "phoneNumbers": [phone],
+      "addresses": [address],
+      "avatar": avatar,
+    };
+
+    await _userRepository.updateUser(userId, data);
   }
 }

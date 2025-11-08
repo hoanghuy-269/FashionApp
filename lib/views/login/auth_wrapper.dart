@@ -1,6 +1,7 @@
 import 'package:fashion_app/views/admin/admin_home_screen.dart';
 import 'package:fashion_app/views/login/staff_screen.dart';
 import 'package:fashion_app/views/staff/warehouse_screen.dart';
+import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -85,7 +86,7 @@ class AuthWrapper extends StatelessWidget {
               case 'role001': // Admin
                 return const AdminHomeScreen();
               case 'role002': // User (Khách hàng)
-                return UserprofileScreen(idUser: user.uid);
+                return HomeScreen(idUser: user.uid);
               case 'role003': // Chủ shop
                 return ShopScreen(idUser: user.uid);
               default:

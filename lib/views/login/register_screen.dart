@@ -1,4 +1,5 @@
-import 'package:fashion_app/core/widget/validatedtextfield.dart';
+import 'package:fashion_app/views/login/email_otp.dart';
+import 'package:fashion_app/views/login/email_otp_service.dart';
 import 'package:flutter/material.dart';
 import '../../core/utils/validator.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -25,10 +26,60 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _passwordError = false;
   bool _confirmError = false;
 
+  final EmailOtpService _otpService = EmailOtpService();
+  bool _isOtpVerified = false;
   bool _isLoading = false;
+
   final AuthViewModel _authViewModel = AuthViewModel();
 
-  Future<void> _register() async {
+  Future<void> _handleVerifyEmail() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final phone = _phoneController.text.trim();
+
+    if (email.isEmpty || password.isEmpty || phone.isEmpty) {
+      context.showError('Vui lòng nhập đầy đủ thông tin!');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      // Gửi OTP lên Firebase
+      await _otpService.sendOtp(email);
+
+      // Chuyển qua màn hình nhập OTP
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => EmailOtpScreen(
+                email: email,
+                otpService: _otpService,
+                password: password,
+                phone: phone,
+              ),
+        ),
+      );
+
+      debugPrint("Nhận result từ OTP Screen: $result");
+
+      if (result == true) {
+        if (mounted) {
+          setState(() {
+            _isOtpVerified = true;
+          });
+        }
+      } else if (result == false) {
+        context.showError('Xác minh OTP thất bại hoặc bị hủy.');
+      }
+    } catch (e) {
+      context.showError('Lỗi khi gửi OTP: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleRegister() async {
     final email = _emailController.text.trim();
     final phone = _phoneController.text.trim();
     final password = _passwordController.text;
@@ -43,25 +94,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (_emailError || _phoneError || _passwordError || _confirmError) return;
 
+    if (!_isOtpVerified) {
+      context.showError('Vui lòng xác minh email trước khi đăng ký.');
+      return;
+    }
+
     setState(() => _isLoading = true);
-    final success = await _authViewModel.registerUser(
-      email: email,
-      password: password,
-      phone: phone,
-    );
-    setState(() => _isLoading = false);
-
-    if (success) {
-      _emailController.clear();
-      _phoneController.clear();
-      _passwordController.clear();
-      _confirmPasswordController.clear();
-
-      context.showSuccess('🎉 Tạo tài khoản thành công!');
-    } else {
-      context.showError(
-        _authViewModel.message ?? 'Đăng ký thất bại, vui lòng thử lại.',
+    try {
+      final success = await _authViewModel.registerUser(
+        email: email,
+        password: password,
+        phone: phone,
       );
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tạo tài khoản thành công!')),
+        );
+
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) Navigator.pop(context);
+        });
+      } else {
+        context.showError(
+          _authViewModel.message ?? 'Đăng ký thất bại, vui lòng thử lại.',
+        );
+      }
+    } catch (e) {
+      context.showError('Lỗi khi tạo tài khoản: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -91,14 +153,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              //Nhap email
               _buildValidatedField(
                 label: 'Email',
                 controller: _emailController,
                 icon: Icons.email,
                 keyboardType: TextInputType.emailAddress,
                 error: _emailError,
-                errorMessage: '⚠️ Email không hợp lệ',
+                errorMessage: 'Email không hợp lệ',
                 validator: Validator.isValidEmail,
                 onChanged: () => setState(() => _emailError = false),
               ),
@@ -110,7 +171,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 icon: Icons.phone,
                 keyboardType: TextInputType.phone,
                 error: _phoneError,
-                errorMessage: '⚠️ Số điện thoại không hợp lệ',
+                errorMessage: 'Số điện thoại không hợp lệ',
                 validator: Validator.isValidPhone,
                 onChanged: () => setState(() => _phoneError = false),
               ),
@@ -125,7 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 toggleObscure:
                     () => setState(() => _obscurePassword = !_obscurePassword),
                 error: _passwordError,
-                errorMessage: '⚠️ Mật khẩu không đúng định dạng',
+                errorMessage: 'Mật khẩu không đúng định dạng',
                 validator: Validator.isValidPassword,
                 onChanged: () => setState(() => _passwordError = false),
               ),
@@ -142,7 +203,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       () => _obscureConfirmPassword = !_obscureConfirmPassword,
                     ),
                 error: _confirmError,
-                errorMessage: '⚠️ Mật khẩu không khớp',
+                errorMessage: 'Mật khẩu không khớp',
                 validator: (v) => v == _passwordController.text,
                 onChanged: () => setState(() => _confirmError = false),
               ),
@@ -152,9 +213,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _register,
+                  onPressed:
+                      _isLoading
+                          ? null
+                          : () async {
+                            if (!_isOtpVerified) {
+                              await _handleVerifyEmail();
+                            } else {
+                              await _handleRegister();
+                            }
+                          },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEE9F38),
+                    backgroundColor:
+                        _isOtpVerified ? Colors.green : const Color(0xFFEE9F38),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -162,11 +233,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child:
                       _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                            'Tạo tài khoản',
-                            style: TextStyle(
+                          : Text(
+                            _isOtpVerified ? 'Tạo tài khoản' : 'Xác minh Email',
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
                 ),

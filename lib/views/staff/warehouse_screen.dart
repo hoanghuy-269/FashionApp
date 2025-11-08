@@ -26,8 +26,7 @@ void initState() {
       final shopProductVM = context.read<ShopProductViewModel>();
 
       await shopProductVM.fetchShopProducts(shopID!);
-
-    
+  
     }
   });
 }
