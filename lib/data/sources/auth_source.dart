@@ -30,15 +30,19 @@ class FirebaseService {
   }
 
   // Lấy user theo ID
-  Future<model.User?> getUserById(String id) async {
-    final doc = await _firestore.collection(_collection).doc(id).get();
-    if (!doc.exists) return null;
-    return model.User.fromFirestore(doc);
+  Stream<model.User?> getUserById(String id) {
+    return _firestore.collection(_collection).doc(id).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return model.User.fromFirestore(doc);
+    });
   }
 
   // Cập nhật user
   Future<void> updateUser(String id, Map<String, dynamic> data) async {
-    await _firestore.collection(_collection).doc(id).update(data);
+    await _firestore
+        .collection(_collection)
+        .doc(id)
+        .set(data, SetOptions(merge: true));
   }
 
   // Xóa user
@@ -106,6 +110,9 @@ class FirebaseService {
     );
 
     final firebaseUser = credential.user!;
+
+    await firebaseUser.sendEmailVerification();
+
     final newUser = model.User(
       id: firebaseUser.uid,
       name: user.name,
@@ -117,7 +124,6 @@ class FirebaseService {
       roleId: 'role002',
     );
 
-    // Lưu thông tin vào Firestore
     await addOrUpdateUser(newUser);
   }
 
@@ -147,8 +153,9 @@ class FirebaseService {
         ),
       );
 
-      // Lấy thông tin người dùng trong Firestore
-      return await getUserById(uid);
+      final doc = await _firestore.collection(_collection).doc(uid).get();
+      if (!doc.exists) return null;
+      return model.User.fromFirestore(doc);
     } on fb_auth.FirebaseAuthException catch (e) {
       //print("Lỗi đăng nhập Firebase Auth: ${e.message}");
       rethrow;
@@ -234,8 +241,6 @@ class FirebaseService {
     });
   }
 
-
-
   /// 🚪 Đăng xuất
   Future<void> signOut() async {
     try {
@@ -253,5 +258,15 @@ class FirebaseService {
     } catch (e) {
       //print(' Lỗi khi đăng xuất: $e');
     }
+  }
+
+  Future<void> changePassword(String newPassword) async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      throw Exception("Không có người dùng nào đang đăng nhập.");
+    }
+
+    await user.updatePassword(newPassword);
   }
 }

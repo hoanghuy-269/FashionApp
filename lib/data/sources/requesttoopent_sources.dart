@@ -22,8 +22,6 @@ class RequestToOpenShopSource {
     return _firestore
         .collection(_collection)
         .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
-        .limit(1)
         .get();
   }
 
@@ -65,7 +63,11 @@ class RequestToOpenShopSource {
     await _firestore.collection(_collection).doc(id).update({'status': status});
   }
 
-  Future<void> updateStatusWithShop(String id, String status, String shopId) async {
+  Future<void> updateStatusWithShop(
+    String id,
+    String status,
+    String shopId,
+  ) async {
     final data = {
       'status': status,
       'shopId': shopId,
@@ -78,7 +80,7 @@ class RequestToOpenShopSource {
     return _firestore
         .collection(_collection)
         .where('status', isEqualTo: status)
-      //  .orderBy('createdAt', descending: true)
+        //  .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
           (snapshot) =>
@@ -89,25 +91,28 @@ class RequestToOpenShopSource {
               }).toList(),
         );
   }
-  Future<List<RequesttoopentshopModel>> fetchApprovedRequestsByUserId(String userId) async {
+
+  Future<List<RequesttoopentshopModel>> fetchApprovedRequestsByUserId(
+    String userId,
+  ) async {
     try {
-      final snapshot = await _firestore
-          .collection(_collection)
-          .where('userId', isEqualTo: userId)
-          .where('status', isEqualTo: 'approved')
-          .get();
+      final snapshot =
+          await _firestore
+              .collection(_collection)
+              .where('userId', isEqualTo: userId)
+              .where('status', isEqualTo: 'approved')
+              .get();
 
       return snapshot.docs
-          .map((doc) => RequesttoopentshopModel.fromMap({
-                ...doc.data(),
-                'requestId': doc.id,
-              }))
+          .map(
+            (doc) => RequesttoopentshopModel.fromMap({
+              ...doc.data(),
+              'requestId': doc.id,
+            }),
+          )
           .toList();
     } catch (e) {
       throw Exception('Error fetching approved requests: $e');
     }
   }
-
-
 }
-

@@ -1,22 +1,20 @@
+import 'dart:async';
 import 'dart:io';
-
 import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
 import 'package:fashion_app/data/models/User.dart';
-import 'package:fashion_app/data/models/requesttoopentshop_model.dart';
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
-import 'package:fashion_app/views/user/approved_shop_dialog.dart';
+import 'package:fashion_app/views/login/change_password_screen.dart';
+import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
+import 'package:fashion_app/views/user/approved_shop_dialog.dart';
 import 'package:fashion_app/views/user/requesttoopentshop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import '../login/login_screen.dart';
 
 class UserprofileScreen extends StatefulWidget {
   final String? idUser;
-
   const UserprofileScreen({super.key, this.idUser});
 
   @override
@@ -27,63 +25,52 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
-  
+  final TextEditingController emailController = TextEditingController();
+
   User? currentUser;
   bool isLoading = true;
-  bool isUpdating = false;
-  String? errorMessage;
-  String? avatarURL;
+  bool _isApprovedShop = false;
+
   File? avatarImage;
+  String? avatarURL;
+
+  StreamSubscription<User?>? _userSub;
 
   @override
   void initState() {
     super.initState();
-    _initializeData();
+
+    if (widget.idUser != null && widget.idUser!.isNotEmpty) {
+      final authVM = AuthViewModel();
+      _userSub = authVM.getUserById(widget.idUser!).listen((user) {
+        if (user != null) {
+          setState(() {
+            currentUser = user;
+            nameController.text = user.name ?? '';
+            phoneController.text =
+                user.phoneNumbers.isNotEmpty ? user.phoneNumbers[0] : '';
+            addressController.text =
+                user.addresses.isNotEmpty ? user.addresses[0] : '';
+            avatarURL = user.avatar;
+            emailController.text = user.email ?? '';
+            isLoading = false; // ✅ Thêm dòng này
+          });
+        } else {
+          setState(
+            () => isLoading = false,
+          ); // ✅ Dừng loading ngay cả khi user null
+        }
+      });
+    } else {
+      // Trường hợp không có idUser
+      setState(() => isLoading = false);
+    }
   }
 
   @override
   void dispose() {
-    nameController.dispose();
-    phoneController.dispose();
-    addressController.dispose();
+    _userSub?.cancel(); // nhớ hủy stream khi widget bị dispose
     super.dispose();
-  }
-
-  Future<void> _initializeData() async {
-    if (widget.idUser == null || widget.idUser!.isEmpty) {
-      setState(() {
-        isLoading = false;
-        errorMessage = "ID người dùng không hợp lệ";
-      });
-      return;
-    }
-
-    try {
-      final authVM = AuthViewModel();
-      final user = await authVM.FetchUserById(widget.idUser!);
-
-      if (!mounted) return;
-
-      if (user != null) {
-        nameController.text = user.name ?? '';
-        phoneController.text =
-            user.phoneNumbers.isNotEmpty ? user.phoneNumbers[0] : '';
-        addressController.text =
-            user.addresses.isNotEmpty ? user.addresses[0] : '';
-        avatarURL = user.avatar; // Giả sử User model có field avatar
-      }
-
-      setState(() {
-        currentUser = user;
-        isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        errorMessage = "Lỗi khi lấy thông tin: $e";
-        isLoading = false;
-      });
-    }
   }
 
   Future<void> _navigateToShop() async {
@@ -100,431 +87,421 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
     }
   }
 
-  Future<void> _handleAvatarPick() async {
-    final image = await showPickImageBottomSheet(context);
-    if (image != null) {
-      setState(() {
-        avatarImage = image;
-      });
+  // ---------------- SHOW PROFILE POPUP ----------------
+  void _showProfileDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text("Your Profile", style: TextStyle(fontSize: 18)),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                // ===========================
+                // ✅ AVATAR
+                // ===========================
+                GestureDetector(
+                  onTap: _handleAvatarPick,
+                  child: Stack(
+                    children: [
+                      ClipOval(
+                        child:
+                            avatarImage != null
+                                ? Image.file(
+                                  avatarImage!,
+                                  width: 90,
+                                  height: 90,
+                                  fit: BoxFit.cover,
+                                )
+                                : (avatarURL != null && avatarURL!.isNotEmpty
+                                    ? Image.network(
+                                      avatarURL!,
+                                      width: 90,
+                                      height: 90,
+                                      fit: BoxFit.cover,
+                                    )
+                                    : Image.asset(
+                                      'assets/images/logo_default.png',
+                                      width: 90,
+                                      height: 90,
+                                    )),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-      try {
-        final url = await GalleryUtil.uploadImageToFirebase(image);
-        setState(() {
-          avatarURL = url;
-        });
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi upload ảnh: $e')),
+                const SizedBox(height: 10),
+
+                TextField(
+                  controller: emailController,
+                  readOnly: true,
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
+                  maxLines: 1,
+                  decoration: InputDecoration(
+                    labelText: "Email",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Colors.grey.shade400,
+                        width: 1.4,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                _buildDialogField("Họ và tên", nameController),
+                const SizedBox(height: 12),
+
+                _buildDialogField(
+                  "Số điện thoại",
+                  phoneController,
+                  isPhone: true,
+                ),
+                const SizedBox(height: 12),
+
+                _buildDialogField("Địa chỉ", addressController),
+              ],
+            ),
+          ),
+
+          // ===========================
+          // ✅ BUTTON ACTIONS
+          // ===========================
+          actions: [
+            TextButton(
+              child: const Text("Hủy"),
+              onPressed: () => Navigator.pop(context),
+            ),
+            ElevatedButton(
+              child: const Text("Cập nhật"),
+              onPressed: () async {
+                await _handleUpdate();
+                if (mounted) Navigator.pop(context);
+              },
+            ),
+          ],
         );
-      }
-    }
+      },
+    );
   }
 
+  // --------------- UPDATE PROFILE ------------------
   Future<void> _handleUpdate() async {
     if (currentUser == null) return;
 
-    setState(() => isUpdating = true);
-
     try {
       final authVM = AuthViewModel();
-            // await authVM.updateUser(
-      //   userId: currentUser!.id,
-      //   name: nameController.text.trim(),
-      //   phone: phoneController.text.trim(),
-      //   address: addressController.text.trim(),
-      //   avatar: avatarURL,
-      // );
 
-      if (!mounted) return;
-      
+      await authVM.updateUserProfile(
+        userId: currentUser!.id,
+        name: nameController.text.trim(),
+        phone: phoneController.text.trim(),
+        address: addressController.text.trim(),
+        avatar: avatarURL,
+      );
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cập nhật thành công!'),
+          content: Text("Cập nhật thành công!"),
           backgroundColor: Colors.green,
         ),
       );
-
-      // Refresh data
-      await _initializeData();
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi cập nhật: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => isUpdating = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Lỗi: $e")));
+    }
+  }
+
+  // --------------- PICK NEW AVATAR ------------------
+  Future<void> _handleAvatarPick() async {
+    final image = await showPickImageBottomSheet(context);
+    if (image != null) {
+      setState(() => avatarImage = image);
+
+      try {
+        final url = await GalleryUtil.uploadImageToFirebase(image);
+        setState(() => avatarURL = url);
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Lỗi upload ảnh: $e")));
       }
     }
   }
 
+  // ---------------- LOGOUT -----------------
   Future<void> _handleLogout() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận'),
-        content: const Text('Bạn có chắc muốn đăng xuất không?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+      builder:
+          (_) => AlertDialog(
+            title: const Text("Đăng xuất"),
+            content: const Text("Bạn có chắc muốn đăng xuất không?"),
+            actions: [
+              TextButton(
+                child: const Text("Hủy"),
+                onPressed: () => Navigator.pop(context),
+              ),
+              TextButton(
+                child: const Text("Đăng xuất"),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Đăng xuất'),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
       final authVM = AuthViewModel();
       await authVM.logout();
+
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
+          (_) => false,
         );
       }
     }
   }
 
+  // ---------------- UI -----------------
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Thông tin người dùng'),
-          centerTitle: true,
-        ),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (errorMessage != null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Thông tin người dùng'),
-          centerTitle: true,
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    isLoading = true;
-                    errorMessage = null;
-                  });
-                  _initializeData();
-                },
-                child: const Text('Thử lại'),
-              ),
-            ],
-          ),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thông tin người dùng'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Đăng xuất',
-            onPressed: _handleLogout,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildHeader(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (_) =>
+                                RequestToOpenStoreScreen(uid: currentUser!.id),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    "Yêu cầu mở shop",
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              if (_isApprovedShop)
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      _navigateToShop();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      "Chọn shop",
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          _buildMenuItem(
+            icon: Icons.person_outline,
+            title: "Thông tin cá nhân",
+            onTap: _showProfileDialog,
+          ),
+
+          _buildMenuItem(
+            icon: Icons.credit_card,
+            title: "Phương thức thanh toán",
+          ),
+          _buildMenuItem(icon: Icons.shopping_bag, title: "Đơn hàng của tôi"),
+          _buildMenuItem(
+            icon: Icons.settings,
+            title: "Đổi mật khẩu",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+              );
+            },
+          ),
+          _buildMenuItem(icon: Icons.people, title: "Mời bạn bè"),
+
+          const SizedBox(height: 20),
+          _buildMenuItem(
+            icon: Icons.logout,
+            title: "Đăng xuất",
+            color: Colors.red,
+            onTap: _handleLogout,
           ),
         ],
-      ),
-      body: SafeArea(
-        child: StreamBuilder<List<RequesttoopentshopModel>>(
-          stream: Provider.of<RequestToOpenShopViewModel>(context, listen: false)
-              .streamUserRequests(currentUser!.id),
-          builder: (context, snapshot) {
-            final hasRequest = snapshot.hasData && snapshot.data!.isNotEmpty;
-            final request = hasRequest ? snapshot.data!.first : null;
-
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(request),
-                  const SizedBox(height: 24),
-                  _buildForm(),
-                  const SizedBox(height: 24),
-                  _buildActionButtons(),
-                ],
-              ),
-            );
-          },
-        ),
       ),
     );
   }
 
-  Widget _buildHeader(RequesttoopentshopModel? request) {
+  // ---------------- HEADER -----------------
+  Widget _buildHeader() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         GestureDetector(
           onTap: _handleAvatarPick,
           child: Stack(
             children: [
               ClipOval(
-                child: avatarImage != null
-                    ? Image.file(
-                        avatarImage!,
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                      )
-                    : (avatarURL != null && avatarURL!.isNotEmpty
-                        ? Image.network(
-                            avatarURL!,
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Image.asset(
-                              'assets/images/logo_default.png',
+                child:
+                    avatarImage != null
+                        ? Image.file(
+                          avatarImage!,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        )
+                        : (avatarURL != null
+                            ? Image.network(
+                              avatarURL!,
                               width: 100,
                               height: 100,
                               fit: BoxFit.cover,
-                            ),
-                          )
-                        : Image.asset(
-                            'assets/images/logo_default.png',
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                          )),
+                            )
+                            : Image.asset(
+                              'assets/images/logo_default.png',
+                              width: 100,
+                              height: 100,
+                            )),
               ),
               Positioned(
                 bottom: 0,
                 right: 0,
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(5),
                   decoration: const BoxDecoration(
-                    color: Colors.blue,
+                    color: Colors.black54,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.camera_alt,
                     color: Colors.white,
-                    size: 20,
+                    size: 18,
                   ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => RequestToOpenStoreScreen(uid: currentUser!.id),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Text(
-                'Yêu cầu mở shop',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              ),
-            ),
-            if (request?.status == 'approved') ...[
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: _navigateToShop,
-                icon: const Icon(Icons.store, size: 16),
-                label: const Text('Chọn shop', style: TextStyle(fontSize: 12)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildForm() {
-    return Column(
-      children: [
-        _buildTextField(
-          label: "Email",
-          hintText: currentUser?.email ?? '',
-          icon: Icons.email_outlined,
-          enabled: false,
-        ),
-        const SizedBox(height: 16),
-        _buildTextField(
-          label: "Họ và tên",
-          controller: nameController,
-          icon: Icons.person_2_outlined,
-        ),
-        const SizedBox(height: 16),
-        _buildPhoneField(),
-        const SizedBox(height: 16),
-        _buildTextField(
-          label: "Địa chỉ",
-          controller: addressController,
-          icon: Icons.location_on_outlined,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTextField({
-    required String label,
-    TextEditingController? controller,
-    String? hintText,
-    IconData? icon,
-    bool enabled = true,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+        const SizedBox(height: 12),
         Text(
-          label,
-          style: const TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          enabled: enabled,
-          decoration: InputDecoration(
-            hintText: hintText,
-            border: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(16)),
-            ),
-            prefixIcon: icon != null ? Icon(icon, color: Colors.blue) : null,
-          ),
+          currentUser?.name ?? "",
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
       ],
     );
   }
 
-  Widget _buildPhoneField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Số điện thoại",
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: phoneController,
-          keyboardType: TextInputType.phone,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(12),
-          ],
-          decoration: InputDecoration(
-            prefixIcon: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Image.asset(
-                "assets/icons/vietnam.png",
-                width: 24,
-                height: 24,
-              ),
-            ),
-            border: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(16)),
-            ),
-          ),
-        ),
-      ],
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    Color color = Colors.black,
+    VoidCallback? onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(title, style: TextStyle(color: color)),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: ElevatedButton(
-            onPressed: isUpdating ? null : () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            child: const Text(
-              "Hủy",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: isUpdating ? null : _handleUpdate,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            child: isUpdating
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Text(
-                    "Cập nhật",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-          ),
-        ),
-      ],
+  // ---------------- DIALOG INPUT ----------------
+  Widget _buildDialogField(
+    String label,
+    TextEditingController ctrl, {
+    bool isPhone = false,
+  }) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
+      inputFormatters:
+          isPhone
+              ? [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(12),
+              ]
+              : null,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
     );
   }
 }
