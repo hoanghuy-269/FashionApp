@@ -5,6 +5,7 @@ import 'package:fashion_app/viewmodels/role_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/login/auth_wrapper.dart';
+import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:fashion_app/views/admin/admin_home_screen.dart';
 import 'package:fashion_app/views/admin/admin_manageShop_screen.dart';

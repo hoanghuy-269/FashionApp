@@ -94,22 +94,22 @@ class RequestToOpenShopViewModel extends ChangeNotifier {
     }
   }
 
-  ///  Lấy yêu cầu theo userId (cho người dùng hiện tại)
-  Future<void> fetchRequestByUsers(String userId) async {
-    try {
-      isLoading = true;
-      errorMessage = null;
-      notifyListeners();
+  // ///  Lấy yêu cầu theo userId (cho người dùng hiện tại)
+  // Future<void> fetchRequestByUsers(String userId) async {
+  //   try {
+  //     isLoading = true;
+  //     errorMessage = null;
+  //     notifyListeners();
 
-      currentUserRequest = await _repo.getRequestByUserId(userId);
-    } catch (e, st) {
-      errorMessage = e.toString();
-      debugPrint('Error fetching user request: $e\n$st');
-    } finally {
-      isLoading = false;
-      notifyListeners();
-    }
-  }
+  //     currentUserRequest = await _repo.getRequestsByUserId(userId);
+  //   } catch (e, st) {
+  //     errorMessage = e.toString();
+  //     debugPrint('Error fetching user request: $e\n$st');
+  //   } finally {
+  //     isLoading = false;
+  //     notifyListeners();
+  //   }
+  // }
 
   ///  Xóa yêu cầu
   Future<void> deleteRequest(String requestId) async {
@@ -166,7 +166,11 @@ class RequestToOpenShopViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> updateStatusWithShop(String requestId, String newStatus, String shopId) async {
+  Future<void> updateStatusWithShop(
+    String requestId,
+    String newStatus,
+    String shopId,
+  ) async {
     try {
       isLoading = true;
       errorMessage = null;
@@ -176,7 +180,10 @@ class RequestToOpenShopViewModel extends ChangeNotifier {
 
       final index = requests.indexWhere((r) => r.requestId == requestId);
       if (index != -1) {
-        requests[index] = requests[index].copyWith(status: newStatus, shopId: shopId);
+        requests[index] = requests[index].copyWith(
+          status: newStatus,
+          shopId: shopId,
+        );
       }
     } catch (e, st) {
       errorMessage = e.toString();
@@ -213,6 +220,22 @@ class RequestToOpenShopViewModel extends ChangeNotifier {
     return _repo.streamRequestsByUser(userId);
   }
 
+  /// Lấy tất cả request theo userId (trả về nhiều)
+  Future<List<RequesttoopentshopModel>> fetchRequestsByUserId(
+    String userId,
+  ) async {
+    try {
+      isLoading = true;
+      notifyListeners();
 
- 
+      final data = await _repo.getRequestsByUserId(userId);
+      return data;
+    } catch (e, st) {
+      debugPrint("Error fetchRequestsByUserId: $e\n$st");
+      return [];
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 }
