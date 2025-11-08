@@ -91,7 +91,7 @@ class AuthWrapper extends StatelessWidget {
               default:
                 // Nếu là nhân viên (staff)
                 if (source == 'staff') {
-                  return WarehouseScreen();
+                  return WarehouseScreen(shopID: shopId);
                 } else {
                   return const LoginScreen();
                 }

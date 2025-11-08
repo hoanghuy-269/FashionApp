@@ -43,6 +43,7 @@ class ShopProductViewModel extends ChangeNotifier {
         shopId: model.shopId,
         productID: model.productID,
         totalQuantity: model.totalQuantity,
+        name: model.name,
         rating: model.rating,
         sold: model.sold,
       );

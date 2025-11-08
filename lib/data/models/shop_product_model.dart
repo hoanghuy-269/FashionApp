@@ -1,6 +1,7 @@
 class ShopProductModel {
   final String shopproductID; 
-  final String shopId;               
+  final String shopId;
+  final String name;
   final String productID;     
   final int totalQuantity;                
   final int? rating;  // đánh giá                        
@@ -11,6 +12,7 @@ class ShopProductModel {
     required this.shopId,
     required this.productID,
     required this.totalQuantity,
+    required this.name,
     this.rating,
     this.sold,
   });
@@ -21,6 +23,7 @@ class ShopProductModel {
       shopId: json['shopId'] ?? '',
       productID: json['productID'] ?? '',
       totalQuantity: json['totalQuantity'] ?? 0,
+      name: json['name'] ?? '',
       rating: json['rating'],
       sold: json['sold'],
     );
@@ -32,6 +35,7 @@ class ShopProductModel {
       'shopId': shopId,
       'productID': productID,
       'totalQuantity': totalQuantity,
+      'name': name,
       'rating': rating,
       'sold': sold,
     };

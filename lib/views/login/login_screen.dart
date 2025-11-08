@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
       
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => WarehouseScreen()),
+        MaterialPageRoute(builder: (_) => WarehouseScreen(shopID: staff.shopId)),
       );
 
       _showSuccess('Đăng nhập nhân viên thành công!');

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
 import 'package:fashion_app/core/widget/vaidatedtextfielfromrequest.dart';
 import 'package:fashion_app/data/models/storestaff_model.dart';

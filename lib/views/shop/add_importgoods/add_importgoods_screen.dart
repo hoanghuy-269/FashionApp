@@ -174,6 +174,7 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
       shopproductID: '',
       shopId: shopId,
       productID: selectedProduct!.productID,
+      name: selectedProduct!.name,
       totalQuantity: 0,
       rating: 0,
       sold: 0,
