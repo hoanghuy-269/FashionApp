@@ -1,6 +1,14 @@
+
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
+import 'package:fashion_app/viewmodels/brand_viewmodel.dart';
+import 'package:fashion_app/viewmodels/category_viewmodel.dart';
+import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
 import 'package:fashion_app/viewmodels/employeerole_viewmodel.dart';
+import 'package:fashion_app/viewmodels/product_viewmodel.dart';
+import 'package:fashion_app/viewmodels/productdetail_viewmodel.dart';
 import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
+import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
+import 'package:fashion_app/viewmodels/shop_productvariant_viewmodel.dart';
 import 'package:fashion_app/viewmodels/role_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
@@ -11,7 +19,9 @@ import 'package:fashion_app/views/admin/admin_home_screen.dart';
 import 'package:fashion_app/views/admin/admin_manageShop_screen.dart';
 import 'package:fashion_app/views/admin/admin_shopAccount_screeen.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
-import 'package:fashion_app/views/shop/shop_screen.dart';
+import 'package:fashion_app/viewmodels/sizes_viewmodel.dart';
+import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
+import 'package:fashion_app/views/login/auth_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -37,6 +47,14 @@ void main() async {
         ChangeNotifierProvider(create: (_) => EmployeeRoleViewmodel()),
         ChangeNotifierProvider(create: (_) => RequestToOpenShopViewModel()),
         Provider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => BrandViewmodel()),
+        ChangeNotifierProvider(create: (_) => ColorsViewmodel()),
+        ChangeNotifierProvider(create: (_) => CategoryViewmodel()),
+        ChangeNotifierProvider(create: (_) => SizesViewmodel()),
+        ChangeNotifierProvider(create: (_) => ProductViewModel()),
+        ChangeNotifierProvider(create: (_) => ProductDetailViewModel()),
+        ChangeNotifierProvider(create: (_) => ShopProductViewModel()),
+        ChangeNotifierProvider(create: (_) => ShopProductvariantViewmodel()),
       ],
       child: const MyApp(),
     ),

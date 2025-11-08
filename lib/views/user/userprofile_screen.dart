@@ -5,6 +5,8 @@ import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
 import 'package:fashion_app/data/models/User.dart';
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
+import 'package:fashion_app/views/staff/warehouse_screen.dart';
+import 'package:fashion_app/views/user/approved_shop_dialog.dart';
 import 'package:fashion_app/views/login/change_password_screen.dart';
 import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
@@ -308,102 +310,15 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildHeader(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) =>
-                                RequestToOpenStoreScreen(uid: currentUser!.id),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    "Yêu cầu mở shop",
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              if (_isApprovedShop)
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      _navigateToShop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      "Chọn shop",
-                      style: TextStyle(fontSize: 13),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          _buildMenuItem(
-            icon: Icons.person_outline,
-            title: "Thông tin cá nhân",
-            onTap: _showProfileDialog,
-          ),
-
-          _buildMenuItem(
-            icon: Icons.credit_card,
-            title: "Phương thức thanh toán",
-          ),
-          _buildMenuItem(icon: Icons.shopping_bag, title: "Đơn hàng của tôi"),
-          _buildMenuItem(
-            icon: Icons.settings,
-            title: "Đổi mật khẩu",
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
-              );
+        title: const Text('Thông tin người dùng'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Đăng xuất',
+            onPressed: (){
+              _handleLogout();
             },
-          ),
-          _buildMenuItem(icon: Icons.people, title: "Mời bạn bè"),
-
-          const SizedBox(height: 20),
-          _buildMenuItem(
-            icon: Icons.logout,
-            title: "Đăng xuất",
-            color: Colors.red,
-            onTap: _handleLogout,
           ),
         ],
       ),

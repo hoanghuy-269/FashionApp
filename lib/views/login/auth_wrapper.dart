@@ -1,4 +1,6 @@
+import 'package:fashion_app/views/admin/admin_home_screen.dart';
 import 'package:fashion_app/views/login/staff_screen.dart';
+import 'package:fashion_app/views/staff/warehouse_screen.dart';
 import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -77,11 +79,12 @@ class AuthWrapper extends StatelessWidget {
 
             final role = data['roleId'];
             final source = data['source'];
+            final shopId = data['shopId'];
 
             // ✅ Điều hướng dựa theo role
             switch (role) {
               case 'role001': // Admin
-                return const AdminrequestshopScreen();
+                return const AdminHomeScreen();
               case 'role002': // User (Khách hàng)
                 return HomeScreen(idUser: user.uid);
               case 'role003': // Chủ shop
@@ -89,7 +92,7 @@ class AuthWrapper extends StatelessWidget {
               default:
                 // Nếu là nhân viên (staff)
                 if (source == 'staff') {
-                  return const StaffScreen();
+                  return WarehouseScreen(shopID: shopId);
                 } else {
                   return const LoginScreen();
                 }
