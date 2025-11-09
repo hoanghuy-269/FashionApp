@@ -1,7 +1,7 @@
 class ShopProductVariantModel {
   final String shopProductVariantID;
   final String colorID;
-  final String sizeID;
+  final List<String> sizeIDS;
   final int quantity;
   final double price; // giá bán
   final double costPrice; // giá vốn
@@ -11,7 +11,7 @@ class ShopProductVariantModel {
   ShopProductVariantModel({
     required this.shopProductVariantID,
     required this.colorID,
-    required this.sizeID,
+    required this.sizeIDS,
     required this.quantity,
     required this.price,
     required this.costPrice,
@@ -22,7 +22,7 @@ class ShopProductVariantModel {
     return ShopProductVariantModel(
       shopProductVariantID: id,
       colorID: json['colorID'] ?? '',
-      sizeID: json['sizeID'] ?? '',
+      sizeIDS: List<String>.from(json['sizeIDS'] ?? []),
       quantity: json['quantity'] ?? 0,
       price: (json['price'] ?? 0).toDouble(),
       costPrice: (json['costPrice'] ?? 0).toDouble(),
@@ -33,7 +33,7 @@ class ShopProductVariantModel {
     return {
       'shopProductVariantID': shopProductVariantID,
       'colorID': colorID,
-      'sizeID': sizeID,
+      'sizeIDS': sizeIDS,
       'quantity': quantity,
       'price': price,
       'costPrice': costPrice,
