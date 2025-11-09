@@ -1,12 +1,7 @@
-import 'dart:async';
-import 'dart:io';
-import 'package:fashion_app/core/utils/gallery_util.dart';
-import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
 import 'package:fashion_app/data/models/brands_model.dart';
 import 'package:fashion_app/data/models/category_model.dart';
 import 'package:fashion_app/data/models/colors_model.dart';
 import 'package:fashion_app/data/models/products_model.dart';
-import 'package:fashion_app/data/models/shop_model.dart';
 import 'package:fashion_app/data/models/shop_product_model.dart';
 import 'package:fashion_app/data/models/shop_product_variant_model.dart';
 import 'package:fashion_app/data/models/sizes_model.dart';
@@ -14,6 +9,7 @@ import 'package:fashion_app/viewmodels/brand_viewmodel.dart';
 import 'package:fashion_app/viewmodels/category_viewmodel.dart';
 import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
 import 'package:fashion_app/viewmodels/product_viewmodel.dart';
+import 'package:fashion_app/viewmodels/productdetail_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_productvariant_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
@@ -22,7 +18,6 @@ import 'package:fashion_app/views/shop/add_importgoods/buildCategoryDropdown.dar
 import 'package:fashion_app/views/shop/add_importgoods/buildColor_shop.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildProductDropdown.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildSize_shop.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -35,11 +30,11 @@ class AddImportgoodsScreen extends StatefulWidget {
 
 class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
   final descriptionController = TextEditingController();
-  final Map<String, File?> selectedImagesByColor = {};
-
+  final Map<String, String> selectedImagesByColor = {}; 
   final Map<String, TextEditingController> importPriceControllers = {};
   final Map<String, TextEditingController> salePriceControllers = {};
   final Map<String, TextEditingController> quantityControllers = {};
+  int totalQuantity = 0;
 
   BrandsModel? selectedBrand;
   CategoryModel? selectedCategory;
@@ -54,13 +49,12 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
     Future.microtask(() {
       context.read<BrandViewmodel>().fetchAllBrands();
       context.read<CategoryViewmodel>().fetchCategories();
-      context.read<ColorsViewmodel>().fetchColors();
+      context.read<ColorsViewmodel>().fetchAllColors();
     });
   }
 
   @override
   void dispose() {
-    // Giải phóng tất cả controllers
     importPriceControllers.values.forEach((c) => c.dispose());
     salePriceControllers.values.forEach((c) => c.dispose());
     quantityControllers.values.forEach((c) => c.dispose());
@@ -68,7 +62,6 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
     super.dispose();
   }
 
-  // Tạo controller cho màu nếu chưa có
   TextEditingController _getOrCreateController(
     Map<String, TextEditingController> controllers,
     String colorID,
@@ -79,164 +72,170 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
     return controllers[colorID]!;
   }
 
-  Future<void> pickImageForColor(String colorID) async {
-    final image = await showPickImageBottomSheet(context);
-    if (image != null) {
-      setState(() {
-        selectedImagesByColor[colorID] = image;
-      });
+  //  load ảnh cho từng màu
+  Future<void> _loadImagesForColors(List<ColorsModel> colors) async {
+    if (selectedProduct == null) return;
+
+    for (final color in colors) {
+     
+      if (selectedImagesByColor.containsKey(color.colorID)) continue;
+
+      final imageUrl = await context
+          .read<ProductDetailViewModel>()
+          .getImageByID(
+            productId: selectedProduct!.productID,
+            productDetailId: color.colorID, // Truyền colorID
+          );
+
+      if (imageUrl != null && imageUrl.isNotEmpty && mounted) {
+        setState(() {
+          selectedImagesByColor[color.colorID] = imageUrl;
+        });
+      }
     }
   }
 
-  Future<void> _saveProduct() async {
-    // Kiểm tra validation
-    if (selectedProduct == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Vui lòng chọn sản phẩm')));
-      return;
-    }
-    if (selectedSizes.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Vui lòng chọn kích thước')));
-      return;
-    }
-    if (selectedColors.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Vui lòng chọn màu sắc')));
-      return;
-    }
-    if (selectedBrand == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn thương hiệu')),
-      );
-      return;
-    }
-
-    // Kiểm tra từng màu có đủ thông tin không
+  // Validate input 
+  String? _validateColorInputs() {
     for (final color in selectedColors) {
       final qty = quantityControllers[color.colorID]?.text ?? '';
       final importPrice = importPriceControllers[color.colorID]?.text ?? '';
       final salePrice = salePriceControllers[color.colorID]?.text ?? '';
 
       if (qty.isEmpty || int.tryParse(qty) == null || int.parse(qty) <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Vui lòng nhập số lượng cho màu ${color.name}'),
-          ),
-        );
-        return;
+        return 'Vui lòng nhập số lượng hợp lệ cho màu ${color.name}';
       }
       if (importPrice.isEmpty || double.tryParse(importPrice) == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Vui lòng nhập giá nhập cho màu ${color.name}'),
-          ),
-        );
-        return;
+        return 'Vui lòng nhập giá nhập hợp lệ cho màu ${color.name}';
       }
       if (salePrice.isEmpty || double.tryParse(salePrice) == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Vui lòng nhập giá bán cho màu ${color.name}'),
-          ),
-        );
-        return;
+        return 'Vui lòng nhập giá bán hợp lệ cho màu ${color.name}';
       }
     }
-    if (isLoading) return;
-    setState(() {
-      isLoading = true;
-    
-    });
+    return null;
+  }
 
-    try {
-      final shopVM = context.read<ShopViewModel>();
-    var currentShop = shopVM.currentShop;
-    if (currentShop == null) {
-      final fetched = await shopVM.fetchShopForCurrentUser();
-      currentShop = fetched ?? shopVM.currentShop;
-    }
-    if (currentShop == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Không tìm thấy cửa hàng hiện tại. Vui lòng thử lại.'),
-        ),
-      );
-      return;
-    }
-    final shopId = currentShop.shopId;
-
-    // Tạo ShopProduct
-    final newShopProduct = ShopProductModel(
-      shopproductID: '',
-      shopId: shopId,
-      productID: selectedProduct!.productID,
-      name: selectedProduct!.name,
-      totalQuantity: 0,
-      rating: 0,
-      sold: 0,
-    );
-
-    final shopProductVM = context.read<ShopProductViewModel>();
-    final createdId = await shopProductVM.addShopProduct(newShopProduct);
-    if (createdId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể tạo sản phẩm cho cửa hàng.')),
-      );
-      return;
-    }
-
-    // Tạo variants cho từng màu và size
-    for (final color in selectedColors) {
-      // Upload ảnh nếu có
-      String imageUrl = '';
-      if (selectedImagesByColor[color.colorID] != null) {
-        final uploadedUrl = await GalleryUtil.uploadImageToFirebase(
-          selectedImagesByColor[color.colorID]!,
-          folderName: 'product_variants',
-        );
-        imageUrl = uploadedUrl ?? '';
-      }
-
-      // Lấy giá trị riêng cho màu này
-      final quantity = int.parse(quantityControllers[color.colorID]!.text);
-      final importPrice = double.parse(
-        importPriceControllers[color.colorID]!.text,
-      );
-      final salePrice = double.parse(salePriceControllers[color.colorID]!.text);
-
-      for (final size in selectedSizes) {
-        final variant = ShopProductVariantModel(
-          shopProductVariantID: '',
-          colorID: color.colorID,
-          sizeID: size.sizeID,
-          quantity: quantity,
-          price: salePrice,
-          costPrice: importPrice,
-          imageUrls: imageUrl,
-        );
-
-        await context.read<ShopProductvariantViewmodel>().addShopProductVariant(
-          shopProductID: createdId,
-          variantData: variant.toMap(),
-        );
-      }
-    }
-    } catch (e) {
-     print('Lỗi khi lưu sản phẩm: $e');
-     return;
-    } finally{
-      setState(() {
-        isLoading = false;
-      });
-    }
+  void _showError(String message) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Thêm sản phẩm thành công!')));
-    Navigator.pop(context);
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _saveProduct() async {
+    // Validate cơ bản
+    if (selectedProduct == null) {
+      _showError('Vui lòng chọn sản phẩm');
+      return;
+    }
+    if (selectedSizes.isEmpty) {
+      _showError('Vui lòng chọn kích thước');
+      return;
+    }
+    if (selectedColors.isEmpty) {
+      _showError('Vui lòng chọn màu sắc');
+      return;
+    }
+    if (selectedBrand == null) {
+      _showError('Vui lòng chọn thương hiệu');
+      return;
+    }
+
+    // Validate inputs cho từng màu
+    final errorMsg = _validateColorInputs();
+    if (errorMsg != null) {
+      _showError(errorMsg);
+      return;
+    }
+
+    if (isLoading) return;
+    setState(() => isLoading = true);
+
+    try {
+      // Lấy shopId
+      final shopVM = context.read<ShopViewModel>();
+      var currentShop = shopVM.currentShop;
+      if (currentShop == null) {
+        final fetched = await shopVM.fetchShopForCurrentUser();
+        currentShop = fetched ?? shopVM.currentShop;
+      }
+      if (currentShop == null) {
+        _showError('Không tìm thấy cửa hàng hiện tại');
+        return;
+      }
+      final shopId = currentShop.shopId;
+
+      // Lấy ảnh đầu tiên từ các màu đã chọn
+      final firstImage = selectedImagesByColor.values.firstWhere(
+        (url) => url.isNotEmpty,
+        orElse: () => '',
+      );
+
+      // tính tổng 
+      for (final color in selectedColors) {
+        final qty = int.parse(quantityControllers[color.colorID]!.text);
+        totalQuantity += qty;
+      }
+      // Tạo ShopProduct
+      final newShopProduct = ShopProductModel(
+        shopproductID: '',
+        shopId: shopId,
+        productID: selectedProduct!.productID,
+        name: selectedProduct!.name,
+        totalQuantity: totalQuantity,
+        imageUrls: firstImage,
+        rating: 0,
+        sold: 0,
+      );
+
+      final shopProductVM = context.read<ShopProductViewModel>();
+      final createdId = await shopProductVM.addShopProduct(newShopProduct);
+      if (createdId == null) {
+        _showError('Không thể tạo sản phẩm cho cửa hàng');
+        return;
+      }
+
+      // Tạo variants
+      for (final color in selectedColors) {
+        final imageUrl = selectedImagesByColor[color.colorID] ?? '';
+        final quantity = int.parse(quantityControllers[color.colorID]!.text);
+        final importPrice = double.parse(
+          importPriceControllers[color.colorID]!.text,
+        );
+        final salePrice = double.parse(
+          salePriceControllers[color.colorID]!.text,
+        );
+
+        for (final size in selectedSizes) {
+          final variant = ShopProductVariantModel(
+            shopProductVariantID: '',
+            colorID: color.colorID,
+            sizeIDS: [size.sizeID],
+            quantity: quantity,
+            price: salePrice,
+            costPrice: importPrice,
+            imageUrls: imageUrl,
+          );
+
+          await context
+              .read<ShopProductvariantViewmodel>()
+              .addVariant(createdId, variant.toMap());
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Thêm sản phẩm thành công!')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      print('Lỗi khi lưu sản phẩm: $e');
+      _showError('Lỗi: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
   }
 
   @override
@@ -257,7 +256,10 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Thương hiệu
-                        Text('Chọn Thương hiệu', style: TextStyle(fontSize: 16)),
+                        const Text(
+                          'Chọn Thương hiệu',
+                          style: TextStyle(fontSize: 16),
+                        ),
                         const SizedBox(height: 10),
                         Consumer<BrandViewmodel>(
                           builder: (context, brandVM, _) {
@@ -279,14 +281,19 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-          
+
                         // Sản phẩm
-                        Text('Chọn Sản phẩm', style: TextStyle(fontSize: 16)),
+                        const Text(
+                          'Chọn Sản phẩm',
+                          style: TextStyle(fontSize: 16),
+                        ),
                         const SizedBox(height: 10),
                         Consumer<ProductViewModel>(
                           builder: (context, productVM, _) {
                             if (productVM.isLoading) {
-                              return Center(child: CircularProgressIndicator());
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
                             }
                             return BuildProductDropdown(
                               brandID: selectedBrand?.brandID ?? '',
@@ -297,9 +304,12 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-          
+
                         // Danh mục
-                        const Text('Chọn Danh mục', style: TextStyle(fontSize: 16)),
+                        const Text(
+                          'Chọn Danh mục',
+                          style: TextStyle(fontSize: 16),
+                        ),
                         const SizedBox(height: 10),
                         Consumer<CategoryViewmodel>(
                           builder: (context, categoryVM, _) {
@@ -315,7 +325,7 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-          
+
                         // Size
                         const Text('Chọn Size', style: TextStyle(fontSize: 16)),
                         Consumer<BrandViewmodel>(
@@ -341,7 +351,7 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-          
+
                         // Màu sắc
                         const Text('Chọn Màu', style: TextStyle(fontSize: 16)),
                         Consumer<ColorsViewmodel>(
@@ -352,16 +362,12 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                               );
                             }
                             return BuildcolorShop(
-                              onColorsSelected: (c) {
+                              onColorsSelected: (colors) {
                                 setState(() {
-                                  selectedColors = c;
-          
-                                  // Khởi tạo controllers và image map cho màu mới
-                                  for (var color in selectedColors) {
-                                    selectedImagesByColor.putIfAbsent(
-                                      color.colorID,
-                                      () => null,
-                                    );
+                                  selectedColors = colors;
+
+                                  // Khởi tạo controllers
+                                  for (var color in colors) {
                                     _getOrCreateController(
                                       importPriceControllers,
                                       color.colorID,
@@ -375,40 +381,35 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                                       color.colorID,
                                     );
                                   }
-          
-                                  // Xóa dữ liệu của màu không còn chọn
+
+                                  // Xóa data của màu không còn chọn
                                   selectedImagesByColor.removeWhere(
-                                    (key, value) =>
-                                        !selectedColors.any(
-                                          (c) => c.colorID == key,
-                                        ),
+                                    (key, _) =>
+                                        !colors.any((c) => c.colorID == key),
                                   );
                                   importPriceControllers.removeWhere(
-                                    (key, value) =>
-                                        !selectedColors.any(
-                                          (c) => c.colorID == key,
-                                        ),
+                                    (key, _) =>
+                                        !colors.any((c) => c.colorID == key),
                                   );
                                   salePriceControllers.removeWhere(
-                                    (key, value) =>
-                                        !selectedColors.any(
-                                          (c) => c.colorID == key,
-                                        ),
+                                    (key, _) =>
+                                        !colors.any((c) => c.colorID == key),
                                   );
                                   quantityControllers.removeWhere(
-                                    (key, value) =>
-                                        !selectedColors.any(
-                                          (c) => c.colorID == key,
-                                        ),
+                                    (key, _) =>
+                                        !colors.any((c) => c.colorID == key),
                                   );
                                 });
+
+                                // Auto load ảnh
+                                _loadImagesForColors(colors);
                               },
                             );
                           },
                         ),
                         const SizedBox(height: 20),
-          
-                        // Ảnh và thông tin theo từng màu
+
+                        // Hiển thị ảnh và inputs theo màu
                         if (selectedColors.isNotEmpty)
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
@@ -416,8 +417,9 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children:
                                   selectedColors.map((color) {
-                                    final image =
+                                    final imageUrl =
                                         selectedImagesByColor[color.colorID];
+
                                     return Padding(
                                       padding: const EdgeInsets.only(
                                         right: 16,
@@ -435,78 +437,120 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                                             ),
                                           ),
                                           const SizedBox(height: 8),
-          
+
                                           // Ảnh
-                                          GestureDetector(
-                                            onTap:
-                                                () => pickImageForColor(
-                                                  color.colorID,
-                                                ),
-                                            child: Container(
-                                              width: 200,
-                                              height: 200,
-                                              decoration: BoxDecoration(
-                                                border: Border.all(
-                                                  color: Colors.grey,
-                                                ),
-                                                borderRadius: BorderRadius.circular(
-                                                  10,
-                                                ),
-                                                image:
-                                                    image != null
-                                                        ? DecorationImage(
-                                                          image: FileImage(image),
-                                                          fit: BoxFit.cover,
-                                                        )
-                                                        : null,
+                                          Container(
+                                            width: 200,
+                                            height: 200,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: Colors.grey,
                                               ),
-                                              child:
-                                                  image == null
-                                                      ? const Center(
-                                                        child: Icon(
-                                                          Icons.add_a_photo,
-                                                          size: 40,
-                                                          color: Colors.grey,
-                                                        ),
-                                                      )
-                                                      : Align(
-                                                        alignment:
-                                                            Alignment.topRight,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets.all(
-                                                                8,
-                                                              ),
-                                                          child: GestureDetector(
-                                                            onTap:
-                                                                () => setState(
-                                                                  () =>
-                                                                      selectedImagesByColor[color
-                                                                              .colorID] =
-                                                                          null,
-                                                                ),
-                                                            child:
-                                                                const CircleAvatar(
-                                                                  radius: 12,
-                                                                  backgroundColor:
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child:
+                                                imageUrl == null ||
+                                                        imageUrl.isEmpty
+                                                    ? const Center(
+                                                      child: Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Icon(
+                                                            Icons
+                                                                .image_not_supported,
+                                                            size: 40,
+                                                            color: Colors.grey,
+                                                          ),
+                                                          SizedBox(height: 8),
+                                                          Text(
+                                                            'Không có ảnh',
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.grey,
+                                                              fontSize: 12,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    )
+                                                    : ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
+                                                          ),
+                                                      child: Image.network(
+                                                        imageUrl,
+                                                        width: 200,
+                                                        height: 200,
+                                                        fit: BoxFit.cover,
+                                                        loadingBuilder: (
+                                                          context,
+                                                          child,
+                                                          loadingProgress,
+                                                        ) {
+                                                          if (loadingProgress ==
+                                                              null) {
+                                                            return child;
+                                                          }
+                                                          return Center(
+                                                            child: CircularProgressIndicator(
+                                                              value:
+                                                                  loadingProgress
+                                                                              .expectedTotalBytes !=
+                                                                          null
+                                                                      ? loadingProgress
+                                                                              .cumulativeBytesLoaded /
+                                                                          loadingProgress
+                                                                              .expectedTotalBytes!
+                                                                      : null,
+                                                            ),
+                                                          );
+                                                        },
+                                                        errorBuilder: (
+                                                          context,
+                                                          error,
+                                                          stackTrace,
+                                                        ) {
+                                                          return const Center(
+                                                            child: Column(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              children: [
+                                                                Icon(
+                                                                  Icons
+                                                                      .error_outline,
+                                                                  color:
                                                                       Colors
-                                                                          .black54,
-                                                                  child: Icon(
-                                                                    Icons.close,
+                                                                          .red,
+                                                                  size: 40,
+                                                                ),
+                                                                SizedBox(
+                                                                  height: 8,
+                                                                ),
+                                                                Text(
+                                                                  'Lỗi tải ảnh',
+                                                                  style: TextStyle(
                                                                     color:
                                                                         Colors
-                                                                            .white,
-                                                                    size: 18,
+                                                                            .red,
+                                                                    fontSize:
+                                                                        12,
                                                                   ),
                                                                 ),
-                                                          ),
-                                                        ),
+                                                              ],
+                                                            ),
+                                                          );
+                                                        },
                                                       ),
-                                            ),
+                                                    ),
                                           ),
                                           const SizedBox(height: 12),
-          
-                                          // Các ô nhập liệu riêng cho màu này
+
+                                          // Input fields
                                           SizedBox(
                                             width: 200,
                                             child: Column(
@@ -517,15 +561,17 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                                                         importPriceControllers,
                                                         color.colorID,
                                                       ),
-                                                  decoration: const InputDecoration(
-                                                    labelText: "Giá nhập",
-                                                    border: OutlineInputBorder(),
-                                                    contentPadding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 12,
-                                                          vertical: 8,
-                                                        ),
-                                                  ),
+                                                  decoration:
+                                                      const InputDecoration(
+                                                        labelText: "Giá nhập",
+                                                        border:
+                                                            OutlineInputBorder(),
+                                                        contentPadding:
+                                                            EdgeInsets.symmetric(
+                                                              horizontal: 12,
+                                                              vertical: 8,
+                                                            ),
+                                                      ),
                                                   keyboardType:
                                                       TextInputType.number,
                                                 ),
@@ -536,15 +582,17 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                                                         salePriceControllers,
                                                         color.colorID,
                                                       ),
-                                                  decoration: const InputDecoration(
-                                                    labelText: "Giá bán",
-                                                    border: OutlineInputBorder(),
-                                                    contentPadding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 12,
-                                                          vertical: 8,
-                                                        ),
-                                                  ),
+                                                  decoration:
+                                                      const InputDecoration(
+                                                        labelText: "Giá bán",
+                                                        border:
+                                                            OutlineInputBorder(),
+                                                        contentPadding:
+                                                            EdgeInsets.symmetric(
+                                                              horizontal: 12,
+                                                              vertical: 8,
+                                                            ),
+                                                      ),
                                                   keyboardType:
                                                       TextInputType.number,
                                                 ),
@@ -555,15 +603,17 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                                                         quantityControllers,
                                                         color.colorID,
                                                       ),
-                                                  decoration: const InputDecoration(
-                                                    labelText: "Số lượng",
-                                                    border: OutlineInputBorder(),
-                                                    contentPadding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 12,
-                                                          vertical: 8,
-                                                        ),
-                                                  ),
+                                                  decoration:
+                                                      const InputDecoration(
+                                                        labelText: "Số lượng",
+                                                        border:
+                                                            OutlineInputBorder(),
+                                                        contentPadding:
+                                                            EdgeInsets.symmetric(
+                                                              horizontal: 12,
+                                                              vertical: 8,
+                                                            ),
+                                                      ),
                                                   keyboardType:
                                                       TextInputType.number,
                                                 ),
@@ -576,7 +626,9 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                                   }).toList(),
                             ),
                           ),
-          
+                          const SizedBox(height: 20),
+                     
+
                         const SizedBox(height: 20),
                         _buildDescription(),
                       ],
@@ -587,14 +639,11 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
             ),
           ),
           if (isLoading)
-          Container(
-            color: Colors.black.withOpacity(0.5), // nền mờ
-            child: const Center(
-              child: CircularProgressIndicator(),
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(child: CircularProgressIndicator()),
             ),
-          ),
         ],
-       
       ),
     );
   }

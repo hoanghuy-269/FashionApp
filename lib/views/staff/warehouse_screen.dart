@@ -1,11 +1,14 @@
 import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
+import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
+import 'package:fashion_app/views/staff/shopproduct_detal_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class WarehouseScreen extends StatefulWidget {
-  final String shopID;
-  const WarehouseScreen({super.key, required this.shopID});
+  final String shopID; 
+  final String? staffID;
+  const WarehouseScreen({super.key, required this.shopID, this.staffID});
 
   @override
   State<WarehouseScreen> createState() => _WarehouseScreenState();
@@ -13,29 +16,31 @@ class WarehouseScreen extends StatefulWidget {
 
 class _WarehouseScreenState extends State<WarehouseScreen> {
   String? shopID;
+  String? staffID;
 
- @override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
+    
+    shopID = widget.shopID;
+    staffID = widget.staffID;
+   
+    Future.microtask(() async {
+      if (shopID != null) {
+        final shopProductVM = context.read<ShopProductViewModel>();
 
-  // Lấy shopID từ widget
-  shopID = widget.shopID;
-
-  Future.microtask(() async {
-    if (shopID != null) {
-      final shopProductVM = context.read<ShopProductViewModel>();
-
-      await shopProductVM.fetchShopProducts(shopID!);
-  
-    }
-  });
-}
-
-
+        await shopProductVM.fetchShopProducts(shopID!);
+      }
+      if (staffID != null) {
+        final storeStaffVM = context.read<StorestaffViewmodel>();
+        await storeStaffVM.fetchStaffById(staffID!);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-
+    final storeStaff = context.watch<StorestaffViewmodel>().currentStaff;
     return Scaffold(
       body: SafeArea(
         child: Consumer<ShopProductViewModel>(
@@ -62,8 +67,8 @@ void initState() {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Text(
-                            'Tên nhân viên',
+                           Text(
+                            storeStaff?.fullName ?? '',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -114,8 +119,12 @@ void initState() {
                     itemBuilder: (context, index) {
                       final product = shopproductVM.shopProducts[index];
                       return ListTile(
+                        leading: Image.network(product.imageUrls),
                         title: Text(product.name),
                         subtitle: Text('Số lượng: ${product.totalQuantity}'),
+                        onTap: (){
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => ShopproductDetalScreen(shopID: shopID,productDetailID: product.shopproductID,)));
+                        },
                       );
                     },
                   ),

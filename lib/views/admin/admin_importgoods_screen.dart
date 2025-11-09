@@ -15,8 +15,8 @@ import 'package:fashion_app/viewmodels/product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/productdetail_viewmodel.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildBranchDropdown.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildCategoryDropdown.dart';
-import 'package:fashion_app/views/shop/add_importgoods/buildsize.dart';
-import 'package:fashion_app/views/shop/add_importgoods/builldcolor.dart';
+import 'package:fashion_app/views/admin/buildsize.dart';
+import 'package:fashion_app/views/admin/builldcolor.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -44,7 +44,7 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
     Future.microtask(() {
       context.read<BrandViewmodel>().fetchAllBrands();
       context.read<CategoryViewmodel>().fetchCategories();
-      context.read<ColorsViewmodel>().fetchColors();
+      context.read<ColorsViewmodel>().fetchAllColors();
     });
   }
 

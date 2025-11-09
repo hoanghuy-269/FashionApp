@@ -1,100 +1,145 @@
+import 'package:fashion_app/data/repositories/color_repository.dart';
+import 'package:fashion_app/data/repositories/size_reporitory.dart';
 import 'package:flutter/material.dart';
+import 'package:fashion_app/data/models/shop_product_variant_model.dart';
 import 'package:fashion_app/data/repositories/shop_productvariant_repository.dart';
 
 class ShopProductvariantViewmodel extends ChangeNotifier {
-  final ShopProductvariantRepository _repository = ShopProductvariantRepository();
+  final _repo = ShopProductvariantRepository();
+  final _colorRepo = ColorRepository();
+  final _sizeRepo = SizeReporitory();
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
+  bool isLoading = false;
+  List<ShopProductVariantModel> variants = [];
+  
+  Map<String, Map<String, dynamic>> _colorsCache = {}; 
+  Map<String, Map<String, dynamic>> _sizesCache = {}; 
 
-  List<Map<String, dynamic>> _variants = [];
-  List<Map<String, dynamic>> get variants => _variants;
-
-  Future<void> addShopProductVariant({
-    required String shopProductID,
-    required Map<String, dynamic> variantData,
-  }) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
-
-      await _repository.addShopProductVariant(
-        shopProductID: shopProductID,
-        variantData: variantData,
-      );
-
-      await fetchVariants(shopProductID);
-    } catch (e) {
-      debugPrint(' Lỗi khi thêm biến thể: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+  String getColorName(String colorID) {
+    final name = _colorsCache[colorID]?['name'];
+    if (name == null) {
+      debugPrint('⚠️ Color not found in cache: $colorID');
     }
+    return name ?? 'Không rõ màu';
+  }
+
+  String getColorHex(String colorID) {
+    final hex = _colorsCache[colorID]?['hexCode'];
+    if (hex == null) {
+      debugPrint(' Color hex not found in cache: $colorID');
+    }
+    return hex ?? '#808080';
+  }
+
+  String getSizeName(String sizeID) {
+    final name = _sizesCache[sizeID]?['name'];
+    if (name == null) {
+      debugPrint('⚠️ Size not found in cache: $sizeID');
+    }
+    return name ?? 'Không rõ size';
   }
 
   Future<void> fetchVariants(String shopProductID) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
+    isLoading = true;
+    notifyListeners();
 
-      _variants = await _repository.getVariantsByShopProductID(shopProductID);
+    try {
+      debugPrint('🔍 Fetching variants for: $shopProductID');
+      
+      // ✅ 1. Load colors và sizes TRƯỚC
+      await _loadColorAndSizeData();
+      
+      // ✅ 2. Sau đó mới load variants
+      variants = await _repo.getVariants(shopProductID);
+      
+      debugPrint('✅ Loaded ${variants.length} variants');
+      debugPrint('✅ Colors cache: ${_colorsCache.length} items');
+      debugPrint('✅ Sizes cache: ${_sizesCache.length} items');
+      
     } catch (e) {
-      debugPrint(' Lỗi khi load biến thể: $e');
+      debugPrint('❌ Error in fetchVariants: $e');
+      variants = [];
     } finally {
-      _isLoading = false;
+      isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> updateVariant({
-    required String shopProductID,
-    required String variantID,
-    required Map<String, dynamic> updatedData,
-  }) async {
+  /// ✅ Private method để load color và size data
+  Future<void> _loadColorAndSizeData() async {
     try {
-      _isLoading = true;
-      notifyListeners();
+      debugPrint('📦 Loading colors and sizes...');
+      
+      // Load colors
+      _colorsCache = await _colorRepo.getAllColors();
+      debugPrint('✅ Loaded ${_colorsCache.length} colors');
+      
+      // Load sizes
+      _sizesCache = await _sizeRepo.getAllSizes();
+      debugPrint('✅ Loaded ${_sizesCache.length} sizes');
+      
+      // Debug: In ra một vài items để check
+      if (_colorsCache.isNotEmpty) {
+        final firstColor = _colorsCache.entries.first;
+        debugPrint('   Sample color: ${firstColor.key} = ${firstColor.value}');
+      }
+      if (_sizesCache.isNotEmpty) {
+        final firstSize = _sizesCache.entries.first;
+        debugPrint('   Sample size: ${firstSize.key} = ${firstSize.value}');
+      }
+      
+    } catch (e) {
+      debugPrint('❌ Error loading color/size data: $e');
+      _colorsCache = {};
+      _sizesCache = {};
+    }
+  }
 
-      await _repository.updateShopProductVariant(
-        shopProductID: shopProductID,
-        variantID: variantID,
-        updatedData: updatedData,
-      );
-
+  /// Thêm biến thể mới
+  Future<void> addVariant(String shopProductID, Map<String, dynamic> data) async {
+    try {
+      await _repo.addVariant(shopProductID, data);
       await fetchVariants(shopProductID);
     } catch (e) {
-      debugPrint(' Lỗi khi cập nhật biến thể: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      debugPrint('❌ Error adding variant: $e');
+      rethrow;
     }
   }
 
-  Future<void> deleteVariant({
-    required String shopProductID,
-    required String variantID,
-  }) async {
+  /// Cập nhật biến thể
+  Future<void> updateVariant(String shopProductID, String variantID, Map<String, dynamic> data) async {
     try {
-      _isLoading = true;
-      notifyListeners();
+      await _repo.updateVariant(shopProductID, variantID, data);
+      await fetchVariants(shopProductID);
+    } catch (e) {
+      debugPrint('❌ Error updating variant: $e');
+      rethrow;
+    }
+  }
 
-      await _repository.deleteShopProductVariant(
-        shopProductID: shopProductID,
-        variantID: variantID,
-      );
-
-      _variants.removeWhere((v) => v['shopProductVariantID'] == variantID);
+  /// Xóa biến thể
+  Future<void> deleteVariant(String shopProductID, String variantID) async {
+    try {
+      await _repo.deleteVariant(shopProductID, variantID);
+      variants.removeWhere((v) => v.shopProductVariantID == variantID);
       notifyListeners();
     } catch (e) {
-      debugPrint('🔥 Lỗi khi xóa biến thể: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      debugPrint('❌ Error deleting variant: $e');
+      rethrow;
     }
   }
 
-  void clearVariants() {
-    _variants = [];
+  /// Dọn sạch danh sách
+  void clear() {
+    variants.clear();
+    _colorsCache.clear();
+    _sizesCache.clear();
+    notifyListeners();
+  }
+
+  /// ✅ BONUS: Method để refresh cache (nếu admin thêm màu/size mới)
+  Future<void> refreshCache() async {
+    await _loadColorAndSizeData();
     notifyListeners();
   }
 }

@@ -44,6 +44,7 @@ class ShopProductViewModel extends ChangeNotifier {
         productID: model.productID,
         totalQuantity: model.totalQuantity,
         name: model.name,
+        imageUrls: model.imageUrls,
         rating: model.rating,
         sold: model.sold,
       );

@@ -1,78 +1,52 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fashion_app/data/models/shop_product_variant_model.dart';
 
 class ShopProductVariantSource {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final _firestore = FirebaseFirestore.instance;
 
-  Future<void> addShopProductVariant({
-    required String shopProductID,
-    required Map<String, dynamic> variantData,
-  }) async {
-    try {
-      // Lấy tham chiếu đến subcollection
-      final docRef = _firestore
-          .collection('shop_products')
-          .doc(shopProductID)
-          .collection('shop_product_variants')
-          .doc();
+  /// Thêm biến thể mới
+  Future<void> addVariant(String shopProductID, Map<String, dynamic> data) async {
+    final ref = _firestore
+        .collection('shop_products')
+        .doc(shopProductID)
+        .collection('shop_product_variants')
+        .doc();
 
-      // Gán id và lưu
-      await docRef.set(variantData..['shopProductVariantID'] = docRef.id);
-    } catch (e) {
-      print(' Lỗi khi thêm biến thể sản phẩm shop: $e');
-      rethrow;
-    }
+    data['shopProductVariantID'] = ref.id;
+    await ref.set(data);
   }
 
-  /// Lấy tất cả variant của 1 sản phẩm trong shop
-  Future<List<Map<String, dynamic>>> getVariantsByShopProductID(String shopProductID) async {
-    try {
-      final querySnapshot = await _firestore
-          .collection('shop_products')
-          .doc(shopProductID)
-          .collection('shop_product_variants')
-          .get();
+  /// Lấy danh sách biến thể của 1 sản phẩm
+  Future<List<ShopProductVariantModel>> getVariants(String shopProductID) async {
+    final snapshot = await _firestore
+        .collection('shop_products')
+        .doc(shopProductID)
+        .collection('shop_product_variants')
+        .get();
 
-      return querySnapshot.docs.map((doc) => doc.data()).toList();
-    } catch (e) {
-      print(' Lỗi khi lấy biến thể sản phẩm shop: $e');
-      rethrow;
-    }
+    return snapshot.docs
+        .map((doc) => ShopProductVariantModel.fromMap(doc.data(), doc.id))
+        .toList();
   }
 
-  /// Sửa biến thể
-  Future<void> updateShopProductVariant({
-    required String shopProductID,
-    required String variantID,
-    required Map<String, dynamic> updatedData,
-  }) async {
-    try {
-      await _firestore
-          .collection('shop_products')
-          .doc(shopProductID)
-          .collection('shop_product_variants')
-          .doc(variantID)
-          .update(updatedData);
-    } catch (e) {
-      print(' Lỗi khi cập nhật biến thể: $e');
-      rethrow;
-    }
+  /// Cập nhật biến thể
+  Future<void> updateVariant(
+      String shopProductID, String variantID, Map<String, dynamic> data) async {
+    await _firestore
+        .collection('shop_products')
+        .doc(shopProductID)
+        .collection('shop_product_variants')
+        .doc(variantID)
+        .update(data);
   }
 
   /// Xóa biến thể
-  Future<void> deleteShopProductVariant({
-    required String shopProductID,
-    required String variantID,
-  }) async {
-    try {
-      await _firestore
-          .collection('shop_products')
-          .doc(shopProductID)
-          .collection('shop_product_variants')
-          .doc(variantID)
-          .delete();
-    } catch (e) {
-      print(' Lỗi khi xóa biến thể: $e');
-      rethrow;
-    }
+  Future<void> deleteVariant(String shopProductID, String variantID) async {
+    await _firestore
+        .collection('shop_products')
+        .doc(shopProductID)
+        .collection('shop_product_variants')
+        .doc(variantID)
+        .delete();
   }
 }

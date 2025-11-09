@@ -1,46 +1,28 @@
+import 'package:fashion_app/data/models/shop_product_variant_model.dart';
 import 'package:fashion_app/data/sources/shop_productvariant_source.dart';
 
 class ShopProductvariantRepository {
   final ShopProductVariantSource _source = ShopProductVariantSource();
 
-  Future<void> addShopProductVariant({
-    required String shopProductID,
-    required Map<String, dynamic> variantData,
-  }) async {
-    await _source.addShopProductVariant(
-      shopProductID: shopProductID,
-      variantData: variantData,
-    );
+  /// Lấy danh sách biến thể theo ID sản phẩm
+  Future<List<ShopProductVariantModel>> getVariants(String shopProductID) {
+    return _source.getVariants(shopProductID);
   }
 
-  Future<List<Map<String, dynamic>>> getVariantsByShopProductID(String shopProductID) async {
-    return await _source.getVariantsByShopProductID(shopProductID);
+  /// Thêm biến thể mới
+  Future<void> addVariant(String shopProductID, Map<String, dynamic> data) {
+    return _source.addVariant(shopProductID, data);
   }
 
-  Future<void> updateShopProductVariant({
-    required String shopProductID,
-    required String variantID,
-    required Map<String, dynamic> updatedData,
-  }) async {
-    await _source.updateShopProductVariant(
-      shopProductID: shopProductID,
-      variantID: variantID,
-      updatedData: updatedData,
-    );
+  /// Cập nhật biến thể
+  Future<void> updateVariant(String shopProductID, String variantID, Map<String, dynamic> data) {
+    return _source.updateVariant(shopProductID, variantID, data);
   }
 
-  Future<void> deleteShopProductVariant({
-    required String shopProductID,
-    required String variantID,
-  }) async {
-    try {
-      await _source.deleteShopProductVariant(
-        shopProductID: shopProductID,
-        variantID: variantID,
-      );
-    } catch (e) {
-      print(' Lỗi khi xóa biến thể sản phẩm shop: $e');
-      rethrow;
-    }
+  /// Xóa biến thể
+  Future<void> deleteVariant(String shopProductID, String variantID) {
+    return _source.deleteVariant(shopProductID, variantID);
   }
+
+  
 }

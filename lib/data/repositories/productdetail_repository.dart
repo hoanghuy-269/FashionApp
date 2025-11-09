@@ -15,5 +15,14 @@ class ProductDetailRepository {
   Future<void> deleteProductDetail(String productId, String productDetailId) async {
     await repository.deleteProductDetail(productId, productDetailId);
   }
+  Future<String?> getImageByID({
+    required String productId,
+    required String colorID,
+  }) async {
+    return await repository.getImageByColorID(
+      productId: productId,
+      colorID: colorID,
+    );
+  }
 
 }

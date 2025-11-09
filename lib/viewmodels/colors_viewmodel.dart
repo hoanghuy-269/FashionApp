@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fashion_app/data/models/colors_model.dart';
-import 'package:fashion_app/data/repositories/color_repositories.dart';
+import 'package:fashion_app/data/repositories/color_repository.dart';
 
 class ColorsViewmodel extends ChangeNotifier {
-  final ColorRepositories _repository = ColorRepositories();
+  final ColorRepository _repository = ColorRepository();
 
   List<ColorsModel> _colors = [];
   bool _isLoading = false;
@@ -11,18 +11,25 @@ class ColorsViewmodel extends ChangeNotifier {
   List<ColorsModel> get colors => _colors;
   bool get isLoading => _isLoading;
 
-  Future<void> fetchColors() async {
+  Future<void> fetchAllColors() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      _colors = await _repository.getAllColors();
+      final colorsMap = await _repository.getAllColors();
+      _colors = colorsMap.entries.map((entry) {
+        return ColorsModel(
+          colorID: entry.key,
+          name: entry.value['name'],
+          hexCode: entry.value['hexCode'],
+        );
+      }).toList();
     } catch (e) {
-      debugPrint('Lỗi khi load màu: $e');
+      debugPrint('Lỗi khi lấy màu: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<void> addColor(String name, String hexCode) async {
