@@ -16,7 +16,7 @@ class BrandsModel {
       logoUrl: json['logoUrl'] ?? '',
     );
   }
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toMap() {
     return {
       'brandID': brandID,
       'name': name,

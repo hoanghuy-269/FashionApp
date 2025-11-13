@@ -32,17 +32,25 @@ class _AdminDiscountScreenState extends State<AdminDiscountScreen> {
     final formKey = GlobalKey<FormState>();
     final codeCtl = TextEditingController(text: isEdit ? discount?.maVoucher : "");
     final nameCtl = TextEditingController(text: isEdit ? discount?.tenVoucher : "");
-    final amountCtl = TextEditingController(text: isEdit ? discount?.soTien : "");
+    final phanTramGiamGiaCtl = TextEditingController(text: isEdit ? discount?.phanTramGiamGia?.toString() : "");
     final soLuongCtl = TextEditingController(text: isEdit ? discount?.soLuong?.toString() : "");
 
-    // Ngày bắt đầu mặc định là ngày hiện tại
+    // Ngày bắt đầu mặc định là ngày hiện tại (set về 00:00)
     DateTime startDate = isEdit
         ? discount!.ngayBatDau.toDate()
         : DateTime.now();
+    startDate = DateTime(startDate.year, startDate.month, startDate.day, 0, 0);
+
     DateTime? endDate = isEdit
         ? discount?.ngayKetThuc.toDate()
         : null;
+    if (endDate != null) {
+      endDate = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
+    }
 
+    String fmt(DateTime d) =>
+        '${d.day.toString().padLeft(2,'0')}/${d.month.toString().padLeft(2,'0')}/${d.year} ${d.hour.toString().padLeft(2,'0')}:${d.minute.toString().padLeft(2,'0')}';
+    
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -70,10 +78,19 @@ class _AdminDiscountScreenState extends State<AdminDiscountScreen> {
                   ),
                   const SizedBox(height: 5),
                   TextFormField(
-                    controller: amountCtl,
+                    controller: phanTramGiamGiaCtl,
                     decoration: const InputDecoration(
-                        labelText: 'Số tiền', prefixIcon: Icon(Icons.sell_outlined)),
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.%đĐ\s]'))],
+                        labelText: 'Giảm giá (%)', prefixIcon: Icon(Icons.percent_outlined)),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (v != null && v.trim().isNotEmpty) {
+                        final value = double.tryParse(v.trim());
+                        if (value == null || value < 0 || value > 100) {
+                          return 'Vui lòng nhập phần trăm hợp lệ (0-100)';
+                        }
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 5),
                   TextFormField(
@@ -83,22 +100,20 @@ class _AdminDiscountScreenState extends State<AdminDiscountScreen> {
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 10),
-                  // Ngày bắt đầu - tự động lấy ngày hiện tại
+                  // Ngày bắt đầu - tự động lấy ngày hiện tại (hiển thị kèm giờ 00:00)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.today_outlined, color: Colors.blue),
-                    title: Text(
-                      'Ngày bắt đầu: ${startDate.day}/${startDate.month}/${startDate.year}',
-                    ),
-                    subtitle: const Text('(Tự động lấy ngày hiện tại)'),
+                    title: Text('Ngày bắt đầu: ${fmt(startDate)}'),
+                    subtitle: const Text('(Tự động lấy ngày hiện tại, lúc 00:00)'),
                   ),
-                  // Ngày kết thúc - chọn ngày
+                  // Ngày kết thúc - chọn ngày (mặc định sẽ lưu lúc 23:59:59 của ngày được chọn)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.event_outlined, color: Colors.blue),
                     title: Text(
                       endDate != null
-                          ? 'Ngày kết thúc: ${endDate?.day}/${endDate?.month}/${endDate?.year}'
+                          ? 'Ngày kết thúc: ${fmt(endDate!)}'
                           : 'Chọn ngày kết thúc',
                       style: TextStyle(
                         color: endDate != null ? Colors.black : Colors.grey[600],
@@ -112,7 +127,8 @@ class _AdminDiscountScreenState extends State<AdminDiscountScreen> {
                         lastDate: DateTime(2100),
                       );
                       if (picked != null) {
-                        setState(() => endDate = picked);
+                        // Thiết lập giờ kết thúc là 23:59:59 của ngày được chọn (hết ngày)
+                        setState(() => endDate = DateTime(picked.year, picked.month, picked.day, 23, 59, 59));
                       }
                     },
                   ),
@@ -129,7 +145,6 @@ class _AdminDiscountScreenState extends State<AdminDiscountScreen> {
                   voucherId: isEdit ? discount!.voucherId : 'new_id',
                   maVoucher: codeCtl.text.trim(),
                   tenVoucher: nameCtl.text.trim(),
-                  soTien: amountCtl.text.trim(),
                   soLuong: int.tryParse(soLuongCtl.text.trim()),
                   daSuDung: 0,
                   ngayBatDau: Timestamp.fromDate(startDate),
@@ -138,6 +153,7 @@ class _AdminDiscountScreenState extends State<AdminDiscountScreen> {
                       : Timestamp.fromDate(DateTime.now().add(const Duration(days: 30))),
                   trangThaiVoucher: 'Đang hoạt động',
                   trangThaiId: '1',
+                  phanTramGiamGia: double.tryParse(phanTramGiamGiaCtl.text.trim()),
                 );
                 if (isEdit) {
                   await _vm.update(discount!.voucherId, v);
@@ -240,7 +256,7 @@ class _AdminDiscountScreenState extends State<AdminDiscountScreen> {
                               isTablet: isTablet,
                               code: v.maVoucher,
                               name: v.tenVoucher,
-                              amount: v.soTien ?? '',
+                              amount: '${v.phanTramGiamGia}% Giảm giá',
                               isUsed: v.daSuDung == 1,
                               onEdit: () => _openDiscountDialog(index: i, discount: v),
                               onDelete: () => _confirmDelete(v),
@@ -254,7 +270,6 @@ class _AdminDiscountScreenState extends State<AdminDiscountScreen> {
     );
   }
 }
-
 class DiscountCard extends StatelessWidget {
   final bool isTablet;
   final String code;
@@ -335,8 +350,7 @@ class DiscountCard extends StatelessWidget {
                   ),
                   IconButton(
                     tooltip: 'Xóa',
-                    icon:
-                        Icon(Icons.delete_outline, color: Colors.red[700], size: isTablet ? 22 : 20),
+                    icon: Icon(Icons.delete_outline, color: Colors.red[700], size: isTablet ? 22 : 20),
                     onPressed: onDelete,
                   ),
                 ],

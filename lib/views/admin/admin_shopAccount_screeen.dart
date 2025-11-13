@@ -275,7 +275,7 @@ class _AdminShopaccountScreenState extends State<AdminShopaccountScreen> {
 
               const SizedBox(height: 10),
 
-              // 📋 Danh sách người dùng
+              //  Danh sách người dùng
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: vm.usersStream(),
@@ -406,7 +406,7 @@ class _AdminShopaccountScreenState extends State<AdminShopaccountScreen> {
     );
   }
 
-  /// 🔹 Dialog xem danh sách tài khoản bị khóa (rút gọn version)
+  ///  Dialog xem danh sách tài khoản bị khóa (rút gọn version)
   Future<void> _showLockedAccounts(AuthViewModel vm) async {
     await _dismissKeyboardAndWait();
     if (!mounted) return;
