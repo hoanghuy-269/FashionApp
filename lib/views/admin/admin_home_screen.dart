@@ -316,6 +316,22 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                                 );
                               },
                             ),
+                             SizedBox(height: isTablet ? 16 : 12),
+                            _buildGridItemFullWidth(
+                              Icons.local_offer_rounded,
+                              'Quản lí  duyệt Shop',
+                              Colors.pinkAccent,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminrequestshopScreen(),
+                                  ),
+                                );
+                              },
+                            ),
                           ],
                         ),
               ),

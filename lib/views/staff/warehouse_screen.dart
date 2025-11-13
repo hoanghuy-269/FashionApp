@@ -1,12 +1,14 @@
+import 'package:fashion_app/data/models/product_request_model.dart';
+import 'package:fashion_app/viewmodels/shop_product_request_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
-import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
+import 'package:fashion_app/data/models/shop_product_model.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/views/staff/shopproduct_detal_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class WarehouseScreen extends StatefulWidget {
-  final String shopID; 
+  final String shopID;
   final String? staffID;
   const WarehouseScreen({super.key, required this.shopID, this.staffID});
 
@@ -17,18 +19,19 @@ class WarehouseScreen extends StatefulWidget {
 class _WarehouseScreenState extends State<WarehouseScreen> {
   String? shopID;
   String? staffID;
+  final TextEditingController quantityController = TextEditingController();
+  final TextEditingController noteController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    
+
     shopID = widget.shopID;
     staffID = widget.staffID;
-   
+
     Future.microtask(() async {
       if (shopID != null) {
         final shopProductVM = context.read<ShopProductViewModel>();
-
         await shopProductVM.fetchShopProducts(shopID!);
       }
       if (staffID != null) {
@@ -38,19 +41,67 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
     });
   }
 
+  // Hàm gửi yêu cầu nhập hàng
+  Future<void> _sendRestockRequest(BuildContext context, dynamic product) async {
+    final requestVM = context.read<ShopProductRequestViewmodel>();
+    
+    final request = ProductRequestModel(
+      productRequestID: '', 
+      shopProductID: product.shopproductID,
+      shopID: shopID!,
+      userID: staffID ?? '', 
+      quantity: int.tryParse(quantityController.text) ?? 0,
+      status: 'pending', 
+      note: noteController.text,
+      createdAt: DateTime.now(),
+    );
+
+    // Gửi request
+    final requestID = await requestVM.addProductRequest(request);
+
+    if (requestID != null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã gửi yêu cầu nhập hàng thành công!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gửi yêu cầu thất bại!'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final storeStaff = context.watch<StorestaffViewmodel>().currentStaff;
     return Scaffold(
       body: SafeArea(
-        child: Consumer<ShopProductViewModel>(
-          builder: (context, shopproductVM, _) {
-            if (shopproductVM.isLoading) {
+        child: StreamBuilder<List<ShopProductModel>>(
+          stream: context.read<ShopProductViewModel>().getShopProductsByShopStream(shopID!),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(child: Text('Lỗi: ${snapshot.error}'));
+            }
+
+            if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
-            if (shopproductVM.shopProducts.isEmpty) {
+
+            final products = snapshot.data ?? [];
+
+            if (products.isEmpty) {
               return const Center(child: Text('Không có sản phẩm trong kho'));
             }
+
             return Column(
               children: [
                 Padding(
@@ -67,7 +118,7 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                           Text(
+                          Text(
                             storeStaff?.fullName ?? '',
                             style: TextStyle(
                               fontSize: 20,
@@ -103,7 +154,7 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      "Tổng số đơn trong kho: ${shopproductVM.shopProducts.length}",
+                      "Tổng số đơn trong kho: ${products.length}",
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -115,16 +166,92 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
                 // Danh sách sản phẩm
                 Expanded(
                   child: ListView.builder(
-                    itemCount: shopproductVM.shopProducts.length,
+                    itemCount: products.length,
                     itemBuilder: (context, index) {
-                      final product = shopproductVM.shopProducts[index];
-                      return ListTile(
-                        leading: Image.network(product.imageUrls),
-                        title: Text(product.name),
-                        subtitle: Text('Số lượng: ${product.totalQuantity}'),
-                        onTap: (){
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => ShopproductDetalScreen(shopID: shopID,productDetailID: product.shopproductID,)));
-                        },
+                      final product = products[index];
+                      final isLowStock = product.totalQuantity <= 5;
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isLowStock ? Colors.red.shade50 : null,
+                          border: const Border(
+                            bottom: BorderSide(color: Colors.grey, width: 0.2),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                product.imageUrls,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ShopproductDetalScreen(
+                                        shopID: shopID,
+                                        productDetailID: product.shopproductID,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      product.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Số lượng: ${product.totalQuantity}',
+                                          style: TextStyle(
+                                            color: isLowStock ? Colors.red : Colors.grey,
+                                            fontWeight: isLowStock ? FontWeight.bold : FontWeight.normal,
+                                          ),
+                                        ),
+                                        if (isLowStock) ...[
+                                          const SizedBox(width: 8),
+                                          const Icon(
+                                            Icons.warning,
+                                            color: Colors.red,
+                                            size: 16,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                Icons.send,
+                                color: isLowStock ? Colors.red : Colors.blue,
+                              ),
+                              onPressed: () {
+                                _showRestockRequestDialog(context, product);
+                              }
+                            ),
+                          ],
+                        ),
                       );
                     },
                   ),
@@ -134,6 +261,52 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
           },
         ),
       ),
+    );
+  }
+  Future<void> _showRestockRequestDialog(BuildContext context, dynamic product) async {
+    quantityController.clear();
+    noteController.clear();
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Yêu cầu nhập hàng'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: quantityController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Số lượng cần nhập',
+                ),
+              ),
+              TextField(
+                controller: noteController,
+                decoration: const InputDecoration(
+                  labelText: 'Ghi chú (tùy chọn)',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await _sendRestockRequest(context, product);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Gửi yêu cầu'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

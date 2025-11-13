@@ -7,49 +7,56 @@ import 'package:provider/provider.dart';
 
 class Buildsize extends StatefulWidget {
   final void Function(SizesModel size, bool selected)? onSizeToggled;
+  final CategoryModel? selectedCategory;
 
-  const Buildsize({super.key, this.onSizeToggled});
+  const Buildsize({super.key, this.onSizeToggled, this.selectedCategory});
 
   @override
   State<Buildsize> createState() => _BuildsizeState();
 }
 
 class _BuildsizeState extends State<Buildsize> {
-  CategoryModel? selectedCategory;
   final List<SizesModel> _localSelected = [];
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (widget.selectedCategory == null) {
+      return const SizedBox.shrink();
+    }
+
     return Consumer<SizesViewmodel>(
       builder: (context, sizeVM, child) {
-        final sizes = sizeVM.sizesList;
+        final allSizes = sizeVM.sizesList;
+        final filteredSizes = allSizes
+            .where((size) => size.categoryID == widget.selectedCategory!.categoryID)
+            .toList();
 
         if (sizeVM.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
-        // if (colors.isEmpty) {
-        //   return const Text("Chưa có màu nào, hãy thêm mới!");
-        // }
 
         return Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
-            ...sizes.map((size) {
+            ...filteredSizes.map((size) {
               final isSelected = _localSelected.any((s) => s.sizeID == size.sizeID);
               return GestureDetector(
                 onTap: () {
                   setState(() {
                     if (isSelected) {
-                      _localSelected.removeWhere((s) => s.sizeID == size.sizeID);
+                      _localSelected.removeWhere(
+                          (s) => s.sizeID == size.sizeID);
                     } else {
                       _localSelected.add(size);
                     }
                   });
-
-                  if (widget.onSizeToggled != null) {
-                    widget.onSizeToggled!(size, !isSelected);
-                  }
+                  widget.onSizeToggled?.call(size, !isSelected);
                 },
                 child: Container(
                   width: 40,
@@ -75,7 +82,6 @@ class _BuildsizeState extends State<Buildsize> {
                 ),
               );
             }),
-            // nut them moi
             GestureDetector(
               onTap: () async {
                 final sizeName = await showDialog<String>(
@@ -83,15 +89,46 @@ class _BuildsizeState extends State<Buildsize> {
                   builder: (_) => const AddsizeDialog(),
                 );
                 if (sizeName != null && sizeName.isNotEmpty) {
-                  // use the SizeViewModel provided by the Consumer above
+                  // Kiểm tra size đã tồn tại chưa
+                  final isExists = await sizeVM.isSizeNameExists(
+                    sizeName,
+                    widget.selectedCategory!.categoryID,
+                  );
+
+                  if (isExists) {
+                    // Hiển thị thông báo nếu size đã tồn tại
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Size "$sizeName" đã tồn tại trong danh mục này!'),
+                          backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                    return;
+                  }
+
+                  // Thêm size mới nếu chưa tồn tại
                   final sizeID = await sizeVM.generateSizeId();
                   final newSize = SizesModel(
                     sizeID: sizeID,
-                    categoryID: selectedCategory?.categoryID ?? "",
+                    categoryID: widget.selectedCategory!.categoryID,
                     name: sizeName,
                   );
 
                   await sizeVM.addSize(newSize);
+
+                  // Hiển thị thông báo thành công
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Đã thêm size "$sizeName" thành công!'),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
                 }
               },
               child: Container(

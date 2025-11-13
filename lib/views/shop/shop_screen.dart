@@ -1,5 +1,5 @@
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
-import 'package:fashion_app/views/shop/importgoods_creen.dart';
+import 'package:fashion_app/views/shop/importgoods_screen.dart';
 import 'package:fashion_app/views/shop/shop_personnal_screen.dart';
 import 'package:fashion_app/views/shop/shop_profile_screen.dart';
 import 'package:fashion_app/views/shop/storerevenue_detail_screen.dart';
