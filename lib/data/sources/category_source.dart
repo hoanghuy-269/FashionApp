@@ -4,13 +4,19 @@ import 'package:fashion_app/data/models/category_model.dart';
 class CategorySource {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
+
   // Lấy hết
+
+
+  // lay tat ca category
+
   Future<List<CategoryModel>> getAllCategories() async {
     final query = await firestore.collection('categories').get();
     return query.docs
         .map((doc) => CategoryModel.fromFirestore(doc.data(), doc.id))
         .toList();
   }
+
 
   // ✅ Thêm
   Future<void> addCategory(CategoryModel category) async {
@@ -27,3 +33,6 @@ class CategorySource {
     await firestore.collection('categories').doc(id).delete();
   }
 }
+
+}
+

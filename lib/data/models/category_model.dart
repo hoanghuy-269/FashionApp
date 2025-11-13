@@ -18,11 +18,15 @@ class CategoryModel {
     );
   }
 
+
   get id => null;
 
   // Dùng để thêm & cập nhật Firestore (KHÔNG cần lưu categoryID trên Firestore)
+
+
   Map<String, dynamic> toMap() {
     return {
+      'categoryID': categoryID,
       'categoryName': categoryName,
       'logoUrl': logoUrl,
     };

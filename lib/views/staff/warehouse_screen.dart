@@ -1,0 +1,139 @@
+import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
+import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
+import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
+import 'package:fashion_app/views/staff/shopproduct_detal_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+class WarehouseScreen extends StatefulWidget {
+  final String shopID; 
+  final String? staffID;
+  const WarehouseScreen({super.key, required this.shopID, this.staffID});
+
+  @override
+  State<WarehouseScreen> createState() => _WarehouseScreenState();
+}
+
+class _WarehouseScreenState extends State<WarehouseScreen> {
+  String? shopID;
+  String? staffID;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    shopID = widget.shopID;
+    staffID = widget.staffID;
+   
+    Future.microtask(() async {
+      if (shopID != null) {
+        final shopProductVM = context.read<ShopProductViewModel>();
+
+        await shopProductVM.fetchShopProducts(shopID!);
+      }
+      if (staffID != null) {
+        final storeStaffVM = context.read<StorestaffViewmodel>();
+        await storeStaffVM.fetchStaffById(staffID!);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final storeStaff = context.watch<StorestaffViewmodel>().currentStaff;
+    return Scaffold(
+      body: SafeArea(
+        child: Consumer<ShopProductViewModel>(
+          builder: (context, shopproductVM, _) {
+            if (shopproductVM.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (shopproductVM.shopProducts.isEmpty) {
+              return const Center(child: Text('Không có sản phẩm trong kho'));
+            }
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundImage: AssetImage(
+                              'assets/images/logo_person.png',
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                           Text(
+                            storeStaff?.fullName ?? '',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.notifications),
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Tìm kiếm',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Tổng số đơn
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Tổng số đơn trong kho: ${shopproductVM.shopProducts.length}",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Danh sách sản phẩm
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: shopproductVM.shopProducts.length,
+                    itemBuilder: (context, index) {
+                      final product = shopproductVM.shopProducts[index];
+                      return ListTile(
+                        leading: Image.network(product.imageUrls),
+                        title: Text(product.name),
+                        subtitle: Text('Số lượng: ${product.totalQuantity}'),
+                        onTap: (){
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => ShopproductDetalScreen(shopID: shopID,productDetailID: product.shopproductID,)));
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}

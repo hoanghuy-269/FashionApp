@@ -1,7 +1,13 @@
+
 import 'package:fashion_app/views/admin/AdminBranch.dart';
 import 'package:fashion_app/views/admin/Admincategories.dart';
+
+import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
+import 'package:fashion_app/views/admin/admin_importgoods_screen.dart';
+
 import 'package:fashion_app/views/admin/admin_manageShop_screen.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
+import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'admin_discount_screen.dart';
 import 'admin_shopAccount_screeen.dart';
@@ -13,7 +19,42 @@ class AdminHomeScreen extends StatefulWidget {
   State<AdminHomeScreen> createState() => _AdminHomeScreenState();
 }
 
+
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
+
+  Future<void> _handleLogout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận'),
+        content: const Text('Bạn có chắc muốn đăng xuất không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Đăng xuất'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final authVM = AuthViewModel();
+      await authVM.logout();
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -81,6 +122,16 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         );
                       },
                     ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.logout,
+                        size: isTablet ? 30 : 26,
+                      ),
+                      color: Colors.blueGrey[700],
+                      onPressed: () {
+                        _handleLogout();
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -104,6 +155,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       Colors.deepPurple,
                       const AdminManageshopScreen(),
                     ),
+
                     SizedBox(height: isTablet ? 18 : 14),
                     _buildGridItemFullWidth(
                       Icons.local_offer_rounded,
@@ -127,6 +179,193 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     ),
                     const SizedBox(height: 20),
                   ],
+
+                  ),
+                ],
+              ),
+
+              SizedBox(
+                height:
+                    isDesktop
+                        ? 32
+                        : isTablet
+                        ? 24
+                        : 20,
+              ),
+
+              // --- 3 ô chính, mỗi ô một dòng ---
+              Expanded(
+                child:
+                    isDesktop
+                        ? GridView.count(
+                          crossAxisCount: 2,
+                          childAspectRatio: 2.5,
+                          crossAxisSpacing: 24,
+                          mainAxisSpacing: 24,
+                          children: [
+                            _buildGridItemFullWidth(
+                              Icons.people_alt_rounded,
+                              'Khách hàng',
+                              Colors.teal,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminShopaccountScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildGridItemFullWidth(
+                              Icons.manage_accounts_rounded,
+                              'Quản lý shop',
+                              Colors.deepPurple,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminManageshopScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildGridItemFullWidth(
+                              Icons.local_offer_rounded,
+                              'Mã giảm giá',
+                              Colors.pinkAccent,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminDiscountScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                    
+                          ],
+                        )
+                        : ListView(
+                          children: [
+                            _buildGridItemFullWidth(
+                              Icons.people_alt_rounded,
+                              'Khách hàng',
+                              Colors.teal,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminShopaccountScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(height: isTablet ? 16 : 12),
+                            _buildGridItemFullWidth(
+                              Icons.manage_accounts_rounded,
+                              'Quản lý shop',
+                              Colors.deepPurple,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminManageshopScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(height: isTablet ? 16 : 12),
+                            _buildGridItemFullWidth(
+                              Icons.local_offer_rounded,
+                              'Mã giảm giá',
+                              Colors.pinkAccent,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminDiscountScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(height: isTablet ? 16 : 12),
+                            _buildGridItemFullWidth(
+                              Icons.local_offer_rounded,
+                              'Quản lí sản phẩm',
+                              Colors.pinkAccent,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AdminImportgoodsScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatButton(
+    String title,
+    String value,
+    bool isTablet,
+    VoidCallback toggle,
+  ) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: isTablet ? 20 : 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: isTablet ? 16 : 14,
+                  color: Colors.black54,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: isTablet ? 20 : 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+
                 ),
               )
             ],

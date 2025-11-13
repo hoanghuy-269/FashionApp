@@ -1,11 +1,16 @@
+
 import 'dart:io';
+
 
 import 'package:fashion_app/data/repositories/category_reporitory.dart';
 import 'package:fashion_app/data/models/category_model.dart';
 import 'package:flutter/foundation.dart';
 
 class CategoryViewmodel extends ChangeNotifier {
+
   final CategoryReporitory _category = CategoryReporitory();
+
+ final CategoryReporitory _category = CategoryReporitory();
 
   List<CategoryModel> categoryList = [];
   bool isLoading = false;
@@ -13,6 +18,7 @@ class CategoryViewmodel extends ChangeNotifier {
   Future<void> fetchCategories() async {
     isLoading = true;
     notifyListeners();
+
     try {
       categoryList = await _category.getAllCategories();
     } catch (e) {
@@ -42,9 +48,18 @@ class CategoryViewmodel extends ChangeNotifier {
     await _category.updateCategory(model.id!, model);
     await fetchCategories();
 
+
+    try {
+      categoryList = await _category.getAllCategories();
+    } catch (e) {
+      print('Lỗi khi load danh mục: $e');
+    }
+
+
     isLoading = false;
     notifyListeners();
   }
+
 
   // ✅ Xóa
   Future<void> deleteCategory(String id) async {
@@ -62,3 +77,6 @@ class CategoryViewmodel extends ChangeNotifier {
 
   addCategoryWithImage(String trim, File? pickedImg) {}
 }
+
+}
+

@@ -1,9 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fashion_app/data/models/brands_model.dart';
 import 'package:fashion_app/viewmodels/role_viewmodel.dart';
+import 'package:fashion_app/views/admin/admin_home_screen.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/login/staff_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
+import 'package:fashion_app/views/staff/warehouse_screen.dart';
+import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:flutter/material.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -99,7 +100,12 @@ class _LoginScreenState extends State<LoginScreen> {
       _showError(_authViewModel.message ?? 'Đăng nhập thất bại');
       return;
     }
-
+    final user = _authViewModel.currentUser;
+    if (user != null && user.status == false) {
+      _showError('Tài khoản của bạn đã bị khóa hoặc chưa được kích hoạt!');
+      print('🔒 User status: ${user.status}');
+      return; // Dừng lại, không chuyển trang
+    }
     await _storage.write(key: 'pwd_$email', value: password);
     final existingEmails = await _storage.read(key: 'emails');
     List<String> emailList = existingEmails?.split(',') ?? [];
@@ -117,17 +123,16 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       print('✅ Nhân viên: ${staff.fullName}, Shop: ${staff.shopId}');
-
+      
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const StaffScreen()),
+        MaterialPageRoute(builder: (_) => WarehouseScreen(shopID: staff.shopId)),
       );
 
       _showSuccess('Đăng nhập nhân viên thành công!');
       return;
     }
 
-    final user = _authViewModel.currentUser;
     if (user == null) {
       _showError('Không tìm thấy thông tin người dùng!');
       return;
@@ -145,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
       case 'role002':
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => UserprofileScreen(idUser: user.id)),
+          MaterialPageRoute(builder: (_) => HomeScreen(idUser: user.id)),
         );
         break;
       case 'role003':
@@ -157,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
       case 'role001':
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const AdminrequestshopScreen()),
+          MaterialPageRoute(builder: (_) => const AdminHomeScreen()),
         );
         break;
       default:

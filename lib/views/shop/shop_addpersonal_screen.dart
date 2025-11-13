@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
 import 'package:fashion_app/core/widget/vaidatedtextfielfromrequest.dart';
 import 'package:fashion_app/data/models/storestaff_model.dart';
@@ -163,15 +162,15 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     if (shopId == null) {
       throw Exception('Không tìm thấy cửa hàng hiện tại.');
     }
-      String generateRequestId() {
-      final now = DateTime.now();
-      final formattedDate = "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}";
-      final timestamp = now.millisecondsSinceEpoch.toString().substring(10);
-      return 'staff_${formattedDate}_$timestamp';
-      }
+      // String generateRequestId() {
+      // final now = DateTime.now();
+      // final formattedDate = "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}";
+      // final timestamp = now.millisecondsSinceEpoch.toString().substring(10);
+      // return 'staff_${formattedDate}_$timestamp';
+      // }
 
     final model = StorestaffModel(
-      employeeId: generateRequestId(),
+      employeeId: '',
       shopId: shopId,
       fullName: nameController.text.trim(),
       email: emailController.text.trim(),

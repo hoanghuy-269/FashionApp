@@ -1,13 +1,22 @@
 class SizesModel {
   final String sizeID;
+  final String categoryID;
   final String name;
 
-  SizesModel({required this.sizeID, required this.name});
-  
+  SizesModel({required this.sizeID, required this.categoryID, required this.name});
+
   factory SizesModel.fromFirestore(Map<String, dynamic> json, String sizeID) {
-    return SizesModel(sizeID: sizeID, name: json['name'] ?? '');
+    return SizesModel(
+      sizeID: sizeID,
+      categoryID: json['categoryID'] ?? '',
+      name: json['name'] ?? '',
+    );
   }
-  Map<String, dynamic> toFirestore() {
-    return {'name': name};
+  Map<String, dynamic> toMap() {
+    return {
+      'sizeID': sizeID,
+      'categoryID': categoryID,
+      'name': name,
+    };
   }
 }

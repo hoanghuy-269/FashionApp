@@ -49,9 +49,15 @@ dependencies:
   flutter_facebook_auth: ^7.1.2
   flutter_secure_storage: ^9.0.0
 
+  #  color
+  flutter_colorpicker: ^1.1.0 
+
+  mailer: ^6.3.0
+  
   # camera
   camera: ^0.11.2+1
   path_provider: ^2.1.5
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

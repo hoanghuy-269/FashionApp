@@ -19,6 +19,7 @@ class StorestaffViewmodel extends ChangeNotifier {
   bool isLoading = false;
   bool isFetching = false;
   String? _lastFetchedShopId;
+  bool _isLoading = false;
 
   Future<void> addNewStaff(StorestaffModel staff) async {
     try {
@@ -278,4 +279,59 @@ class StorestaffViewmodel extends ChangeNotifier {
   Future<bool> isStaffEmailExists(String email, String shopId) async {
     return await _repo.isStaffEmailExists(email, shopId);
   }
+
+  // Trong StorestaffViewmodel
+
+ Future<void> loadCurrentStaffFromAuth() async {
+  try {
+    _isLoading = true;
+    notifyListeners();
+
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user == null) {
+      print("Không có user đang đăng nhập");
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    print("User ID: ${user.uid}");
+
+    // ← PHẢI TÌM STAFF TRONG TẤT CẢ CÁC SHOP
+    final shopsSnapshot = await FirebaseFirestore.instance
+        .collection('shops')
+        .get();
+
+    StorestaffModel? foundStaff;
+
+    // Duyệt qua từng shop để tìm staff
+    for (var shopDoc in shopsSnapshot.docs) {
+      final staffDoc = await shopDoc.reference
+          .collection('staff')
+          .where('employeeId', isEqualTo: user.uid)
+          .get();
+
+      if (staffDoc.docs.isNotEmpty) {
+        foundStaff = StorestaffModel.fromMap(staffDoc.docs.first.data());
+        print("Tìm thấy staff: ${foundStaff.fullName}, Shop: ${foundStaff.shopId}");
+        break;
+      }
+    }
+
+    if (foundStaff != null) {
+      currentStaff = foundStaff; // ← Dùng currentStaff, không phải _currentStaff
+      print("Loaded staff: ${currentStaff?.fullName}, Shop: ${currentStaff?.shopId}");
+    } else {
+      print("Không tìm thấy staff với uid: ${user.uid}");
+    } 
+
+    _isLoading = false;
+    notifyListeners();
+  } catch (e) {
+    print("Error loading staff: $e");
+    _isLoading = false;
+    notifyListeners();
+  }
+}
 }
