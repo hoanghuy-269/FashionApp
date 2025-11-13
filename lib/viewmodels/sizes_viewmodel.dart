@@ -61,6 +61,17 @@ class SizesViewmodel extends ChangeNotifier {
       return null;
     }
   }
+
+  // hiển thị tên size theo ID
+  Future<String?> getSizeNameById(String sizeID) async {
+    try {
+      final size = await getSizeById(sizeID);
+      return size?.name;
+    } catch (e) {
+      debugPrint('Lỗi khi lấy tên size theo ID: $e');
+      return null;
+    }
+  }
   
   
 }

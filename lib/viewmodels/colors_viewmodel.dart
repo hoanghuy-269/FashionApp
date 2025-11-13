@@ -48,4 +48,15 @@ class ColorsViewmodel extends ChangeNotifier {
       debugPrint('Lỗi khi thêm màu: $e');
     }
   }
+
+  // lay ten mau theo ID
+  String? getColorNameById(String colorID) {
+    try {
+      final color = _colors.firstWhere((c) => c.colorID == colorID);
+      return color.name;
+    } catch (e) {
+      debugPrint('Lỗi khi lấy tên màu theo ID: $e');
+      return null;
+    }
+  }
 }

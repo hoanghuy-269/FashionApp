@@ -74,22 +74,51 @@ class ProductSizeViewmodel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Cập nhật size
-  Future<void> updateSize(String shopProductID, String variantID, ProductSizeModel size) async {
+  Future<void> updateSize(
+  String shopProductID,
+  String variantID,
+  ProductSizeModel size,
+) async {
+  _isLoading = true;
+  notifyListeners();
+
+  try {
+    await _source.updateProductSize(shopProductID, variantID, size.sizeID, size);
+    final index = _sizes.indexWhere((s) => s.sizeID == size.sizeID);
+    if (index != -1) {
+      _sizes[index] = size;
+    }
+    _error = null;
+  } catch (e) {
+    _error = e.toString();
+  } finally {
+    _isLoading = false;
+    notifyListeners();
+  }
+}
+
+
+  Future<List<ProductSizeModel>> getSizesForVariant(String shopProductID, String variantID) async {
+    try {
+      final sizes = await _source.getSizesByVariant(shopProductID, variantID);
+      return sizes;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return [];
+    }
+  }
+
+  Future<void> featchSizesForVariant(String shopProductID, String variantID) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      await _source.updateProductSize(shopProductID, variantID, size.sizeID, size);
-      final index = _sizes.indexWhere((s) => s.sizeID == size.sizeID);
-      if (index != -1) {
-        _sizes[index] = size;
-      }
+      _sizes = await _source.getSizesByVariant(shopProductID, variantID);
       _error = null;
-      notifyListeners();
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
+      _sizes = [];
     } finally {
       _isLoading = false;
       notifyListeners();

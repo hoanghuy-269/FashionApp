@@ -18,4 +18,8 @@ class ShopProductvariantRepository {
   Future<void> deleteVariant(String shopProductID, String variantID) {
     return _source.deleteVariant(shopProductID, variantID);
   }
+
+  Future<void> updateMultipleVariants(String shopProductID, Map<String, Map<String, dynamic>> dataToUpdate) {
+    return _source.updateMultipleVariants(shopProductID, dataToUpdate);
+  }
 }
