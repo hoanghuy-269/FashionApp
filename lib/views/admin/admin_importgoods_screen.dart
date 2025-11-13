@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:io';
 import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
@@ -87,8 +86,7 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
         description: descriptionController.text,
       );
 
-      final productId =
-          await context.read<ProductViewModel>().addProduct(newProduct.toMap());
+      final productId = await context.read<ProductViewModel>().addProduct(newProduct.toMap());
       for (final size in selectedSizes) {
         for (final color in selectedColors) {
               final imageFile = selectedImagesByColor[color.colorID]!;
@@ -107,7 +105,7 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
             productID: productId,
             sizeID: size.sizeID,
             colorID: color.colorID,
-            imageUrls: imageFile.path,
+            imageUrls: imageUrl,
           );
 
           await context
@@ -184,6 +182,7 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
                     brandVM.isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : Buildsize(
+                          selectedCategory: selectedCategory,
                             onSizeToggled: (s, sel) {
                               setState(() => sel
                                   ? selectedSizes.add(s)

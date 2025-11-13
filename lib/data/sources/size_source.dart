@@ -58,4 +58,29 @@ class SizeSource {
       return {};
     }
   }
+
+  // Future void 
+  Future<SizesModel?> getSizeById(String sizeID) async {
+    try {
+      final doc = await _firestore.collection('sizes').doc(sizeID).get();
+      if (doc.exists) {
+        return SizesModel.fromFirestore(doc.data()!, doc.id);
+      }
+      return null;
+    } catch (e) {
+      print('Error getting size by ID: $e');
+      return null;
+    }
+  }
+
+ // kiem tra check name size da ton tai chua
+  Future<bool> isSizeNameExists(String name, String categoryId) async {
+    final querySnapshot = await _firestore
+        .collection('sizes')
+        .where('name', isEqualTo: name)
+        .where('categoryID', isEqualTo: categoryId)
+        .get();
+
+    return querySnapshot.docs.isNotEmpty;
+  }
 }

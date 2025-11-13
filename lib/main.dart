@@ -4,9 +4,11 @@ import 'package:fashion_app/viewmodels/brand_viewmodel.dart';
 import 'package:fashion_app/viewmodels/category_viewmodel.dart';
 import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
 import 'package:fashion_app/viewmodels/employeerole_viewmodel.dart';
+import 'package:fashion_app/viewmodels/product_size_viewmodel.dart';
 import 'package:fashion_app/viewmodels/product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/productdetail_viewmodel.dart';
 import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
+import 'package:fashion_app/viewmodels/shop_product_request_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_productvariant_viewmodel.dart';
 import 'package:fashion_app/viewmodels/role_viewmodel.dart';
@@ -54,7 +56,9 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ProductViewModel()),
         ChangeNotifierProvider(create: (_) => ProductDetailViewModel()),
         ChangeNotifierProvider(create: (_) => ShopProductViewModel()),
-        ChangeNotifierProvider(create: (_) => ShopProductvariantViewmodel()),
+        ChangeNotifierProvider(create: (_) => ShopProductVariantViewModel()),
+        ChangeNotifierProvider(create: (_) => ShopProductRequestViewmodel()),
+        ChangeNotifierProvider(create: (_) =>ProductSizeViewmodel()),
       ],
       child: const MyApp(),
     ),

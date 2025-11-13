@@ -33,6 +33,21 @@ class ShopproductSource {
     }
   }
 
+  // Real-time stream of shop products for a shop
+  Stream<List<ShopProductModel>> getShopProductsByShopStream(String shopId) {
+    try {
+      return _firestore
+          .collection(_collection)
+          .where('shopId', isEqualTo: shopId)
+          .snapshots()
+          .map((querySnap) => querySnap.docs
+              .map((doc) => ShopProductModel.fromMap(doc.data(), doc.id))
+              .toList());
+    } catch (e) {
+      return Stream.value([]);
+    }
+  }
+
   Future<void> updateShopProduct(ShopProductModel model) async {
     try {
       await _firestore
@@ -66,4 +81,5 @@ class ShopproductSource {
       return null;
     }
   }
+  
 }

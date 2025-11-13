@@ -109,4 +109,9 @@ class ShopProductViewModel extends ChangeNotifier {
       return null;
     }
   }
+
+  // Expose stream for real-time shop products
+  Stream<List<ShopProductModel>> getShopProductsByShopStream(String shopId) {
+    return _repository.getShopProductsByShopStream(shopId);
+  }
 }

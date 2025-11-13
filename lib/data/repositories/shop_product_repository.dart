@@ -10,6 +10,11 @@ class ShopProductRepository {
   Future<List<ShopProductModel>> getShopProductsByShop(String shopId) async {
     return await _source.getShopProductsByShop(shopId);
   }
+  
+  // Expose real-time stream of shop products
+  Stream<List<ShopProductModel>> getShopProductsByShopStream(String shopId) {
+    return _source.getShopProductsByShopStream(shopId);
+  }
   Future<void> updateShopProduct(ShopProductModel model) async {
     await _source.updateShopProduct(model);
   }

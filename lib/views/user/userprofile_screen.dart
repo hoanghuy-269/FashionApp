@@ -349,11 +349,11 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              if (_isApprovedShop)
+             
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {
-                      Navigator.pop(context);
+                      // Navigator.pop(context);
                       _navigateToShop();
                     },
                     style: ElevatedButton.styleFrom(
@@ -369,7 +369,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                       style: TextStyle(fontSize: 13),
                     ),
                   ),
-                ),
+                )
             ],
           ),
 
