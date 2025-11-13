@@ -1,5 +1,10 @@
+
+import 'package:fashion_app/views/admin/AdminBranch.dart';
+import 'package:fashion_app/views/admin/Admincategories.dart';
+
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/views/admin/admin_importgoods_screen.dart';
+
 import 'package:fashion_app/views/admin/admin_manageShop_screen.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/login/login_screen.dart';
@@ -9,17 +14,13 @@ import 'admin_shopAccount_screeen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
+
   @override
   State<AdminHomeScreen> createState() => _AdminHomeScreenState();
 }
- 
-class _AdminHomeScreenState extends State<AdminHomeScreen> {
-  bool showRevenue = true;
-  bool showOrders = true;
 
-  // Ví dụ số liệu
-  int revenue = 24042005;
-  int orders = 342;
+
+class _AdminHomeScreenState extends State<AdminHomeScreen> {
 
   Future<void> _handleLogout() async {
     final confirm = await showDialog<bool>(
@@ -64,30 +65,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       backgroundColor: const Color(0xFFF3F5F7),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(
-            isDesktop
-                ? 48
-                : isTablet
-                ? 24
-                : 16,
-          ),
+          padding: EdgeInsets.all(isDesktop ? 48 : isTablet ? 24 : 16),
           child: Column(
             children: [
-              // --- Header ---
+              // ---------------- HEADER ----------------
               Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal:
-                      isDesktop
-                          ? 48
-                          : isTablet
-                          ? 24
-                          : 16,
-                  vertical:
-                      isDesktop
-                          ? 24
-                          : isTablet
-                          ? 16
-                          : 12,
+                  horizontal: isDesktop ? 48 : isTablet ? 24 : 16,
+                  vertical: isDesktop ? 24 : isTablet ? 18 : 12,
                 ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -98,45 +83,41 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
                   ],
                 ),
                 child: Row(
                   children: [
                     CircleAvatar(
-                      radius: isTablet ? 30 : 24,
-                      backgroundColor: const Color.fromARGB(255, 41, 127, 129),
+                      radius: isTablet ? 28 : 24,
+                      backgroundColor: Colors.teal,
                       child: Icon(
                         Icons.person,
                         color: Colors.white,
-                        size: isTablet ? 34 : 28,
+                        size: isTablet ? 32 : 26,
                       ),
                     ),
-                    SizedBox(width: isTablet ? 16 : 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Admin',
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
                           fontSize: isTablet ? 20 : 18,
-                          color: Colors.black87,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                     IconButton(
-                      icon: Icon(
-                        Icons.notifications_none,
-                        size: isTablet ? 30 : 26,
-                      ),
-                      color: Colors.blueGrey[700],
+                      icon: const Icon(Icons.notifications_none),
+                      iconSize: isTablet ? 30 : 26,
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const AdminrequestshopScreen(),
+                            builder: (_) => const AdminrequestshopScreen(),
                           ),
                         );
                       },
@@ -155,49 +136,50 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 ),
               ),
 
-              SizedBox(
-                height:
-                    isDesktop
-                        ? 32
-                        : isTablet
-                        ? 24
-                        : 20,
-              ),
+              const SizedBox(height: 24),
 
-              // --- 2 nút thống kê có ẩn/hiện số riêng ---
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatButton(
-                      'Doanh thu',
-                      showRevenue ? revenue.toString() : '******',
-                      isTablet,
-                      () {
-                        setState(() {
-                          showRevenue = !showRevenue;
-                        });
-                      },
+              // ---------------- DANH SÁCH CHỨC NĂNG (CUỘN) ----------------
+              Expanded(
+                child: ListView(
+                  children: [
+                    _buildGridItemFullWidth(
+                      Icons.people_alt_rounded,
+                      'Khách hàng',
+                      Colors.teal,
+                      const AdminShopaccountScreen(),
                     ),
-                  ),
-                  SizedBox(
-                    width:
-                        isDesktop
-                            ? 32
-                            : isTablet
-                            ? 20
-                            : 16,
-                  ),
-                  Expanded(
-                    child: _buildStatButton(
-                      'Số đơn',
-                      showOrders ? orders.toString() : '***',
-                      isTablet,
-                      () {
-                        setState(() {
-                          showOrders = !showOrders;
-                        });
-                      },
+                    SizedBox(height: isTablet ? 18 : 14),
+                    _buildGridItemFullWidth(
+                      Icons.manage_accounts_rounded,
+                      'Quản lý shop',
+                      Colors.deepPurple,
+                      const AdminManageshopScreen(),
                     ),
+
+                    SizedBox(height: isTablet ? 18 : 14),
+                    _buildGridItemFullWidth(
+                      Icons.local_offer_rounded,
+                      'Mã giảm giá',
+                      Colors.pinkAccent,
+                      const AdminDiscountScreen(),
+                    ),
+                    SizedBox(height: isTablet ? 18 : 14),
+                    _buildGridItemFullWidth(
+                      Icons.branding_watermark,
+                      'Hãng',
+                      Colors.indigo,
+                      const BrandScreen(),
+                    ),
+                    SizedBox(height: isTablet ? 18 : 14),
+                    _buildGridItemFullWidth(
+                      Icons.category,
+                      'Danh mục',
+                      Colors.blue,
+                      const Categories(),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+
                   ),
                 ],
               ),
@@ -383,52 +365,51 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   fontSize: isTablet ? 20 : 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
+
                 ),
-              ),
+              )
             ],
           ),
-          const SizedBox(width: 8),
-          InkWell(
-            onTap: toggle,
-            child: Icon(
-              value.contains('*') ? Icons.visibility_off : Icons.visibility,
-              color: Colors.grey[700],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
+  // ITEM CHỨC NĂNG GIỮ Y HỆT KÍCH THƯỚC BAN ĐẦU
   Widget _buildGridItemFullWidth(
     IconData icon,
     String title,
     Color color,
-    VoidCallback onTap,
+    Widget page,
   ) {
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => page),
+        );
+      },
       child: Container(
-        height: 120,
+        height: 120, //  giữ nguyên size ban đầu
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
               blurRadius: 8,
               offset: const Offset(0, 3),
-            ),
+            )
           ],
         ),
         child: Row(
           children: [
             CircleAvatar(
-              radius: 28,
-              backgroundColor: color.withOpacity(0.15),
-              child: Icon(icon, color: color, size: 32),
+              radius: 30,
+              backgroundColor: color.withOpacity(0.18),
+              child: Icon(icon, size: 32, color: color),
             ),
             const SizedBox(width: 16),
             Text(
@@ -438,7 +419,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 fontSize: 18,
                 color: Colors.black87,
               ),
-            ),
+            )
           ],
         ),
       ),

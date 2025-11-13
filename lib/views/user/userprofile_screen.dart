@@ -5,8 +5,13 @@ import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
 import 'package:fashion_app/data/models/User.dart';
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/requesttopent_viewmodel.dart';
+
+
+import 'package:fashion_app/views/user/approved_shop_dialog.dart';
+
 import 'package:fashion_app/views/login/change_password_screen.dart';
 import 'package:fashion_app/views/login/login_screen.dart';
+
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:fashion_app/views/user/approved_shop_dialog.dart';
 import 'package:fashion_app/views/user/requesttoopentshop_screen.dart';
@@ -373,6 +378,19 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
             ],
           ),
 
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Thông tin người dùng'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Đăng xuất',
+            onPressed: (){
+              Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen()));
+            },
+
           const SizedBox(height: 20),
 
           _buildMenuItem(
@@ -404,8 +422,10 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
             title: "Đăng xuất",
             color: Colors.red,
             onTap: _handleLogout,
+
           ),
         ],
+
       ),
     );
   }

@@ -1,4 +1,6 @@
 
+import 'package:fashion_app/data/models/User.dart';
+
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/brand_viewmodel.dart';
 import 'package:fashion_app/viewmodels/category_viewmodel.dart';
@@ -11,7 +13,9 @@ import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_productvariant_viewmodel.dart';
 import 'package:fashion_app/viewmodels/role_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
+import 'package:fashion_app/views/admin/AdminBranch.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
+import 'package:fashion_app/views/admin/Admincategories.dart';
 import 'package:fashion_app/views/login/auth_wrapper.dart';
 import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
@@ -27,6 +31,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -38,7 +43,6 @@ void main() async {
   } catch (e) {
     print(" Lỗi kết nối Firebase: $e");
   }
-
   runApp(
     MultiProvider(
       providers: [
@@ -60,10 +64,8 @@ void main() async {
     ),
   );
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -72,18 +74,15 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
-
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
-
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: AuthWrapper()));
-    //return Scaffold(body: Center(child: AdminHomeScreen()));
+   // return Scaffold(body: Center(child: Danhmucj()));
+    return Scaffold(body: Center(child: AdminHomeScreen()));
   }
 }

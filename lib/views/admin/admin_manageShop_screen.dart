@@ -11,7 +11,7 @@ class AdminManageshopScreen extends StatefulWidget {
 class _AdminManageshopScreenState extends State<AdminManageshopScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  bool _isDialogOpen = false; // 🔒 chốt chống mở nhiều dialog
+  bool _isDialogOpen = false; //  chốt chống mở nhiều dialog
 
   // Helper: mở dialog chỉ-1-lần
   Future<T?> _openDialogOnce<T>(Future<T?> Function() open) async {
