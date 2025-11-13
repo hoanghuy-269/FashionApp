@@ -39,6 +39,47 @@ Future<String> addVariant(String shopProductID, Map<String, dynamic> data) async
         .update(data);
   }
 
+  Future<void> updateMultipleVariants(
+    String shopProductID,
+    Map<String, Map<String, dynamic>> dataToUpdate,
+  ) async {
+    try {
+      final batch = _firestore.batch();
+
+      final snapshot = await _firestore
+          .collection('shop_products')
+          .doc(shopProductID)
+          .collection('shop_product_variants')
+          .get();
+
+      for (var doc in snapshot.docs) {
+        if (dataToUpdate.containsKey(doc.id)) {
+          batch.update(doc.reference, dataToUpdate[doc.id]!);
+        }
+      }
+
+      await batch.commit();
+
+      final variantsSnapshot = await _firestore
+          .collection('shop_products')
+          .doc(shopProductID)
+          .collection('shop_product_variants')
+          .get();
+
+      int newTotalQuantity = 0;
+      for (var doc in variantsSnapshot.docs) {
+        newTotalQuantity += (doc.data()['quantity'] as int? ?? 0);
+      }
+
+      await _firestore.collection('shop_products').doc(shopProductID).update({
+        'totalQuantity': newTotalQuantity,
+      });
+    } catch (e) {
+      print('Error updating multiple variants: $e');
+      rethrow;
+    }
+  }
+
   Future<void> deleteVariant(String shopProductID, String variantID) async {
     await _firestore
         .collection('shop_products')
@@ -47,4 +88,9 @@ Future<String> addVariant(String shopProductID, Map<String, dynamic> data) async
         .doc(variantID)
         .delete();
   }
+
+  
+
+  
+
 }
