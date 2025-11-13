@@ -47,6 +47,7 @@ class ShopProductViewModel extends ChangeNotifier {
         imageUrls: model.imageUrls,
         rating: model.rating,
         sold: model.sold,
+        description: model.description,
       );
       _shopProducts.add(createdModel);
       _error = null;

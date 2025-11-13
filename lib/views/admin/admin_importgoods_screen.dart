@@ -83,7 +83,6 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
         name: nameController.text,
         categoryID: selectedCategory!.categoryID,
         brandID: selectedBrand!.brandID,
-        description: descriptionController.text,
       );
 
       final productId = await context.read<ProductViewModel>().addProduct(newProduct.toMap());
