@@ -193,6 +193,7 @@ import 'package:provider/provider.dart';
           imageUrls: _imagesByColor.values.firstOrNull ?? '',
           rating: 0,
           sold: 0,
+          description: _descriptionController.text.trim(),
         );
 
         final shopProductVM = context.read<ShopProductViewModel>();
