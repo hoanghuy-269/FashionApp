@@ -14,28 +14,24 @@ class WarehouseScreen extends StatefulWidget {
 class _WarehouseScreenState extends State<WarehouseScreen> {
   String? shopID;
 
- @override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-  // Lấy shopID từ widget
-  shopID = widget.shopID;
+    // Lấy shopID từ widget
+    shopID = widget.shopID;
 
-  Future.microtask(() async {
-    if (shopID != null) {
-      final shopProductVM = context.read<ShopProductViewModel>();
+    Future.microtask(() async {
+      if (shopID != null) {
+        final shopProductVM = context.read<ShopProductViewModel>();
 
-      await shopProductVM.fetchShopProducts(shopID!);
-  
-    }
-  });
-}
-
-
+        await shopProductVM.fetchShopProducts(shopID!);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: SafeArea(
         child: Consumer<ShopProductViewModel>(

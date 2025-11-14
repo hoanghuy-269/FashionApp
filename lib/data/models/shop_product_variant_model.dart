@@ -7,7 +7,6 @@ class ShopProductVariantModel {
   final double costPrice; // giá vốn
   final String imageUrls;
 
-
   ShopProductVariantModel({
     required this.shopProductVariantID,
     required this.colorID,
@@ -18,7 +17,10 @@ class ShopProductVariantModel {
     required this.imageUrls,
   });
 
-  factory ShopProductVariantModel.fromMap(Map<String, dynamic> json, String id) {
+  factory ShopProductVariantModel.fromMap(
+    Map<String, dynamic> json,
+    String id,
+  ) {
     return ShopProductVariantModel(
       shopProductVariantID: id,
       colorID: json['colorID'] ?? '',

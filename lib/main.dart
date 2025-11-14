@@ -1,4 +1,3 @@
-
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/brand_viewmodel.dart';
 import 'package:fashion_app/viewmodels/category_viewmodel.dart';
@@ -14,6 +13,7 @@ import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/login/auth_wrapper.dart';
 import 'package:fashion_app/views/user/home_screen.dart';
+import 'package:fashion_app/views/user/product_detail.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:fashion_app/views/admin/admin_home_screen.dart';
 import 'package:fashion_app/views/admin/admin_manageShop_screen.dart';
@@ -83,7 +83,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: AuthWrapper()));
+    return Scaffold(body: Center(child: ProductDetailScreen(userId: '')));
     //return Scaffold(body: Center(child: AdminHomeScreen()));
   }
 }
