@@ -14,7 +14,11 @@ class UserRepository {
       password: password,
     );
 
-    final uid = credential.user!.uid;
+    final firebaseUser = credential.user!;
+    final uid = firebaseUser.uid;
+
+    // ⚠️ KHÔNG gửi email xác minh nữa vì bạn đã xác minh qua OTP rồi.
+    print('🔥 Đã tạo tài khoản Firebase thành công cho ${user.email}');
 
     final userWithUid = User(
       id: uid,
@@ -29,13 +33,10 @@ class UserRepository {
     );
 
     await _service.addOrUpdateUser(userWithUid);
-    await _auth.signOut();
   }
-
   /// Đăng nhập bằng email + password
   Future<User?> login(String email, String password) async {
     try {
-     
       final credential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -43,11 +44,11 @@ class UserRepository {
 
       final uid = credential.user!.uid;
 
-      // Lấy thông tin người dùng trong Firestore
-      final user = await _service.getUserById(uid);
+      // Lấy dữ liệu 1 lần
+      final user = await _service.getUserById(uid).firstWhere((u) => u != null);
+
       return user;
-    } on fb_auth.FirebaseAuthException catch (e) {
-      // Xử lý lỗi đăng nhập
+    } catch (e) {
       return null;
     }
   }
@@ -63,7 +64,7 @@ class UserRepository {
   /// Các hàm thao tác Firestore
   Future<void> createUser(User user) => _service.addOrUpdateUser(user);
   Future<List<User>> fetchUsers() => _service.getAllUsers();
-  Future<User?> getUserById(String id) => _service.getUserById(id);
+  Stream<User?> getUserById(String id) => _service.getUserById(id);
   Future<void> updateUser(String id, Map<String, dynamic> data) =>
       _service.updateUser(id, data);
   Future<void> deleteUser(String id) => _service.deleteUser(id);
@@ -80,5 +81,9 @@ class UserRepository {
   // Unlock a user's account
   Future<void> unlockAccount(String userId) async {
     await _service.unlockAccount(userId);
+  }
+
+  Future<void> changePassword(String newPassword) {
+    return _service.changePassword(newPassword);
   }
 }

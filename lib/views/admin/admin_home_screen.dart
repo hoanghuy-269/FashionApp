@@ -1,7 +1,9 @@
+import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/views/admin/AdminBranch.dart';
 import 'package:fashion_app/views/admin/Admincategories.dart';
 import 'package:fashion_app/views/admin/admin_manageShop_screen.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
+import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'admin_discount_screen.dart';
 import 'admin_shopAccount_screeen.dart';
@@ -14,6 +16,39 @@ class AdminHomeScreen extends StatefulWidget {
 }
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
+
+   Future<void> _handleLogout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận'),
+        content: const Text('Bạn có chắc muốn đăng xuất không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Đăng xuất'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final authVM = AuthViewModel();
+      await authVM.logout();
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -79,6 +114,16 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                             builder: (_) => const AdminrequestshopScreen(),
                           ),
                         );
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.logout,
+                        size: isTablet ? 30 : 26,
+                      ),
+                      color: Colors.blueGrey[700],
+                      onPressed: () {
+                        _handleLogout();
                       },
                     ),
                   ],

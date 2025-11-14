@@ -38,8 +38,9 @@ class StaffRemotesources {
     final snaps =
         await _db
             .collectionGroup('staff')
-            .where(FieldPath.documentId, isEqualTo: employeeId)
+            .where('employeeId', isEqualTo: employeeId)
             .get();
+
     if (snaps.docs.isEmpty) return null;
     final e = snaps.docs.first;
     final data = Map<String, dynamic>.from(e.data());

@@ -24,7 +24,7 @@ class BrandViewmodel extends ChangeNotifier {
     _currentBrand = brand;
     notifyListeners();
     return brand;
-  }
+  } 
   
   /// ✅ Lấy tất cả brand
   Future<void> fetchAllBrands() async {
