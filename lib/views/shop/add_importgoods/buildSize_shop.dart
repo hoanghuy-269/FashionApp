@@ -1,7 +1,5 @@
-import 'package:fashion_app/data/models/category_model.dart';
 import 'package:fashion_app/data/models/sizes_model.dart';
 import 'package:fashion_app/viewmodels/sizes_viewmodel.dart';
-import 'package:fashion_app/views/shop/addsize_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -15,27 +13,24 @@ class BuildsizeShop extends StatefulWidget {
 }
 
 class _BuildsizeShopState extends State<BuildsizeShop> {
-  CategoryModel? selectedCategory;
   final List<SizesModel> _localSelected = [];
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<SizesViewmodel>(
       builder: (context, sizeVM, child) {
-        final sizes = sizeVM.sizesList;
-
-        if (sizeVM.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        // if (colors.isEmpty) {
-        //   return const Text("Chưa có màu nào, hãy thêm mới!");
-        // }
+        final allSizes = sizeVM.sizesList;
 
         return Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
-            ...sizes.map((size) {
+            ...allSizes.map((size) {
               final isSelected = _localSelected.any(
                 (s) => s.sizeID == size.sizeID,
               );
@@ -50,10 +45,7 @@ class _BuildsizeShopState extends State<BuildsizeShop> {
                       _localSelected.add(size);
                     }
                   });
-
-                  if (widget.onSizeToggled != null) {
-                    widget.onSizeToggled!(size, !isSelected);
-                  }
+                  widget.onSizeToggled?.call(size, !isSelected);
                 },
                 child: Container(
                   width: 40,

@@ -45,8 +45,10 @@ class ShopProductViewModel extends ChangeNotifier {
         productID: model.productID,
         totalQuantity: model.totalQuantity,
         name: model.name,
+        imageUrls: model.imageUrls,
         rating: model.rating,
         sold: model.sold,
+        description: model.description,
       );
       _shopProducts.add(createdModel);
       _error = null;
@@ -116,5 +118,10 @@ class ShopProductViewModel extends ChangeNotifier {
 
   Stream<List<ShopProductWithDetail>> getAllShopProductsStream() {
     return _repository.getAllShopProductsWithDetail();
+  }
+
+  // Expose stream for real-time shop products
+  Stream<List<ShopProductModel>> getShopProductsByShopStream(String shopId) {
+    return _repository.getShopProductsByShopStream(shopId);
   }
 }

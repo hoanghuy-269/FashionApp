@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:io';
 import 'package:fashion_app/core/utils/gallery_util.dart';
 import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
@@ -15,8 +14,8 @@ import 'package:fashion_app/viewmodels/product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/productdetail_viewmodel.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildBranchDropdown.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildCategoryDropdown.dart';
-import 'package:fashion_app/views/shop/add_importgoods/buildsize.dart';
-import 'package:fashion_app/views/shop/add_importgoods/builldcolor.dart';
+import 'package:fashion_app/views/admin/buildsize.dart';
+import 'package:fashion_app/views/admin/builldcolor.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -44,7 +43,7 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
     Future.microtask(() {
       context.read<BrandViewmodel>().fetchAllBrands();
       context.read<CategoryViewmodel>().fetchCategories();
-      context.read<ColorsViewmodel>().fetchColors();
+      context.read<ColorsViewmodel>().fetchAllColors();
     });
   }
 
@@ -84,11 +83,9 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
         name: nameController.text,
         categoryID: selectedCategory!.categoryID,
         brandID: selectedBrand!.brandID,
-        description: descriptionController.text,
       );
 
-      final productId =
-          await context.read<ProductViewModel>().addProduct(newProduct.toMap());
+      final productId = await context.read<ProductViewModel>().addProduct(newProduct.toMap());
       for (final size in selectedSizes) {
         for (final color in selectedColors) {
               final imageFile = selectedImagesByColor[color.colorID]!;
@@ -107,7 +104,7 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
             productID: productId,
             sizeID: size.sizeID,
             colorID: color.colorID,
-            imageUrls: imageFile.path,
+            imageUrls: imageUrl,
           );
 
           await context
@@ -184,6 +181,7 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
                     brandVM.isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : Buildsize(
+                          selectedCategory: selectedCategory,
                             onSizeToggled: (s, sel) {
                               setState(() => sel
                                   ? selectedSizes.add(s)

@@ -1,242 +1,278 @@
-import 'dart:async';
-import 'dart:io';
-import 'package:fashion_app/core/utils/gallery_util.dart';
-import 'package:fashion_app/core/utils/pick_image_bottom_sheet.dart';
 import 'package:fashion_app/data/models/brands_model.dart';
 import 'package:fashion_app/data/models/category_model.dart';
 import 'package:fashion_app/data/models/colors_model.dart';
+import 'package:fashion_app/data/models/product_size_model.dart';
 import 'package:fashion_app/data/models/products_model.dart';
-import 'package:fashion_app/data/models/shop_model.dart';
 import 'package:fashion_app/data/models/shop_product_model.dart';
 import 'package:fashion_app/data/models/shop_product_variant_model.dart';
 import 'package:fashion_app/data/models/sizes_model.dart';
 import 'package:fashion_app/viewmodels/brand_viewmodel.dart';
 import 'package:fashion_app/viewmodels/category_viewmodel.dart';
 import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
+import 'package:fashion_app/viewmodels/product_size_viewmodel.dart';
 import 'package:fashion_app/viewmodels/product_viewmodel.dart';
+import 'package:fashion_app/viewmodels/productdetail_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_productvariant_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
+import 'package:fashion_app/viewmodels/sizes_viewmodel.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildBranchDropdown.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildCategoryDropdown.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildColor_shop.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildProductDropdown.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildSize_shop.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class AddImportgoodsScreen extends StatefulWidget {
-  const AddImportgoodsScreen({super.key});
+  class AddImportgoodsScreen extends StatefulWidget {
+    const AddImportgoodsScreen({super.key});
 
-  @override
-  State<AddImportgoodsScreen> createState() => _AddImportgoodsScreenState();
-}
-
-class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
-  final descriptionController = TextEditingController();
-  final Map<String, File?> selectedImagesByColor = {};
-
-  final Map<String, TextEditingController> importPriceControllers = {};
-  final Map<String, TextEditingController> salePriceControllers = {};
-  final Map<String, TextEditingController> quantityControllers = {};
-
-  BrandsModel? selectedBrand;
-  CategoryModel? selectedCategory;
-  ProductsModel? selectedProduct;
-  List<SizesModel> selectedSizes = [];
-  List<ColorsModel> selectedColors = [];
-  bool isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      context.read<BrandViewmodel>().fetchAllBrands();
-      context.read<CategoryViewmodel>().fetchCategories();
-      context.read<ColorsViewmodel>().fetchColors();
-    });
+    @override
+    State<AddImportgoodsScreen> createState() => _AddImportgoodsScreenState();
   }
 
-  @override
-  void dispose() {
-    // Giải phóng tất cả controllers
-    importPriceControllers.values.forEach((c) => c.dispose());
-    salePriceControllers.values.forEach((c) => c.dispose());
-    quantityControllers.values.forEach((c) => c.dispose());
-    descriptionController.dispose();
-    super.dispose();
-  }
+  class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
+    final _descriptionController = TextEditingController();
+    
+    // Lưu image theo màu
+    final Map<String, String> _imagesByColor = {};
+    
+    // Lưu data theo màu -> size
+    final Map<String, Map<String, _SizeData>> _dataBySizeColor = {};
 
-  // Tạo controller cho màu nếu chưa có
-  TextEditingController _getOrCreateController(
-    Map<String, TextEditingController> controllers,
-    String colorID,
-  ) {
-    if (!controllers.containsKey(colorID)) {
-      controllers[colorID] = TextEditingController();
-    }
-    return controllers[colorID]!;
-  }
+    // Selected items
+    BrandsModel? _selectedBrand;
+    CategoryModel? _selectedCategory;
+    ProductsModel? _selectedProduct;
+    List<SizesModel> _selectedSizes = [];
+    List<ColorsModel> _selectedColors = [];
+    
+    bool _isLoading = false;
 
-  Future<void> pickImageForColor(String colorID) async {
-    final image = await showPickImageBottomSheet(context);
-    if (image != null) {
-      setState(() {
-        selectedImagesByColor[colorID] = image;
+    @override
+    void initState() {
+      super.initState();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<BrandViewmodel>().fetchAllBrands();
+        context.read<CategoryViewmodel>().fetchCategories();
+        context.read<ColorsViewmodel>().fetchAllColors();
       });
     }
-  }
 
-  Future<void> _saveProduct() async {
-    // Kiểm tra validation
-    if (selectedProduct == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Vui lòng chọn sản phẩm')));
-      return;
-    }
-    if (selectedSizes.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Vui lòng chọn kích thước')));
-      return;
-    }
-    if (selectedColors.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Vui lòng chọn màu sắc')));
-      return;
-    }
-    if (selectedBrand == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn thương hiệu')),
-      );
-      return;
-    }
-
-    // Kiểm tra từng màu có đủ thông tin không
-    for (final color in selectedColors) {
-      final qty = quantityControllers[color.colorID]?.text ?? '';
-      final importPrice = importPriceControllers[color.colorID]?.text ?? '';
-      final salePrice = salePriceControllers[color.colorID]?.text ?? '';
-
-      if (qty.isEmpty || int.tryParse(qty) == null || int.parse(qty) <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Vui lòng nhập số lượng cho màu ${color.name}'),
-          ),
-        );
-        return;
+    @override
+    void dispose() {
+      _descriptionController.dispose();
+      // Dispose tất cả controllers
+      for (var colorMap in _dataBySizeColor.values) {
+        for (var data in colorMap.values) {
+          data.dispose();
+        }
       }
-      if (importPrice.isEmpty || double.tryParse(importPrice) == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Vui lòng nhập giá nhập cho màu ${color.name}'),
-          ),
-        );
-        return;
+      super.dispose();
+    }
+
+    // Lấy hoặc tạo data cho size + color
+    _SizeData _getSizeData(String colorID, String sizeID) {
+      if (!_dataBySizeColor.containsKey(colorID)) {
+        _dataBySizeColor[colorID] = {};
       }
-      if (salePrice.isEmpty || double.tryParse(salePrice) == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Vui lòng nhập giá bán cho màu ${color.name}'),
-          ),
-        );
-        return;
+      if (!_dataBySizeColor[colorID]!.containsKey(sizeID)) {
+        _dataBySizeColor[colorID]![sizeID] = _SizeData();
+      }
+      return _dataBySizeColor[colorID]![sizeID]!;
+    }
+
+    // Load ảnh cho màu
+    Future<void> _loadImages() async {
+      if (_selectedProduct == null) return;
+      
+      final detailVM = context.read<ProductDetailViewModel>();
+      
+      for (var color in _selectedColors) {
+        if (_imagesByColor.containsKey(color.colorID)) continue;
+        
+        try {
+          final imageUrl = await detailVM.getImageByID(
+            productId: _selectedProduct!.productID,
+            productDetailId: color.colorID,
+          );
+          
+          if (imageUrl != null && imageUrl.isNotEmpty && mounted) {
+            setState(() {
+              _imagesByColor[color.colorID] = imageUrl;
+            });
+          }
+        } catch (e) {
+          debugPrint('Lỗi load ảnh: $e');
+        }
       }
     }
-    if (isLoading) return;
-    setState(() {
-      isLoading = true;
-    
-    });
 
-    try {
+    // Validate dữ liệu
+    String? _validate() {
+      if (_selectedProduct == null) return 'Chọn sản phẩm';
+      if (_selectedBrand == null) return 'Chọn thương hiệu';
+      if (_selectedSizes.isEmpty) return 'Chọn ít nhất 1 size';
+      if (_selectedColors.isEmpty) return 'Chọn ít nhất 1 màu';
+
+      // Kiểm tra từng màu + size
+      for (var color in _selectedColors) {
+        for (var size in _selectedSizes) {
+          final data = _dataBySizeColor[color.colorID]?[size.sizeID];
+          if (data == null) {
+            return 'Nhập đủ thông tin cho ${color.name} - ${size.name}';
+          }
+
+          final qty = int.tryParse(data.quantity.text);
+          final importPrice = double.tryParse(data.importPrice.text);
+          final salePrice = double.tryParse(data.salePrice.text);
+
+          if (qty == null || qty <= 0) {
+            return 'Số lượng không hợp lệ: ${color.name} - ${size.name}';
+          }
+          if (importPrice == null || importPrice <= 0) {
+            return 'Giá nhập không hợp lệ: ${color.name} - ${size.name}';
+          }
+          if (salePrice == null || salePrice <= 0) {
+            return 'Giá bán không hợp lệ: ${color.name} - ${size.name}';
+          }
+        }
+      }
+      return null;
+    }
+
+    // Tính tổng số lượng
+    int _getTotalQuantity() {
+      int total = 0;
+      for (var colorMap in _dataBySizeColor.values) {
+        for (var data in colorMap.values) {
+          total += int.tryParse(data.quantity.text) ?? 0;
+        }
+      }
+      return total;
+    }
+
+    // Lấy shop ID
+    Future<String?> _getShopId() async {
       final shopVM = context.read<ShopViewModel>();
-    var currentShop = shopVM.currentShop;
-    if (currentShop == null) {
-      final fetched = await shopVM.fetchShopForCurrentUser();
-      currentShop = fetched ?? shopVM.currentShop;
-    }
-    if (currentShop == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Không tìm thấy cửa hàng hiện tại. Vui lòng thử lại.'),
-        ),
-      );
-      return;
-    }
-    final shopId = currentShop.shopId;
-
-    // Tạo ShopProduct
-    final newShopProduct = ShopProductModel(
-      shopproductID: '',
-      shopId: shopId,
-      productID: selectedProduct!.productID,
-      name: selectedProduct!.name,
-      totalQuantity: 0,
-      rating: 0,
-      sold: 0,
-    );
-
-    final shopProductVM = context.read<ShopProductViewModel>();
-    final createdId = await shopProductVM.addShopProduct(newShopProduct);
-    if (createdId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể tạo sản phẩm cho cửa hàng.')),
-      );
-      return;
+      var shop = shopVM.currentShop;
+      
+      if (shop == null) {
+        shop = await shopVM.fetchShopForCurrentUser();
+      }
+      
+      return shop?.shopId;
     }
 
-    // Tạo variants cho từng màu và size
-    for (final color in selectedColors) {
-      // Upload ảnh nếu có
-      String imageUrl = '';
-      if (selectedImagesByColor[color.colorID] != null) {
-        final uploadedUrl = await GalleryUtil.uploadImageToFirebase(
-          selectedImagesByColor[color.colorID]!,
-          folderName: 'product_variants',
-        );
-        imageUrl = uploadedUrl ?? '';
+    // Lưu sản phẩm
+    Future<void> _save() async {
+      final error = _validate();
+      if (error != null) {
+        _showError(error);
+        return;
       }
 
-      // Lấy giá trị riêng cho màu này
-      final quantity = int.parse(quantityControllers[color.colorID]!.text);
-      final importPrice = double.parse(
-        importPriceControllers[color.colorID]!.text,
-      );
-      final salePrice = double.parse(salePriceControllers[color.colorID]!.text);
+      setState(() => _isLoading = true);
 
-      for (final size in selectedSizes) {
+      try {
+        // 1. Lấy shopId
+        final shopId = await _getShopId();
+        if (shopId == null) {
+          _showError('Không tìm thấy cửa hàng');
+          return;
+        }
+
+        // 2. Tạo ShopProduct
+        final shopProduct = ShopProductModel(
+          shopproductID: '',
+          shopId: shopId,
+          productID: _selectedProduct!.productID,
+          name: _selectedProduct!.name,
+          totalQuantity: _getTotalQuantity(),
+          imageUrls: _imagesByColor.values.firstOrNull ?? '',
+          rating: 0,
+          sold: 0,
+          description: _descriptionController.text.trim(),
+        );
+
+        final shopProductVM = context.read<ShopProductViewModel>();
+        final shopProductId = await shopProductVM.addShopProduct(shopProduct);
+        
+        if (shopProductId == null) {
+          _showError('Lỗi tạo shop product');
+          return;
+        }
+
+        // 3. Tạo variants + sizes
+        await _createVariantsAndSizes(shopProductId);
+
+        if (mounted) {
+          _showSuccess('Thêm sản phẩm thành công!');
+          Navigator.pop(context);
+        }
+        
+      } catch (e) {
+        debugPrint('Lỗi save: $e');
+        _showError('Lỗi: $e');
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+
+    // Tạo variants và sizes
+    Future<void> _createVariantsAndSizes(String shopProductId) async {
+      final variantVM = context.read<ShopProductVariantViewModel>();
+      final sizeVM = context.read<ProductSizeViewmodel>();
+
+      for (var color in _selectedColors) {
+        // Tạo variant cho màu này
         final variant = ShopProductVariantModel(
           shopProductVariantID: '',
           colorID: color.colorID,
-          sizeID: size.sizeID,
-          quantity: quantity,
-          price: salePrice,
-          costPrice: importPrice,
-          imageUrls: imageUrl,
+          imageUrls: _imagesByColor[color.colorID] ?? '',
         );
 
-        await context.read<ShopProductvariantViewmodel>().addShopProductVariant(
-          shopProductID: createdId,
-          variantData: variant.toMap(),
-        );
+        final variantId = await variantVM.addVariant(shopProductId, variant.toMap());
+        if (variantId == null || variantId.isEmpty) {
+          debugPrint('Lỗi tạo variant cho màu: ${color.colorID}');
+          continue;
+        }
+
+        // Tạo sizes cho variant này
+        for (var size in _selectedSizes) {
+          final data = _dataBySizeColor[color.colorID]?[size.sizeID];
+          if (data == null) continue;
+
+      
+          final productSize = ProductSizeModel(
+            sizeID: size.sizeID,
+            quantity: int.parse(data.quantity.text),
+            costPrice: double.parse(data.importPrice.text),
+            price: double.parse(data.salePrice.text),
+          );
+
+          try {
+            await sizeVM.addSize(shopProductId, variantId, productSize);
+          } catch (e) {
+            debugPrint('Lỗi thêm size ${size.sizeID}: $e');
+          }
+        }
       }
     }
-    } catch (e) {
-     print('Lỗi khi lưu sản phẩm: $e');
-     return;
-    } finally{
-      setState(() {
-        isLoading = false;
-      });
-    }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Thêm sản phẩm thành công!')));
-    Navigator.pop(context);
+
+  void _showError(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+    );
+  }
+
+  void _showSuccess(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.green),
+    );
   }
 
   @override
@@ -246,393 +282,301 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
       body: Stack(
         children: [
           SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                      const Expanded(
+                        child: Text(
+                          'Nhập sản phẩm',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _save,
+                        icon: const Icon(Icons.check, color: Colors.green),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Body
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Thương hiệu
-                        Text('Chọn Thương hiệu', style: TextStyle(fontSize: 16)),
-                        const SizedBox(height: 10),
+                        // Brand
+                        const Text('Thương hiệu', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
                         Consumer<BrandViewmodel>(
-                          builder: (context, brandVM, _) {
-                            if (brandVM.isLoading) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                            return Buildbranchdropdown(
-                              onBrandSelected: (b) async {
-                                setState(() => selectedBrand = b);
-                                if (b != null) {
-                                  await context
-                                      .read<ProductViewModel>()
-                                      .fetchProductsByBrand(b.brandID);
-                                }
-                              },
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 20),
-          
-                        // Sản phẩm
-                        Text('Chọn Sản phẩm', style: TextStyle(fontSize: 16)),
-                        const SizedBox(height: 10),
-                        Consumer<ProductViewModel>(
-                          builder: (context, productVM, _) {
-                            if (productVM.isLoading) {
-                              return Center(child: CircularProgressIndicator());
-                            }
-                            return BuildProductDropdown(
-                              brandID: selectedBrand?.brandID ?? '',
-                              onProductSelected: (p) {
-                                setState(() => selectedProduct = p);
-                              },
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 20),
-          
-                        // Danh mục
-                        const Text('Chọn Danh mục', style: TextStyle(fontSize: 16)),
-                        const SizedBox(height: 10),
-                        Consumer<CategoryViewmodel>(
-                          builder: (context, categoryVM, _) {
-                            if (categoryVM.isLoading) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                            return Buildcategorydropdown(
-                              onCategorySelected:
-                                  (c) => setState(() => selectedCategory = c),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 20),
-          
-                        // Size
-                        const Text('Chọn Size', style: TextStyle(fontSize: 16)),
-                        Consumer<BrandViewmodel>(
-                          builder: (context, brandVM, _) {
-                            if (brandVM.isLoading) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                            return BuildsizeShop(
-                              onSizeToggled: (s, sel) {
-                                setState(() {
-                                  if (sel) {
-                                    selectedSizes.add(s);
-                                  } else {
-                                    selectedSizes.removeWhere(
-                                      (e) => e.sizeID == s.sizeID,
-                                    );
-                                  }
-                                });
-                              },
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 20),
-          
-                        // Màu sắc
-                        const Text('Chọn Màu', style: TextStyle(fontSize: 16)),
-                        Consumer<ColorsViewmodel>(
-                          builder: (context, colorVM, _) {
-                            if (colorVM.isLoading) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                            return BuildcolorShop(
-                              onColorsSelected: (c) {
-                                setState(() {
-                                  selectedColors = c;
-          
-                                  // Khởi tạo controllers và image map cho màu mới
-                                  for (var color in selectedColors) {
-                                    selectedImagesByColor.putIfAbsent(
-                                      color.colorID,
-                                      () => null,
-                                    );
-                                    _getOrCreateController(
-                                      importPriceControllers,
-                                      color.colorID,
-                                    );
-                                    _getOrCreateController(
-                                      salePriceControllers,
-                                      color.colorID,
-                                    );
-                                    _getOrCreateController(
-                                      quantityControllers,
-                                      color.colorID,
-                                    );
-                                  }
-          
-                                  // Xóa dữ liệu của màu không còn chọn
-                                  selectedImagesByColor.removeWhere(
-                                    (key, value) =>
-                                        !selectedColors.any(
-                                          (c) => c.colorID == key,
-                                        ),
-                                  );
-                                  importPriceControllers.removeWhere(
-                                    (key, value) =>
-                                        !selectedColors.any(
-                                          (c) => c.colorID == key,
-                                        ),
-                                  );
-                                  salePriceControllers.removeWhere(
-                                    (key, value) =>
-                                        !selectedColors.any(
-                                          (c) => c.colorID == key,
-                                        ),
-                                  );
-                                  quantityControllers.removeWhere(
-                                    (key, value) =>
-                                        !selectedColors.any(
-                                          (c) => c.colorID == key,
-                                        ),
-                                  );
-                                });
-                              },
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 20),
-          
-                        // Ảnh và thông tin theo từng màu
-                        if (selectedColors.isNotEmpty)
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children:
-                                  selectedColors.map((color) {
-                                    final image =
-                                        selectedImagesByColor[color.colorID];
-                                    return Padding(
-                                      padding: const EdgeInsets.only(
-                                        right: 16,
-                                        bottom: 8,
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            color.name,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-          
-                                          // Ảnh
-                                          GestureDetector(
-                                            onTap:
-                                                () => pickImageForColor(
-                                                  color.colorID,
-                                                ),
-                                            child: Container(
-                                              width: 200,
-                                              height: 200,
-                                              decoration: BoxDecoration(
-                                                border: Border.all(
-                                                  color: Colors.grey,
-                                                ),
-                                                borderRadius: BorderRadius.circular(
-                                                  10,
-                                                ),
-                                                image:
-                                                    image != null
-                                                        ? DecorationImage(
-                                                          image: FileImage(image),
-                                                          fit: BoxFit.cover,
-                                                        )
-                                                        : null,
-                                              ),
-                                              child:
-                                                  image == null
-                                                      ? const Center(
-                                                        child: Icon(
-                                                          Icons.add_a_photo,
-                                                          size: 40,
-                                                          color: Colors.grey,
-                                                        ),
-                                                      )
-                                                      : Align(
-                                                        alignment:
-                                                            Alignment.topRight,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets.all(
-                                                                8,
-                                                              ),
-                                                          child: GestureDetector(
-                                                            onTap:
-                                                                () => setState(
-                                                                  () =>
-                                                                      selectedImagesByColor[color
-                                                                              .colorID] =
-                                                                          null,
-                                                                ),
-                                                            child:
-                                                                const CircleAvatar(
-                                                                  radius: 12,
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .black54,
-                                                                  child: Icon(
-                                                                    Icons.close,
-                                                                    color:
-                                                                        Colors
-                                                                            .white,
-                                                                    size: 18,
-                                                                  ),
-                                                                ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 12),
-          
-                                          // Các ô nhập liệu riêng cho màu này
-                                          SizedBox(
-                                            width: 200,
-                                            child: Column(
-                                              children: [
-                                                TextField(
-                                                  controller:
-                                                      _getOrCreateController(
-                                                        importPriceControllers,
-                                                        color.colorID,
-                                                      ),
-                                                  decoration: const InputDecoration(
-                                                    labelText: "Giá nhập",
-                                                    border: OutlineInputBorder(),
-                                                    contentPadding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 12,
-                                                          vertical: 8,
-                                                        ),
-                                                  ),
-                                                  keyboardType:
-                                                      TextInputType.number,
-                                                ),
-                                                const SizedBox(height: 8),
-                                                TextField(
-                                                  controller:
-                                                      _getOrCreateController(
-                                                        salePriceControllers,
-                                                        color.colorID,
-                                                      ),
-                                                  decoration: const InputDecoration(
-                                                    labelText: "Giá bán",
-                                                    border: OutlineInputBorder(),
-                                                    contentPadding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 12,
-                                                          vertical: 8,
-                                                        ),
-                                                  ),
-                                                  keyboardType:
-                                                      TextInputType.number,
-                                                ),
-                                                const SizedBox(height: 8),
-                                                TextField(
-                                                  controller:
-                                                      _getOrCreateController(
-                                                        quantityControllers,
-                                                        color.colorID,
-                                                      ),
-                                                  decoration: const InputDecoration(
-                                                    labelText: "Số lượng",
-                                                    border: OutlineInputBorder(),
-                                                    contentPadding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 12,
-                                                          vertical: 8,
-                                                        ),
-                                                  ),
-                                                  keyboardType:
-                                                      TextInputType.number,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                            ),
+                          builder: (context, vm, _) => Buildbranchdropdown(
+                            onBrandSelected: (brand) async {
+                              setState(() {
+                                _selectedBrand = brand;
+                                _selectedProduct = null;
+                              });
+                              if (brand != null) {
+                                await context.read<ProductViewModel>().fetchProductsByBrand(brand.brandID);
+                              }
+                            },
                           ),
-          
-                        const SizedBox(height: 20),
-                        _buildDescription(),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Product
+                        const Text('Sản phẩm', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Consumer<ProductViewModel>(
+                          builder: (context, vm, _) => BuildProductDropdown(
+                            brandID: _selectedBrand?.brandID ?? '',
+                            onProductSelected: (product) {
+                              setState(() => _selectedProduct = product);
+                            },
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Category
+                        const Text('Danh mục', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Consumer<CategoryViewmodel>(
+                          builder: (context, vm, _) => Buildcategorydropdown(
+                            onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Size
+                        const Text('Kích thước', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Consumer<SizesViewmodel>(
+                          builder: (context, vm, _) => BuildsizeShop(
+                            onSizeToggled: (size, selected) {
+                              setState(() {
+                                if (selected) {
+                                  _selectedSizes.add(size);
+                                } else {
+                                  _selectedSizes.removeWhere((s) => s.sizeID == size.sizeID);
+                                  // Xóa data của size này
+                                  for (var colorMap in _dataBySizeColor.values) {
+                                    colorMap.remove(size.sizeID);
+                                  }
+                                }
+                              });
+                            },
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Color
+                        const Text('Màu sắc', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Consumer<ColorsViewmodel>(
+                          builder: (context, vm, _) => BuildcolorShop(
+                            onColorsSelected: (colors) {
+                              setState(() {
+                                _selectedColors = colors;
+                                // Xóa data của màu không còn chọn
+                                _dataBySizeColor.removeWhere(
+                                  (colorId, _) => !colors.any((c) => c.colorID == colorId)
+                                );
+                              });
+                              _loadImages();
+                            },
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Input fields
+                        if (_selectedColors.isNotEmpty && _selectedSizes.isNotEmpty)
+                          ..._selectedColors.map((color) => _buildColorSection(color)),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Description
+                        const Text('Mô tả', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _descriptionController,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: 'Nhập mô tả...',
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 100),
                       ],
                     ),
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+          
+          // Loading
+          if (_isLoading)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
               ),
             ),
-          ),
-          if (isLoading)
-          Container(
-            color: Colors.black.withOpacity(0.5), // nền mờ
-            child: const Center(
-              child: CircularProgressIndicator(),
-            ),
-          ),
         ],
-       
       ),
     );
   }
 
-  Widget _buildHeader() => Row(
-    children: [
-      IconButton(
-        onPressed: () => Navigator.pop(context),
-        icon: const Icon(Icons.arrow_back, size: 30),
+  Widget _buildColorSection(ColorsModel color) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
       ),
-      const Spacer(),
-      const Text(
-        'Nhập sản phẩm',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Color name + image
+          Row(
+            children: [
+              Text(
+                color.name,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Color(int.parse(color.hexCode.replaceFirst('#', '0xFF'))),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.grey),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 8),
+          
+          // Image
+          if (_imagesByColor.containsKey(color.colorID))
+            Container(
+              height: 150,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  _imagesByColor[color.colorID]!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Icon(Icons.error, color: Colors.red),
+                  ),
+                ),
+              ),
+            ),
+          
+          const SizedBox(height: 12),
+          
+          // Size inputs
+          ..._selectedSizes.map((size) => _buildSizeInput(color, size)),
+        ],
       ),
-      const Spacer(),
-      IconButton(
-        onPressed: _saveProduct,
-        icon: const Icon(Icons.check, size: 30),
-      ),
-    ],
-  );
+    );
+  }
 
-  Widget _buildDescription() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text('Mô tả', style: TextStyle(color: Colors.grey)),
-      const SizedBox(height: 5),
-      TextFormField(
-        controller: descriptionController,
-        maxLines: null,
-        decoration: const InputDecoration(
-          labelText: 'Nhập mô tả',
-          border: OutlineInputBorder(),
-          floatingLabelBehavior: FloatingLabelBehavior.never,
-          prefixIcon: Icon(Icons.description, color: Colors.blue),
-        ),
+  Widget _buildSizeInput(ColorsModel color, SizesModel size) {
+    final data = _getSizeData(color.colorID, size.sizeID);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(6),
       ),
-    ],
-  );
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Size: ${size.name}',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: data.quantity,
+                  decoration: const InputDecoration(
+                    labelText: 'Số lượng',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: data.importPrice,
+                  decoration: const InputDecoration(
+                    labelText: 'Giá nhập',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: data.salePrice,
+                  decoration: const InputDecoration(
+                    labelText: 'Giá bán',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Class lưu data cho 1 size
+class _SizeData {
+  final quantity = TextEditingController();
+  final importPrice = TextEditingController();
+  final salePrice = TextEditingController();
+
+  void dispose() {
+    quantity.dispose();
+    importPrice.dispose();
+    salePrice.dispose();
+  }
 }

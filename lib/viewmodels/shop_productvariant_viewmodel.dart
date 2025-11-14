@@ -1,100 +1,72 @@
-import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fashion_app/data/models/shop_product_variant_model.dart';
 import 'package:fashion_app/data/repositories/shop_productvariant_repository.dart';
+import 'package:flutter/material.dart';
 
-class ShopProductvariantViewmodel extends ChangeNotifier {
-  final ShopProductvariantRepository _repository = ShopProductvariantRepository();
+class ShopProductVariantViewModel extends ChangeNotifier {
+  final _repo = ShopProductvariantRepository();
+  final _firestore = FirebaseFirestore.instance;
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
-
-  List<Map<String, dynamic>> _variants = [];
-  List<Map<String, dynamic>> get variants => _variants;
-
-  Future<void> addShopProductVariant({
-    required String shopProductID,
-    required Map<String, dynamic> variantData,
-  }) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
-
-      await _repository.addShopProductVariant(
-        shopProductID: shopProductID,
-        variantData: variantData,
-      );
-
-      await fetchVariants(shopProductID);
-    } catch (e) {
-      debugPrint(' Lỗi khi thêm biến thể: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
+  bool isLoading = false;
+  List<ShopProductVariantModel> variants = [];
 
   Future<void> fetchVariants(String shopProductID) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
+    isLoading = true;
+    notifyListeners();
 
-      _variants = await _repository.getVariantsByShopProductID(shopProductID);
+    try {
+      variants = await _repo.getVariants(shopProductID);
     } catch (e) {
-      debugPrint(' Lỗi khi load biến thể: $e');
+      debugPrint('Error fetching variants: $e');
+      variants = [];
     } finally {
-      _isLoading = false;
+      isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> updateVariant({
-    required String shopProductID,
-    required String variantID,
-    required Map<String, dynamic> updatedData,
-  }) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
-
-      await _repository.updateShopProductVariant(
-        shopProductID: shopProductID,
-        variantID: variantID,
-        updatedData: updatedData,
-      );
-
-      await fetchVariants(shopProductID);
-    } catch (e) {
-      debugPrint(' Lỗi khi cập nhật biến thể: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+  Future<String> addVariant(String shopProductID, Map<String, dynamic> data) async {
+    final variantId = await _repo.addVariant(shopProductID, data);
+    await fetchVariants(shopProductID);
+    return variantId;
   }
 
-  Future<void> deleteVariant({
-    required String shopProductID,
-    required String variantID,
-  }) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
-
-      await _repository.deleteShopProductVariant(
-        shopProductID: shopProductID,
-        variantID: variantID,
-      );
-
-      _variants.removeWhere((v) => v['shopProductVariantID'] == variantID);
-      notifyListeners();
-    } catch (e) {
-      debugPrint('🔥 Lỗi khi xóa biến thể: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+  Future<void> updateVariant(String shopProductID, String variantID, Map<String, dynamic> data) async {
+    await _repo.updateVariant(shopProductID, variantID, data);
+    await fetchVariants(shopProductID);
   }
 
-  void clearVariants() {
-    _variants = [];
+  Future<void> updateMultipleVariants(
+      String shopProductID, Map<String, Map<String, dynamic>> dataToUpdate) async {
+    await _repo.updateMultipleVariants(shopProductID, dataToUpdate);
+    await fetchVariants(shopProductID);
+  }
+
+  Future<void> deleteVariant(String shopProductID, String variantID) async {
+    await _repo.deleteVariant(shopProductID, variantID);
+    variants.removeWhere((v) => v.shopProductVariantID == variantID);
+    notifyListeners();
+  }
+
+  Future<String?> getColorName(String? colorID) async {
+    if (colorID == null || colorID.isEmpty) return null;
+    
+    try {
+      final doc = await _firestore.collection('colors').doc(colorID).get();
+      
+      if (doc.exists) {
+        final data = doc.data();
+        return data?['name'] ?? data?['name'] ?? colorID;
+      }
+      
+      return colorID;
+    } catch (e) {
+      debugPrint('Error fetching color name: $e');
+      return colorID;
+    }
+  }
+  void clear() {
+    variants.clear();
     notifyListeners();
   }
 }

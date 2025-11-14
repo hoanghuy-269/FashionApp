@@ -64,4 +64,24 @@ class ProductDetailViewModel extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
+  Future<String?> getImageByID({
+    required String productId,
+    required String productDetailId,
+  }) async {
+    isLoading = true;
+    notifyListeners();
+    String? imageUrl;
+    try {
+      imageUrl = await _productDetailRepository.getImageByID(
+        productId: productId,
+        colorID: productDetailId,
+      );
+    } catch (e) {
+      print('Lỗi khi lấy ảnh chi tiết sản phẩm: $e');
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+    return imageUrl;
+  }
 }
