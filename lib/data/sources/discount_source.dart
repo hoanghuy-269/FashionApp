@@ -3,7 +3,8 @@ import '../../data/models/voucher.dart';
 
 class DiscountSource {
   final FirebaseFirestore _firestore;
-  DiscountSource({FirebaseFirestore? firestore})
+  
+  DiscountSource({FirebaseFirestore? firestore}) 
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _col =>
@@ -26,6 +27,4 @@ class DiscountSource {
   Future<void> delete(String id) async {
     await _col.doc(id).delete();
   }
-
-  
 }

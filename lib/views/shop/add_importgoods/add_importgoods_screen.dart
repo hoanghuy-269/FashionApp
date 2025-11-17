@@ -37,10 +37,8 @@ import 'package:provider/provider.dart';
     // Lưu image theo màu
     final Map<String, String> _imagesByColor = {};
     
-    // Lưu data theo màu -> size
     final Map<String, Map<String, _SizeData>> _dataBySizeColor = {};
 
-    // Selected items
     BrandsModel? _selectedBrand;
     CategoryModel? _selectedCategory;
     ProductsModel? _selectedProduct;
