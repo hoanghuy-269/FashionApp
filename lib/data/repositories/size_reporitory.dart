@@ -24,6 +24,7 @@ class SizeReporitory {
     return sizes.any((size) => size.name.toLowerCase() == name.toLowerCase());
   }
 
+
   Future<SizesModel?> getSizeById(String sizeID) async {
     final allSizesMap = await getAllSizes();
     if (allSizesMap.containsKey(sizeID)) {

@@ -25,10 +25,24 @@ class _BuildProductDropdownState extends State<BuildProductDropdown> {
   Widget build(BuildContext context) {
     return Consumer<ProductViewModel>(
       builder: (context, productVM, _) {
-        final products =
+        // Lọc theo brandID
+        final filteredProducts =
             productVM.productList
-                .where((p) => p.brandID == widget.brandID) // lọc theo brandID
+                .where((p) => p.brandID == widget.brandID)
                 .toList();
+
+        // Loại bỏ trùng lặp dựa trên productID
+        final uniqueProducts = <String, ProductsModel>{};
+        for (var product in filteredProducts) {
+          uniqueProducts[product.productID] = product;
+        }
+        final products = uniqueProducts.values.toList();
+
+        // Reset selectedProduct nếu không còn trong danh sách
+        if (selectedProduct != null && 
+            !products.any((p) => p.productID == selectedProduct!.productID)) {
+          selectedProduct = null;
+        }
 
         if (productVM.isLoading) {
           return const Center(child: CircularProgressIndicator());

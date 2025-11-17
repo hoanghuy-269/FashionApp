@@ -72,6 +72,15 @@ class SizesViewmodel extends ChangeNotifier {
       return null;
     }
   }
+  // lấy tất cả size
+  Future<Map<String, Map<String, dynamic>>> getAllSizes() async {
+    try {
+      return await _sizes.getAllSizes();
+    } catch (e) {
+      debugPrint('Lỗi khi lấy tất cả size: $e');
+      return {};
+    }
+  }
   
   
 }
