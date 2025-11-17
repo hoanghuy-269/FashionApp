@@ -46,7 +46,6 @@ Future<ColorsModel> addColor(ColorsModel color) async {
       return '#808080';
     }
   }
-  
   Future<Map<String, Map<String, dynamic>>> getAllColors() async {
     try {
       final snapshot = await _firestore.collection('colors').get();

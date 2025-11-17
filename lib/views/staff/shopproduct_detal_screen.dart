@@ -1,4 +1,3 @@
-import 'package:fashion_app/core/utils/colorhelper.dart';
 import 'package:fashion_app/data/models/product_size_model.dart';
 import 'package:fashion_app/data/sources/color_source.dart';
 import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
@@ -18,22 +17,7 @@ class ShopproductDetalScreen extends StatefulWidget {
 }
 
 class _ShopproductDetalScreenState extends State<ShopproductDetalScreen> {
-  final ColorSource _colorSource = ColorSource();
- 
-  
-  // Fetch color từ Firestore
-  Future<Color> _getColorFromFirestore(String? colorID) async {
-    if (colorID == null || colorID.isEmpty) return Colors.grey;
-    
-    try {
-      final hexCode = await _colorSource.getColorHexCode(colorID);
-      final color = ColorHelper.hexToColor(hexCode);
-      return color;
-    } catch (e) {
-      print('Error fetching color $colorID: $e');
-      return Colors.grey;
-    }
-  }
+  ColorsViewmodel colorsViewmodel = ColorsViewmodel();
   
   @override
   void initState() {
@@ -43,11 +27,8 @@ class _ShopproductDetalScreenState extends State<ShopproductDetalScreen> {
     print("productDetailID in initState: $productdetalID");
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // QUAN TRỌNG: Load màu trước
       context.read<ColorsViewmodel>().fetchAllColors();
-      
-      // Sau đó load variants
-      context.read<ShopProductVariantViewModel>().fetchVariants(
+            context.read<ShopProductVariantViewModel>().fetchVariants(
         productdetalID ?? '',
       );
     });
@@ -178,7 +159,7 @@ class _ShopproductDetalScreenState extends State<ShopproductDetalScreen> {
                                 style: TextStyle(fontWeight: FontWeight.w600),
                               ),
                               FutureBuilder<Color>(
-                                future: _getColorFromFirestore(colorID),
+                                future: colorsViewmodel.getColorFromFirestore(colorID),
                                 builder: (context, snapshot) {
                                   return Container(
                                     width: 20,
@@ -202,7 +183,7 @@ class _ShopproductDetalScreenState extends State<ShopproductDetalScreen> {
                                 },
                               ),
                               SizedBox(width: 8),
-                              // SỬA: Dùng Consumer để lấy tên màu
+                              
                               Consumer<ColorsViewmodel>(
                                 builder: (context, colorVM, _) {
                                   final colorName = colorVM.getColorNameById(colorID);
@@ -278,7 +259,6 @@ class _ShopproductDetalScreenState extends State<ShopproductDetalScreen> {
                                   children: [
                                     ...sizes.map((size) {
                                       return ListTile(
-                                        // SỬA: Dùng FutureBuilder để lấy tên size
                                         title: FutureBuilder<String?>(
                                           future: context.read<SizesViewmodel>().getSizeNameById(size.sizeID ?? ''),
                                           builder: (context, sizeSnapshot) {

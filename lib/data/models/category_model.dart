@@ -17,6 +17,8 @@ class CategoryModel {
       logoUrl: json['logoUrl'] ?? '',
     );
   }
+
+  get id => null;
   Map<String, dynamic> toMap() {
     return {
       'categoryID': categoryID,

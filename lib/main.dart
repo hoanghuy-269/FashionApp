@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import 'package:fashion_app/data/models/User.dart';
-=======
-
->>>>>>> e7d896c1be56be28da678506b0c3c1a1d579c45e
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/brand_viewmodel.dart';
 import 'package:fashion_app/viewmodels/category_viewmodel.dart';
