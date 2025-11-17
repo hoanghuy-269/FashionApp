@@ -1,5 +1,5 @@
 class CategoryModel {
-  final String categoryID;
+  final String categoryID;   // chính là doc.id
   final String categoryName;
   final String logoUrl;
 
@@ -9,9 +9,10 @@ class CategoryModel {
     required this.logoUrl,
   });
 
-  factory CategoryModel.fromFirestore(Map<String, dynamic> json, String categoryID) {
+  // Lấy từ Firestore
+  factory CategoryModel.fromFirestore(Map<String, dynamic> json, String id) {
     return CategoryModel(
-      categoryID: categoryID,
+      categoryID: id,
       categoryName: json['categoryName'] ?? '',
       logoUrl: json['logoUrl'] ?? '',
     );
