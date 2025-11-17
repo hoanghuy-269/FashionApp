@@ -53,23 +53,20 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                 user.addresses.isNotEmpty ? user.addresses[0] : '';
             avatarURL = user.avatar;
             emailController.text = user.email ?? '';
-            isLoading = false; // ✅ Thêm dòng này
+            isLoading = false;
           });
         } else {
-          setState(
-            () => isLoading = false,
-          ); // ✅ Dừng loading ngay cả khi user null
+          setState(() => isLoading = false);
         }
       });
     } else {
-      // Trường hợp không có idUser
       setState(() => isLoading = false);
     }
   }
 
   @override
   void dispose() {
-    _userSub?.cancel(); // nhớ hủy stream khi widget bị dispose
+    _userSub?.cancel();
     super.dispose();
   }
 
@@ -349,11 +346,11 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-             
+              if (_isApprovedShop)
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {
-                      // Navigator.pop(context);
+                      Navigator.pop(context);
                       _navigateToShop();
                     },
                     style: ElevatedButton.styleFrom(
@@ -369,7 +366,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                       style: TextStyle(fontSize: 13),
                     ),
                   ),
-                )
+                ),
             ],
           ),
 

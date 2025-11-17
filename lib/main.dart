@@ -17,7 +17,9 @@ import 'package:fashion_app/views/admin/AdminBranch.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/admin/Admincategories.dart';
 import 'package:fashion_app/views/login/auth_wrapper.dart';
+import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:fashion_app/views/user/home_screen.dart';
+import 'package:fashion_app/views/user/product_detail.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:fashion_app/views/admin/admin_home_screen.dart';
 import 'package:fashion_app/views/admin/admin_manageShop_screen.dart';
@@ -30,7 +32,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,12 +61,13 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ShopProductViewModel()),
         ChangeNotifierProvider(create: (_) => ShopProductVariantViewModel()),
         ChangeNotifierProvider(create: (_) => ShopProductRequestViewmodel()),
-        ChangeNotifierProvider(create: (_) =>ProductSizeViewmodel()),
+        ChangeNotifierProvider(create: (_) => ProductSizeViewmodel()),
       ],
       child: const MyApp(),
     ),
   );
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
@@ -76,15 +78,16 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
+
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-   // return Scaffold(body: Center(child: Danhmucj()));
-    return Scaffold(body: Center(child: AdminHomeScreen()));
+    return Scaffold(body: Center(child: LoginScreen()));
   }
 }
