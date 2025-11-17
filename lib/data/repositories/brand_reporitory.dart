@@ -23,4 +23,31 @@ class BrandReporitory {
       return [];
     }
   }
+
+  // ✅ THÊM BRAND
+  Future<void> addBrand(String name, String logo) async {
+    try {
+      await _source.addBrand(name, logo);
+    } catch (e) {
+      print("Add brand error: $e");
+    }
+  }
+
+  // ✅ SỬA BRAND
+  Future<void> updateBrand(String id, String name, String logo) async {
+    try {
+      await _source.updateBrand(id, name, logo);
+    } catch (e) {
+      print("Update brand error: $e");
+    }
+  }
+
+  // ✅ XÓA BRAND
+  Future<void> deleteBrand(String id) async {
+    try {
+      await _source.deleteBrand(id);
+    } catch (e) {
+      print("Delete brand error: $e");
+    }
+  }  
 }

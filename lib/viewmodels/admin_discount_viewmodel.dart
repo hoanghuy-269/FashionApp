@@ -5,6 +5,7 @@ import '../data/models/voucher.dart';
 
 class AdminDiscountViewModel extends ChangeNotifier {
   final DiscountRepository _repo;
+  
   AdminDiscountViewModel({DiscountRepository? repo})
       : _repo = repo ?? DiscountRepository();
 
@@ -16,12 +17,14 @@ class AdminDiscountViewModel extends ChangeNotifier {
   List<Voucher> get vouchers => _vouchers;
   String? get error => _error;
 
+  // Initializing Firebase
   Future<void> init() async {
     if (_initialized) return;
     await Firebase.initializeApp();
     _initialized = true;
   }
 
+  // Fetching all vouchers from the repository
   Future<List<Voucher>> fetch() async {
     try {
       final list = await _repo.fetchAll();
@@ -36,21 +39,24 @@ class AdminDiscountViewModel extends ChangeNotifier {
     }
   }
 
+  // Adding a new voucher
   Future<void> add(Voucher v) async {
     await _repo.add(v);
     await fetch();
   }
 
+  // Updating an existing voucher
   Future<void> update(String id, Voucher v) async {
     await _repo.update(id, v);
     await fetch();
   }
 
+  // Deleting a voucher
   Future<void> delete(String id) async {
     await _repo.delete(id);
     await fetch();
   }
 
-  
-  String amountString(Voucher v) => v.amount ?? (v.soTien ?? '');
+  // Getter for discount amount (now using percentage)
+  String amountString(Voucher v) => '${v.percentageDiscount}% Giảm giá';
 }
