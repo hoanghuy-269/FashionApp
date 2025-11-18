@@ -30,6 +30,7 @@ class UserRepository {
       loginMethodId: user.loginMethodId,
       roleId: user.roleId,
       createdAt: user.createdAt,
+      notificationToken: user.notificationToken,
     );
 
     await _service.addOrUpdateUser(userWithUid);

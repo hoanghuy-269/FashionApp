@@ -346,7 +346,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              if (_isApprovedShop)
+              // if (_isApprovedShop)
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {

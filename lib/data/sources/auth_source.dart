@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/data/models/storestaff_model.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import '../models/User.dart' as model;
@@ -108,6 +109,7 @@ class FirebaseService {
       email: user.email ?? "",
       password: password,
     );
+    final fcmToken = await FirebaseMessaging.instance.getToken();
 
     final firebaseUser = credential.user!;
 
@@ -122,6 +124,8 @@ class FirebaseService {
       addresses: user.addresses,
       loginMethodId: 'local',
       roleId: 'role002',
+      // thêm token xử lí thông báo
+      notificationToken: fcmToken,
     );
 
     await addOrUpdateUser(newUser);
@@ -135,6 +139,7 @@ class FirebaseService {
         email: email,
         password: password,
       );
+      final fcmToken = await FirebaseMessaging.instance.getToken();
 
       final firebaseUser = credential.user!;
       final uid = firebaseUser.uid;
@@ -150,6 +155,8 @@ class FirebaseService {
           addresses: [],
           loginMethodId: 'local',
           roleId: 'role002',
+          // thêm token xử lí thông báo
+          notificationToken: fcmToken,
         ),
       );
 
@@ -174,6 +181,8 @@ class FirebaseService {
       idToken: googleAuth.idToken,
     );
 
+    final fcmToken = await FirebaseMessaging.instance.getToken();
+
     final userCredential = await _auth.signInWithCredential(credential);
     final firebaseUser = userCredential.user;
     if (firebaseUser == null) return null;
@@ -187,6 +196,8 @@ class FirebaseService {
       addresses: [],
       loginMethodId: 'google',
       roleId: 'role002',
+      // thêm token xử lí thông báo
+      notificationToken: fcmToken,
     );
 
     await addOrUpdateUser(newUser);
@@ -205,6 +216,8 @@ class FirebaseService {
         result.accessToken!.tokenString,
       );
 
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+
       final userCredential = await _auth.signInWithCredential(credential);
       final firebaseUser = userCredential.user;
       if (firebaseUser == null) return null;
@@ -218,6 +231,8 @@ class FirebaseService {
         addresses: [],
         loginMethodId: 'facebook',
         roleId: 'role002',
+        // thêm token xử lí thông báo
+        notificationToken: fcmToken,
       );
 
       // Đồng bộ Auth → Firestore

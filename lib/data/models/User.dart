@@ -11,7 +11,9 @@ class User {
   final String roleId;
   final bool status;
   final Timestamp? createdAt;
-
+  // thêm token sử lí thông báo 
+  final String? notificationToken;
+  
   User({
     required this.id,
     this.name,
@@ -23,6 +25,8 @@ class User {
     required this.roleId,
     this.createdAt,
     this.status = true,
+    this.notificationToken,
+   
   });
 
   factory User.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -38,6 +42,7 @@ class User {
       roleId: data['roleId'] ?? 'role002',
       createdAt: data['createdAt'],
       status: data['status'] ?? true,
+      notificationToken: data['notificationToken'],
     );
   }
 
@@ -52,6 +57,7 @@ class User {
       'roleId': roleId,
       'status': status,
       'createdAt': createdAt ?? FieldValue.serverTimestamp(),
+      'notificationToken': notificationToken,
     };
   }
 }

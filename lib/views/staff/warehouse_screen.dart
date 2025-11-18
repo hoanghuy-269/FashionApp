@@ -153,6 +153,7 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                
                 // Tổng số đơn
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),

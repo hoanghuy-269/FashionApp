@@ -124,4 +124,10 @@ class ProductSizeViewmodel extends ChangeNotifier {
       notifyListeners();
     }
   }
+  Stream<List<ProductSizeModel>> watchSizesForVariant(
+  String shopProductID, 
+  String variantID
+) {
+  return _source.watchSizesByVariant(shopProductID, variantID);
+}
 }

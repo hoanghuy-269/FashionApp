@@ -3,6 +3,7 @@ import 'package:fashion_app/views/shop/importgoods_screen.dart';
 import 'package:fashion_app/views/shop/shop_personnal_screen.dart';
 import 'package:fashion_app/views/shop/shop_profile_screen.dart';
 import 'package:fashion_app/views/shop/storerevenue_detail_screen.dart';
+import 'package:fashion_app/views/shop/warehouse_management.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -322,6 +323,14 @@ class _ShopScreenState extends State<ShopScreen> {
           LucideIcons.warehouse,
           Colors.green,
           count: 1,
+          onTap: (){
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => WarehouseChartScreen(),
+              ),
+            );
+          }
         ),
         _buildGridItem(
           "Yêu cầu  nhập hàng",

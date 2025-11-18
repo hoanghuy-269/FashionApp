@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/data/models/storestaff_model.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:uuid/uuid.dart';
 import '../data/models/User.dart';
 import '../data/repositories/user_repository.dart';
@@ -20,6 +21,7 @@ class AuthViewModel extends ChangeNotifier {
     required String password,
     required String phone,
   }) async {
+    final fcmToken = await FirebaseMessaging.instance.getToken();
     try {
       isLoading = true;
       message = null;
@@ -33,6 +35,7 @@ class AuthViewModel extends ChangeNotifier {
         addresses: [],
         loginMethodId: 'local',
         roleId: 'role002',
+        notificationToken: fcmToken,
       );
 
       await _userRepository.registerUser(newUser, password);
@@ -60,6 +63,7 @@ class AuthViewModel extends ChangeNotifier {
         notifyListeners();
         return false;
       }
+     
 
       print('🔒 User status: ${user.status}');
 
@@ -294,4 +298,6 @@ class AuthViewModel extends ChangeNotifier {
 
     await _userRepository.updateUser(userId, data);
   }
+
+  
 }
