@@ -1,7 +1,12 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fashion_app/data/models/cart_model.dart';
+import 'package:fashion_app/data/models/order_item_model.dart';
+import 'package:fashion_app/data/models/order_model.dart';
+import 'package:fashion_app/viewmodels/cart_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:fashion_app/data/models/shop_product_with_detail.dart';
+import 'package:provider/provider.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final ShopProductWithDetail product;
@@ -18,12 +23,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _currentImage = 0;
   late PageController _pageController;
   Timer? _timer;
-
+  ValueNotifier<int> cartItemCount = ValueNotifier<int>(0);
   int selectedColorIndex = 0;
   String selectedSize = "";
 
   final Map<String, String> _colorNameCache = {};
-  List<Map<String, dynamic>> _productSizes = [];
+  Map<String, List<Map<String, dynamic>>> _variantSizes = {};
+  List<Map<String, dynamic>> sizes = [];
   bool _isLoadingSizes = true;
   Map<String, String> _sizeNameCache = {};
   // Thêm vào state
@@ -68,6 +74,37 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
+  void _listenSizesByVariant(String variantID) {
+    final productID = widget.product.shopProduct.shopproductID;
+
+    FirebaseFirestore.instance
+        .collection('shop_products')
+        .doc(productID)
+        .collection('shop_product_variants')
+        .doc(variantID)
+        .collection('product_sizes')
+        .snapshots()
+        .listen((snapshot) {
+          final loadedSizes =
+              snapshot.docs.map((doc) {
+                final data = doc.data();
+                return {
+                  'sizeID': doc.id,
+                  'name': _sizeNameCache[doc.id] ?? 'Unknown',
+                  'quantity': data['quantity'] ?? 0,
+                  'price': (data['price'] as num?)?.toDouble() ?? 0,
+                };
+              }).toList();
+
+          setState(() {
+            if (_selectedVariantID == variantID) {
+              sizes = loadedSizes;
+            }
+            _isLoadingSizes = false;
+          });
+        });
+  }
+
   Future<void> _loadAllSizes() async {
     final snapshot = await FirebaseFirestore.instance.collection('sizes').get();
     for (var doc in snapshot.docs) {
@@ -93,9 +130,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
-
     _loadAllSizes().then((_) {
-      _loadProductSizes();
+      //_loadProductSizes();
+      _listenSizesByVariant(_selectedVariantID);
     });
     _loadAdditionalInfo();
     // Giữ nguyên timer lướt ảnh
@@ -127,12 +164,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     setState(() {
       selectedColorIndex = index;
       selectedSize = "";
-      _productSizes.clear();
+      sizes.clear();
       _isLoadingSizes = true;
       _quantity = 1;
     });
 
-    _loadSizesByVariant(widget.product.variants[index].shopProductVariantID);
+    _listenSizesByVariant(widget.product.variants[index].shopProductVariantID);
   }
 
   Future<void> _loadSizesByVariant(String variantID) async {
@@ -176,13 +213,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           }).toList();
 
       setState(() {
-        _productSizes = loadedSizes;
+        sizes = loadedSizes;
         _isLoadingSizes = false;
       });
     } catch (e) {
       setState(() {
         _isLoadingSizes = false;
-        _productSizes = [];
+        sizes = [];
       });
     }
   }
@@ -191,7 +228,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     try {
       setState(() {
         _isLoadingSizes = true;
-        _productSizes.clear();
+        sizes.clear();
         selectedSize = "";
       });
 
@@ -236,7 +273,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           }).toList();
 
       setState(() {
-        _productSizes = loaded;
+        sizes = loaded;
         _isLoadingSizes = false;
       });
     } catch (e) {
@@ -260,7 +297,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       return _sizeNameCache[sizeID]!;
     }
 
-    final size = _productSizes.firstWhere(
+    final size = sizes.firstWhere(
       (size) => size['sizeID'] == sizeID,
       orElse: () => {'name': sizeID},
     );
@@ -275,7 +312,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (sizeID.isEmpty) return 0;
 
     try {
-      final size = _productSizes.firstWhere((size) => size['sizeID'] == sizeID);
+      final size = sizes.firstWhere((size) => size['sizeID'] == sizeID);
       return size['quantity'] as int? ?? 0;
     } catch (e) {
       return 0;
@@ -286,7 +323,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (sizeID.isEmpty) return 0;
 
     try {
-      final size = _productSizes.firstWhere((s) => s['sizeID'] == sizeID);
+      final size = sizes.firstWhere((s) => s['sizeID'] == sizeID);
       final price = size['price'];
 
       if (price == null) return 0;
@@ -298,11 +335,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   double _getMinPrice() {
-    if (_productSizes.isEmpty) return 0;
+    if (sizes.isEmpty) return 0;
 
     try {
       final prices =
-          _productSizes
+          sizes
               .map((s) {
                 final price = s['price'];
                 if (price == null) return 0.0;
@@ -324,16 +361,156 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return true;
   }
 
+  Stream<int> get cartItemCountStream {
+    if (widget.idUser == null) {
+      return Stream.value(0);
+    }
+
+    return FirebaseFirestore.instance
+        .collection('carts')
+        .doc(widget.idUser)
+        .collection('cart_items')
+        .snapshots()
+        .map((snapshot) => snapshot.size);
+  }
+  // Thêm vào _ProductDetailScreenState class
+
+  Future<void> _createSampleOrder() async {
+    try {
+      // Kiểm tra user đã đăng nhập chưa
+      if (widget.idUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Vui lòng đăng nhập để mua hàng'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Tạo order ID
+      final orderId = 'ORD_${DateTime.now().millisecondsSinceEpoch}';
+      final product = widget.product;
+      final variant = product.variants[selectedColorIndex];
+
+      // Tạo order document
+      final orderData = {
+        'orderId': orderId,
+        'userId': widget.idUser!,
+        'customerPhone': '0123456789', // Số điện thoại mẫu
+        'customerAddress': '123 Đường ABC, Quận 1, TP.HCM', // Địa chỉ mẫu
+        'itemsTotal': _getSizePrice(selectedSize) * _quantity,
+        'shippingFee': 30000.0, // Phí ship mẫu
+        'discount': 0.0,
+        'finalTotal': (_getSizePrice(selectedSize) * _quantity) + 30000.0,
+        'paymentMethodId': 'payment_cod', // COD mẫu
+        'orderStatus': 'pending',
+        'createdAt': Timestamp.now(),
+        'updatedAt': Timestamp.now(),
+      };
+
+      // Tạo order item
+      final orderItem = {
+        'orderItemId': '${orderId}_ITEM_1',
+        'productId': product.shopProduct.shopproductID,
+        'productName': product.productDetail.name ?? 'Không tên',
+        'variantId': variant.shopProductVariantID,
+        'shopId': product.shopProduct.shopId ?? '',
+        'colorId': variant.colorID,
+        'sizeId': selectedSize,
+        'price': _getSizePrice(selectedSize),
+        'quantity': _quantity,
+        'totalPrice': _getSizePrice(selectedSize) * _quantity,
+        'itemStatus': 'pending',
+        'voucherId': '',
+        'imageUrl': variant.imageUrls.isNotEmpty ? variant.imageUrls : '',
+        'createdAt': Timestamp.now(),
+      };
+
+      // Lưu lên Firebase với nested structure
+      await _saveOrderToFirebaseNested(orderId, orderData, orderItem);
+
+      final colorName = _getColorName(_selectedColorID);
+      final sizeName = _getSizeName(selectedSize);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '✅ Đã tạo đơn hàng #$orderId thành công - $_quantity sản phẩm ($colorName - $sizeName)',
+          ),
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'XEM ĐƠN HÀNG',
+            onPressed: () {
+              // TODO: Điều hướng đến trang đơn hàng
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      print('❌ Lỗi tạo đơn hàng: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Lỗi tạo đơn hàng: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Future<void> _saveOrderToFirebaseNested(
+    String orderId,
+    Map<String, dynamic> orderData,
+    Map<String, dynamic> orderItem,
+  ) async {
+    final batch = FirebaseFirestore.instance.batch();
+
+    // 1. Tạo user document trong orders collection (nếu chưa có)
+    final userOrderRef = FirebaseFirestore.instance
+        .collection('orders')
+        .doc(widget.idUser);
+
+    // 2. Tạo subcollection user_orders và order document
+    final orderRef = userOrderRef.collection('user_orders').doc(orderId);
+
+    batch.set(orderRef, orderData);
+
+    // 3. Tạo subcollection order_items trong order document
+    final orderItemRef = orderRef
+        .collection('order_items')
+        .doc(orderItem['orderItemId']);
+
+    batch.set(orderItemRef, orderItem);
+
+    // 4. Xóa sản phẩm khỏi giỏ hàng (nếu có)
+    final cartItemId =
+        '${widget.product.shopProduct.shopproductID}_${_selectedColorID}_$selectedSize';
+    final cartRef = FirebaseFirestore.instance
+        .collection('carts')
+        .doc(widget.idUser)
+        .collection('cart_items')
+        .doc(cartItemId);
+
+    batch.delete(cartRef);
+
+    await batch.commit();
+
+    print('✅ Đã tạo đơn hàng nested: $orderId');
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
     _timer?.cancel();
+    cartItemCount.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     int maxQuantity = _getSizeQuantity(selectedSize);
+    final cartViewModel = Provider.of<CartViewModel>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chi tiết sản phẩm'),
@@ -343,11 +520,43 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.home),
-            onPressed:
-                () => Navigator.popUntil(context, (route) => route.isFirst),
-            tooltip: 'Về trang chủ',
+          // Icon giỏ hàng với StreamBuilder
+          StreamBuilder<int>(
+            stream: cartItemCountStream,
+            builder: (context, snapshot) {
+              final itemCount = snapshot.data ?? 0;
+
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.shopping_bag_outlined),
+                    onPressed: () {
+                      // TODO: Điều hướng đến màn hình giỏ hàng
+                    },
+                  ),
+                  if (itemCount > 0)
+                    Positioned(
+                      right: 4,
+                      top: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          itemCount > 99 ? '99+' : '$itemCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -630,13 +839,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Text('Đang tải sizes...'),
                     ],
                   )
-                  : _productSizes.isEmpty
+                  : sizes.isEmpty
                   ? const Text('Không có size nào cho màu này')
                   : Wrap(
                     spacing: 10,
                     runSpacing: 8,
                     children:
-                        _productSizes.map((size) {
+                        sizes.map((size) {
                           final sizeID = size['sizeID'] as String;
                           final sizeName = size['name'] as String;
                           final quantity = size['quantity'] as int;
@@ -644,10 +853,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                           return GestureDetector(
                             onTap:
-                                () => setState(() {
-                                  selectedSize = sizeID;
-                                  _quantity = 1;
-                                }),
+                                quantity > 0
+                                    ? () => setState(() {
+                                      selectedSize = sizeID;
+                                      _quantity = 1;
+                                    })
+                                    : null, // Ngăn chọn nếu hết hàng
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -655,9 +866,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color:
-                                    isSelected
-                                        ? Colors.blueAccent
-                                        : const Color(0xFFD9D9D9),
+                                    quantity > 0
+                                        ? (isSelected
+                                            ? Colors.blueAccent
+                                            : const Color(0xFFD9D9D9))
+                                        : Colors
+                                            .grey
+                                            .shade400, // màu xám khi hết hàng
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Column(
@@ -666,9 +881,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     sizeName,
                                     style: TextStyle(
                                       color:
-                                          isSelected
-                                              ? Colors.white
-                                              : Colors.black,
+                                          quantity > 0
+                                              ? (isSelected
+                                                  ? Colors.white
+                                                  : Colors.black)
+                                              : Colors.white70,
                                       fontWeight:
                                           isSelected
                                               ? FontWeight.bold
@@ -677,16 +894,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    "$quantity cái",
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color:
-                                          isSelected
-                                              ? Colors.white
-                                              : Colors.green,
-                                    ),
-                                  ),
+                                  quantity > 0
+                                      ? const SizedBox()
+                                      : const SizedBox(),
                                 ],
                               ),
                             ),
@@ -866,24 +1076,99 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               // === NÚT HÀNH ĐỘNG ===
               Row(
                 children: [
+                  // NÚT THÊM GIỎ - BỊ THIẾU
                   Expanded(
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton(
                         onPressed:
                             selectedSize.isNotEmpty
-                                ? () {
+                                ? () async {
+                                  // LẤY CartViewModel từ Provider
+                                  final cartVM = Provider.of<CartViewModel>(
+                                    context,
+                                    listen: false,
+                                  );
+
+                                  // Kiểm tra user đã đăng nhập chưa
+                                  if (widget.idUser == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Vui lòng đăng nhập để thêm vào giỏ hàng',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
+
                                   final colorName = _getColorName(
                                     _selectedColorID,
                                   );
                                   final sizeName = _getSizeName(selectedSize);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        "Đã thêm $_quantity sản phẩm ($colorName - $sizeName) vào giỏ hàng",
-                                      ),
-                                    ),
+
+                                  final cartItem = CartItem(
+                                    cartItemId:
+                                        '${widget.product.shopProduct.shopproductID}_${_selectedColorID}_$selectedSize',
+                                    userId: widget.idUser!,
+                                    productId:
+                                        widget
+                                            .product
+                                            .shopProduct
+                                            .shopproductID,
+                                    productName:
+                                        widget.product.productDetail.name ??
+                                        'Không tên',
+                                    variantId: _selectedVariantID,
+                                    shopId:
+                                        widget.product.shopProduct.shopId ?? '',
+                                    colorId: _selectedColorID,
+                                    sizeId: selectedSize,
+                                    quantity: _quantity,
+                                    price: _getSizePrice(selectedSize),
+                                    imageUrl:
+                                        widget
+                                                .product
+                                                .variants[selectedColorIndex]
+                                                .imageUrls
+                                                .isNotEmpty
+                                            ? widget
+                                                .product
+                                                .variants[selectedColorIndex]
+                                                .imageUrls
+                                            : '',
+                                    addedAt: DateTime.now(),
                                   );
+
+                                  try {
+                                    await cartVM.addOrUpdateItem(cartItem);
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          "✅ Đã thêm $_quantity sản phẩm ($colorName - $sizeName) vào giỏ hàng",
+                                        ),
+                                        duration: const Duration(seconds: 2),
+                                        action: SnackBarAction(
+                                          label: 'XEM GIỎ',
+                                          onPressed: () {
+                                            // TODO: Điều hướng đến giỏ hàng
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          "❌ Lỗi thêm giỏ hàng: $e",
+                                        ),
+                                        backgroundColor: Colors.red,
+                                        duration: const Duration(seconds: 3),
+                                      ),
+                                    );
+                                  }
                                 }
                                 : null,
                         style: ElevatedButton.styleFrom(
@@ -910,24 +1195,30 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
+                  // NÚT MUA NGAY - ĐÃ CÓ
+                  // NÚT MUA NGAY - SỬA LẠI
                   Expanded(
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton(
                         onPressed:
                             selectedSize.isNotEmpty
-                                ? () {
+                                ? () async {
                                   final colorName = _getColorName(
                                     _selectedColorID,
                                   );
                                   final sizeName = _getSizeName(selectedSize);
+
+                                  // Hiển thị loading
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(
-                                        "Đặt mua $_quantity sản phẩm ($colorName - $sizeName) thành công",
-                                      ),
+                                      content: Text('🔄 Đang tạo đơn hàng...'),
+                                      duration: const Duration(seconds: 2),
                                     ),
                                   );
+
+                                  // Tạo đơn hàng
+                                  await _createSampleOrder();
                                 }
                                 : null,
                         style: ElevatedButton.styleFrom(
