@@ -1,6 +1,7 @@
 import 'package:fashion_app/data/models/User.dart';
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/brand_viewmodel.dart';
+import 'package:fashion_app/viewmodels/cart_view_model.dart';
 import 'package:fashion_app/viewmodels/category_viewmodel.dart';
 import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
 import 'package:fashion_app/viewmodels/employeerole_viewmodel.dart';
@@ -62,6 +63,9 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ShopProductVariantViewModel()),
         ChangeNotifierProvider(create: (_) => ShopProductRequestViewmodel()),
         ChangeNotifierProvider(create: (_) => ProductSizeViewmodel()),
+        ChangeNotifierProvider(
+          create: (context) => CartViewModel(userId: 'current_user_id'),
+        ),
       ],
       child: const MyApp(),
     ),
