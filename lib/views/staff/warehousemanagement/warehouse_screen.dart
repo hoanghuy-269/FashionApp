@@ -3,7 +3,9 @@ import 'package:fashion_app/viewmodels/shop_product_request_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
 import 'package:fashion_app/data/models/shop_product_model.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
-import 'package:fashion_app/views/staff/shopproduct_detal_screen.dart';
+import 'package:fashion_app/views/staff/warehousemanagement/ordermanagement.dart';
+import 'package:fashion_app/views/staff/warehousemanagement/orderprocessing.dart';
+import 'package:fashion_app/views/staff/warehousemanagement/shopproduct_detal_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -148,6 +150,66 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+// nút đơn hàng với xử lí đơn hàng
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const Ordermanagement(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Xử lý đơn hàng',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // đơn hàng
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const Orderprocessing(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          ' đơn hàng',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+
+
+
                 // Tổng số đơn
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),

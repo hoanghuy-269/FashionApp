@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-import 'package:fashion_app/data/models/User.dart';
-=======
-
->>>>>>> e7d896c1be56be28da678506b0c3c1a1d579c45e
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/brand_viewmodel.dart';
 import 'package:fashion_app/viewmodels/category_viewmodel.dart';
@@ -21,6 +16,7 @@ import 'package:fashion_app/views/admin/AdminBranch.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/admin/Admincategories.dart';
 import 'package:fashion_app/views/login/auth_wrapper.dart';
+import 'package:fashion_app/views/staff/warehousemanagement/warehouse_screen.dart';
 import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:fashion_app/views/admin/admin_home_screen.dart';
@@ -89,6 +85,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
    // return Scaffold(body: Center(child: Danhmucj()));
-    return Scaffold(body: Center(child: AdminHomeScreen()));
+    return Scaffold(body: Center(child: AuthWrapper()));
   }
 }
