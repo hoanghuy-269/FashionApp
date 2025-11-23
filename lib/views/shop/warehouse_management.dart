@@ -1,5 +1,4 @@
 import 'package:fashion_app/views/shop/importgoods_warehouse_screen.dart';
-import 'package:fashion_app/views/shop/shop_importgoods.dart';
 import 'package:fashion_app/views/staff/shopproduct_detal_screen.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';

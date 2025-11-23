@@ -6,6 +6,8 @@ import 'package:fashion_app/viewmodels/cart_view_model.dart';
 import 'package:fashion_app/viewmodels/category_viewmodel.dart';
 import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
 import 'package:fashion_app/viewmodels/employeerole_viewmodel.dart';
+import 'package:fashion_app/viewmodels/oder_item_viewmodel.dart';
+import 'package:fashion_app/viewmodels/order_viewmodel.dart';
 import 'package:fashion_app/viewmodels/product_size_viewmodel.dart';
 import 'package:fashion_app/viewmodels/product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/productdetail_viewmodel.dart';
@@ -59,6 +61,8 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ShopProductVariantViewModel()),
         ChangeNotifierProvider(create: (_) => ShopProductRequestViewmodel()),
         ChangeNotifierProvider(create: (_) => ProductSizeViewmodel()),
+        ChangeNotifierProvider(create: (_) => OrderItemViewModel()),
+        ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(
           create: (context) => CartViewModel(userId: 'current_user_id'),
         ),

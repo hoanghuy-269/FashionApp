@@ -15,8 +15,10 @@ class FashionOrder {
   final String orderStatus;
   final DateTime createdAt;
   final List<OrderItem> items;
+
   final String? shipperId;
   final String? cancellationReason;
+  final String? deliveryProofUrl;
 
   FashionOrder({
     required this.orderId,
@@ -33,6 +35,7 @@ class FashionOrder {
     required this.items,
     this.shipperId,
     this.cancellationReason,
+    this.deliveryProofUrl,
   });
 
   Map<String, dynamic> toMap() {
@@ -51,6 +54,7 @@ class FashionOrder {
       'updatedAt': Timestamp.now(),
       'shipperId': shipperId,
       'cancellationReason': cancellationReason,
+      'deliveryProofUrl': deliveryProofUrl,
     };
   }
 
@@ -72,6 +76,7 @@ class FashionOrder {
       items: [],
       shipperId: data['shipperId'],
       cancellationReason: data['cancellationReason'],
+      deliveryProofUrl: data['deliveryProofUrl'],
     );
   }
 
@@ -109,6 +114,7 @@ class FashionOrder {
     List<OrderItem>? items,
     String? shipperId,
     String? cancellationReason,
+    String? deliveryProofUrl,
   }) {
     return FashionOrder(
       orderId: orderId ?? this.orderId,
@@ -125,6 +131,7 @@ class FashionOrder {
       items: items ?? this.items,
       shipperId: shipperId ?? this.shipperId,
       cancellationReason: cancellationReason ?? this.cancellationReason,
+      deliveryProofUrl: deliveryProofUrl ?? this.deliveryProofUrl,
     );
   }
 }

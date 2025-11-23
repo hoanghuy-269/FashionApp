@@ -1,3 +1,6 @@
+import 'package:fashion_app/data/models/brands_model.dart';
+import 'package:fashion_app/data/models/category_model.dart';
+import 'package:fashion_app/data/models/products_model.dart';
 import 'package:fashion_app/data/models/shop_product_with_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:fashion_app/data/models/shop_product_model.dart';
@@ -12,24 +15,51 @@ class ShopProductViewModel extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
+  // lấy name của branch
+  Map<String, BrandsModel> branchNameCache = {};
+  String? getBranchNameCacher(String id) => branchNameCache[id]?.name;
+
+  // Lấy tên thương hiệu từ cache
+  Map<String, CategoryModel> categoryNameCache = {};
+  String? getCategoryrNameCacher(String id) =>
+      categoryNameCache[id]?.categoryName;
+  
+  Map<String, ProductsModel> productNameCache = {};
+  ProductsModel? getProductNameCacher(String id) => productNameCache[id];
+
+  ProductsModel? product;
   String? _error;
   String? get error => _error;
 
   //  Fetch sản phẩm theo ShopID
-  Future<void> fetchShopProducts(String shopId) async {
-    _isLoading = true;
+ Future<void> fetchShopProducts(String shopId) async {
+  if(productNameCache.containsKey(shopId)){
+    product = productNameCache[shopId];
     notifyListeners();
-
-    try {
-      _shopProducts = await _repository.getShopProductsByShop(shopId);
-      _error = null;
-    } catch (e) {
-      _error = e.toString();
-    }
-
-    _isLoading = false;
-    notifyListeners();
+    return;
   }
+  try {
+      _isLoading = true;
+  notifyListeners();
+    _shopProducts = await _repository.getShopProductsByShop(shopId);
+    _error = null;
+
+    for (var p in _shopProducts) {
+      productNameCache[p.productID] = ProductsModel(
+        productID: p.productID,
+        name: p.name,
+        brandID: '',
+        categoryID: '',
+      );
+    }
+  } catch (e) {
+    _error = e.toString();
+  }
+
+  _isLoading = false;
+  notifyListeners();
+}
+
 
   //  Thêm sản phẩm
   Future<String?> addShopProduct(ShopProductModel model) async {
@@ -111,6 +141,21 @@ class ShopProductViewModel extends ChangeNotifier {
       return null;
     }
   }
+  
+  Future<void> updateQuantity(String shopProductID, int additionalQty) async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      await _repository.incrementTotalQuantity(shopProductID, additionalQty);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   Stream<List<Map<String, dynamic>>> getShopProductsStream(String shopId) {
     return _repository.getProductsByShopProduct(shopId);
@@ -123,5 +168,50 @@ class ShopProductViewModel extends ChangeNotifier {
   // Expose stream for real-time shop products
   Stream<List<ShopProductModel>> getShopProductsByShopStream(String shopId) {
     return _repository.getShopProductsByShopStream(shopId);
+  }
+
+  Future<void> getProductByShopProductID(String shopProductID) async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      final result = await _repository.getProductByShopProductID(shopProductID);
+
+      product = result;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchBranchName(String id) async {
+    if (!branchNameCache.containsKey(id)) {
+      final name = await _repository.getNameBranch(id);
+      if (name != null) {
+        branchNameCache[id] = BrandsModel(
+          brandID: id,
+          name: name,
+          logoUrl: '',
+        );
+        notifyListeners(); 
+      }
+    }
+  }
+
+  Future<void> fetchCategoryName(String id) async {
+    if (!categoryNameCache.containsKey(id)) {
+      final name = await _repository.getNameCategory(id);
+      if (name != null) {
+        categoryNameCache[id] = CategoryModel(
+          categoryID: id,
+          categoryName: name,
+          logoUrl: '',
+        );
+        notifyListeners(); 
+      }
+    }
   }
 }

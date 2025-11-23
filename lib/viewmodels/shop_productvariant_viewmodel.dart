@@ -65,6 +65,14 @@ class ShopProductVariantViewModel extends ChangeNotifier {
       return colorID;
     }
   }
+  Future<String?> getVariantIdByColor(String shopProductId, String colorId) async {
+    try {
+      final variantId = await _repo.getVariantIdByColor(shopProductId, colorId);
+      return variantId;
+    } catch (e) {
+      return null;
+    }
+  }
   void clear() {
     variants.clear();
     notifyListeners();

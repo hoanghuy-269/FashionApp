@@ -73,4 +73,11 @@ class ColorsViewmodel extends ChangeNotifier {
       return null;
     }
   }
+
+  // lay ten mau theo id
+  Future<String> fetchColorName(String colorID) async {
+    return await _repository.fetchColorName(colorID);
+  }
+ 
+  
 }

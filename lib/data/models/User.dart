@@ -60,4 +60,32 @@ class User {
       'notificationToken': notificationToken,
     };
   }
+
+  copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? avatar,
+    List<String>? phoneNumbers,
+    List<String>? addresses,
+    String? loginMethodId,
+    String? roleId,
+    bool? status,
+    Timestamp? createdAt,
+    String? notificationToken,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      avatar: avatar ?? this.avatar,
+      phoneNumbers: phoneNumbers ?? this.phoneNumbers,
+      addresses: addresses ?? this.addresses,
+      loginMethodId: loginMethodId ?? this.loginMethodId,
+      roleId: roleId ?? this.roleId,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      notificationToken: notificationToken ?? this.notificationToken,
+    );
+  }
 }

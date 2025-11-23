@@ -30,7 +30,7 @@ class UserRepository {
       loginMethodId: user.loginMethodId,
       roleId: user.roleId,
       createdAt: user.createdAt,
-      notificationToken: user.notificationToken,
+      notificationToken: '',
     );
 
     await _service.addOrUpdateUser(userWithUid);
@@ -86,5 +86,18 @@ class UserRepository {
 
   Future<void> changePassword(String newPassword) {
     return _service.changePassword(newPassword);
+  }
+
+  // getUserNameById
+  Future<String> getUserNameById(String userId) async {
+    return await _service.getUserNameById(userId);
+  }
+
+  Future<void> updateNotificationToken(String userId, String token) async {
+    await _service.updateNotificationToken(userId, token);
+  }
+  
+  Future<void> resetNotificationToken(String userId) async {
+    await _service.resetNotificationToken(userId);
   }
 }

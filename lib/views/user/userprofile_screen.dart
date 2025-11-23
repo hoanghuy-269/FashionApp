@@ -12,6 +12,7 @@ import 'package:fashion_app/views/user/approved_shop_dialog.dart';
 import 'package:fashion_app/views/user/requesttoopentshop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 class UserprofileScreen extends StatefulWidget {
   final String? idUser;
@@ -41,10 +42,11 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
     super.initState();
 
     if (widget.idUser != null && widget.idUser!.isNotEmpty) {
-      final authVM = AuthViewModel();
+      final authVM = Provider.of<AuthViewModel>(context, listen: false);
       _userSub = authVM.getUserById(widget.idUser!).listen((user) {
         if (user != null) {
           setState(() {
+              authVM.currentUser = user; 
             currentUser = user;
             nameController.text = user.name ?? '';
             phoneController.text =
@@ -221,7 +223,7 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
     if (currentUser == null) return;
 
     try {
-      final authVM = AuthViewModel();
+      final authVM = Provider.of<AuthViewModel>(context, listen: false);
 
       await authVM.updateUserProfile(
         userId: currentUser!.id,
@@ -263,6 +265,14 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
 
   // ---------------- LOGOUT -----------------
   Future<void> _handleLogout() async {
+    final authVM = Provider.of<AuthViewModel>(context, listen: false);
+
+    final userId = authVM.currentUser?.id;
+
+    print(
+      'DEBUG: userId = $userId',
+    ); // <-- luôn có giá trị nếu đăng nhập thành công
+
     final confirm = await showDialog(
       context: context,
       builder:
@@ -283,7 +293,15 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
     );
 
     if (confirm == true) {
-      final authVM = AuthViewModel();
+      if (userId != null) {
+        print('DEBUG: Reset token cho user $userId');
+        await authVM.resetNotificationToken(userId);
+      } else {
+        print(
+          'DEBUG: userId NULL — khởi tạo AuthViewModel sai hoặc login chưa set currentUser',
+        );
+      }
+
       await authVM.logout();
 
       if (mounted) {
@@ -347,26 +365,26 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
               ),
               const SizedBox(width: 10),
               // if (_isApprovedShop)
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      _navigateToShop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      "Chọn shop",
-                      style: TextStyle(fontSize: 13),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    _navigateToShop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                  child: const Text(
+                    "Chọn shop",
+                    style: TextStyle(fontSize: 13),
+                  ),
                 ),
+              ),
             ],
           ),
 
@@ -403,7 +421,6 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
             onTap: _handleLogout,
           ),
         ],
-
       ),
     );
   }

@@ -5,13 +5,14 @@ import 'package:fashion_app/viewmodels/sizes_viewmodel.dart';
 import 'package:fashion_app/viewmodels/product_size_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_product_request_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_productvariant_viewmodel.dart';
+import 'package:fashion_app/views/shop/add_importgoods/add_new_variant_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ImportgoodsWarehouseScreen extends StatefulWidget {
   final String? shopProductID;
   final String? productRequestID;
-  
+
   const ImportgoodsWarehouseScreen({
     super.key,
     this.shopProductID,
@@ -23,7 +24,8 @@ class ImportgoodsWarehouseScreen extends StatefulWidget {
       _ImportgoodsWarehouseScreenState();
 }
 
-class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen> {
+class _ImportgoodsWarehouseScreenState
+    extends State<ImportgoodsWarehouseScreen> {
   bool _isSaving = false;
   final Set<String> _expandedVariants = {};
   final Map<String, Map<String, ImportData>> _importDataMap = {};
@@ -34,8 +36,9 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
     if (widget.shopProductID != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.read<ColorsViewmodel>().fetchAllColors();
-        context.read<ShopProductVariantViewModel>()
-            .fetchVariants(widget.shopProductID!);
+        context.read<ShopProductVariantViewModel>().fetchVariants(
+          widget.shopProductID!,
+        );
       });
     }
   }
@@ -47,28 +50,28 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: const Text(
-          'Nhập hàng vào kho',
+          'Nhập hàng',
           style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
         ),
         elevation: 0,
         actions: [
           TextButton.icon(
             onPressed: _isSaving ? null : _confirmImport,
-            icon: _isSaving
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.save, color: Colors.white, size: 18),
+            icon:
+                _isSaving
+                    ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Icon(Icons.save, color: Colors.white, size: 18),
             label: Text(
               _isSaving ? 'Đang lưu...' : 'Xác nhận',
               style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
             style: TextButton.styleFrom(
               backgroundColor: Colors.green,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(6),
               ),
@@ -83,18 +86,130 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (vm.variants.isEmpty) {
-            return const Center(child: Text('Không có sản phẩm'));
-          }
+          return Column(
+            children: [
+              // Nút thêm variant mới
+              _buildAddVariantButton(),
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: vm.variants.length,
-            itemBuilder: (context, index) => _buildVariantCard(vm.variants[index]),
+              // Danh sách variants hiện có
+              Expanded(
+                child:
+                    vm.variants.isEmpty
+                        ? _buildEmptyState()
+                        : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: vm.variants.length,
+                          itemBuilder:
+                              (context, index) =>
+                                  _buildVariantCard(vm.variants[index]),
+                        ),
+              ),
+            ],
           );
         },
       ),
     );
+  }
+
+  Widget _buildAddVariantButton() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue[400]!, Colors.blue[600]!],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _showAddVariantDialog,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.add_circle_outline,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Nhập variant mới',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          Text(
+            'Chưa có variant nào',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Nhấn nút ở trên để thêm variant mới',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showAddVariantDialog() async {
+    if (widget.shopProductID == null) {
+      _showSnackBar('Không có thông tin sản phẩm!', Colors.red);
+      return;
+    }
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) =>
+              AddNewVariantScreen(shopProductID: widget.shopProductID!),
+    );
+
+    if (result == true && mounted) {
+      // Refresh danh sách variants sau khi thêm mới
+      context.read<ShopProductVariantViewModel>().fetchVariants(
+        widget.shopProductID!,
+      );
+    }
   }
 
   Widget _buildVariantCard(ShopProductVariantModel variant) {
@@ -149,15 +264,16 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
   Widget _buildVariantImage(String? imageUrl) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: imageUrl?.isNotEmpty == true
-          ? Image.network(
-              imageUrl!,
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _placeholderImage(),
-            )
-          : _placeholderImage(),
+      child:
+          imageUrl?.isNotEmpty == true
+              ? Image.network(
+                imageUrl!,
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _placeholderImage(),
+              )
+              : _placeholderImage(),
     );
   }
 
@@ -236,9 +352,10 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
         }
 
         return Column(
-          children: snapshot.data!
-              .map((size) => _buildSizeItem(variantID, size))
-              .toList(),
+          children:
+              snapshot.data!
+                  .map((size) => _buildSizeItem(variantID, size))
+                  .toList(),
         );
       },
     );
@@ -246,10 +363,7 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
 
   Widget _buildSizeItem(String variantID, ProductSizeModel size) {
     _importDataMap.putIfAbsent(variantID, () => {});
-    _importDataMap[variantID]!.putIfAbsent(
-      size.sizeID,
-      () => ImportData(),
-    );
+    _importDataMap[variantID]!.putIfAbsent(size.sizeID, () => ImportData());
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -306,7 +420,10 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
         prefixIcon: const Icon(Icons.attach_money, size: 20),
         suffixText: 'đ',
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
         isDense: true,
       ),
       onChanged: (value) {
@@ -325,7 +442,10 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
         prefixIcon: const Icon(Icons.sell, size: 20),
         suffixText: 'đ',
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
         isDense: true,
       ),
       onChanged: (value) {
@@ -343,7 +463,10 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
         hintText: 'Để trống nếu không thay đổi',
         prefixIcon: const Icon(Icons.add_box, size: 20),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
         isDense: true,
       ),
       onChanged: (value) {
@@ -381,7 +504,6 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
   }
 
   Future<void> _confirmImport() async {
-    // Validate có dữ liệu nhập
     if (!_hasImportData()) {
       _showSnackBar(
         'Vui lòng nhập số lượng cho ít nhất một size!',
@@ -390,20 +512,9 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
       return;
     }
 
-    // Validate giá nhập
-    if (!_hasValidCostPrice()) {
-      _showSnackBar(
-        'Vui lòng nhập giá nhập cho tất cả size có số lượng!',
-        Colors.orange,
-      );
-      return;
-    }
-
-    // Hiển thị dialog xác nhận đơn giản
     final confirm = await _showConfirmDialog();
     if (confirm != true) return;
 
-    // Thực hiện nhập kho
     await _performImport();
   }
 
@@ -416,35 +527,25 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
     return false;
   }
 
-  bool _hasValidCostPrice() {
-    for (var variantData in _importDataMap.values) {
-      for (var importData in variantData.values) {
-        if (importData.quantity > 0 && importData.costPrice <= 0) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
   Future<bool?> _showConfirmDialog() {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận nhập kho'),
-        content: const Text('Bạn có chắc chắn muốn nhập hàng vào kho?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Xác nhận nhập kho'),
+            content: const Text('Bạn có chắc chắn muốn nhập hàng vào kho?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Hủy'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                child: const Text('Xác nhận'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Xác nhận'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -474,9 +575,9 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
       }
 
       if (widget.productRequestID != null) {
-        await context
-            .read<ShopProductRequestViewmodel>()
-            .approvedRequest(widget.productRequestID!);
+        await context.read<ShopProductRequestViewmodel>().approvedRequest(
+          widget.productRequestID!,
+        );
       }
 
       if (mounted) {
@@ -498,7 +599,6 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
     String sizeID,
     ImportData importData,
   ) async {
-    // Lấy thông tin size hiện tại
     final sizes = await productSizeVM.getSizesForVariant(
       widget.shopProductID!,
       variantID,
@@ -506,23 +606,23 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
 
     final currentSize = sizes.firstWhere(
       (s) => s.sizeID == sizeID,
-      orElse: () => ProductSizeModel(
-        sizeID: sizeID,
-        quantity: 0,
-        price: 0,
-        costPrice: 0,
-      ),
+      orElse:
+          () => ProductSizeModel(
+            sizeID: sizeID,
+            quantity: 0,
+            price: 0,
+            costPrice: 0,
+          ),
     );
 
     final newQuantity = currentSize.quantity + importData.quantity;
-    final newSellingPrice = importData.sellingPrice > 0
-        ? importData.sellingPrice
-        : currentSize.price;
-    final newCostPrice = importData.costPrice > 0
-        ? importData.costPrice
-        : currentSize.costPrice;
+    final newSellingPrice =
+        importData.sellingPrice > 0
+            ? importData.sellingPrice
+            : currentSize.price;
+    final newCostPrice =
+        importData.costPrice > 0 ? importData.costPrice : currentSize.costPrice;
 
-    // Cập nhật 
     await productSizeVM.updateSize(
       widget.shopProductID!,
       variantID,
@@ -537,22 +637,15 @@ class _ImportgoodsWarehouseScreenState extends State<ImportgoodsWarehouseScreen>
 
   void _showSnackBar(String message, Color backgroundColor) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-      ),
+      SnackBar(content: Text(message), backgroundColor: backgroundColor),
     );
   }
 }
 
 class ImportData {
   int quantity;
-  double costPrice;      // Giá nhập
-  double sellingPrice;   // Giá bán
+  double costPrice;
+  double sellingPrice;
 
-  ImportData({
-    this.quantity = 0,
-    this.costPrice = 0,
-    this.sellingPrice = 0,
-  });
+  ImportData({this.quantity = 0, this.costPrice = 0, this.sellingPrice = 0});
 }

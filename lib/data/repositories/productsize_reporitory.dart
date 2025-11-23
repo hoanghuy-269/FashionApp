@@ -41,4 +41,17 @@ Future<List<ProductSizeModel>> getAllSizes() async {
   ) async {
     await _source.deleteProductSize(shopProductID, variantID, sizeID);
   }
+
+  // add or update size
+  Future<String> addOrUpdateSize({
+    required String shopProductID,
+    required String variantID,
+    required ProductSizeModel size,
+  }) async {
+    return await _source.addOrUpdateSize(
+      shopProductID: shopProductID,
+      variantID: variantID,
+      size: size,
+    );
+  }
 }

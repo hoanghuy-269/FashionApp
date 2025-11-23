@@ -4,6 +4,89 @@ import 'package:fashion_app/data/models/product_size_model.dart';
 class ProductSizeSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+ Future<String> addOrUpdateSize({
+    required String shopProductID,
+    required String variantID,
+    required ProductSizeModel size,
+  }) async {
+    if (shopProductID.isEmpty) throw ArgumentError('shopProductID is required');
+    if (variantID.isEmpty) throw ArgumentError('variantID is required');
+    if (size.sizeID == null || size.sizeID!.isEmpty) {
+      throw ArgumentError('sizeID is required');
+    }
+
+    try {
+      final sizeID = size.sizeID!;
+      
+      // 1. Kiểm tra size đã tồn tại chưa
+      final exists = await sizeExists(shopProductID, variantID, sizeID);
+
+      if (exists) {
+        // 2a. Đã tồn tại → Cập nhật (increment quantity)
+        
+        final docRef = _firestore
+            .collection('shop_products')
+            .doc(shopProductID)
+            .collection('shop_product_variants')
+            .doc(variantID)
+            .collection('product_sizes')
+            .doc(sizeID);
+
+        await docRef.update({
+          'quantity': FieldValue.increment(size.quantity ?? 0),
+          'costPrice': size.costPrice,
+          'price': size.price,
+        });
+
+        print('✅ Đã cập nhật size: +${size.quantity} items');
+        return sizeID;
+      } else {        
+        return await addProductSize(shopProductID, variantID, size);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// 🆕 THÊM MỚI: Lấy tất cả sizes của một sizeID cụ thể (để tính tổng)
+  Future<int> getTotalQuantityBySize({
+    required String shopProductID,
+    required String sizeID,
+  }) async {
+    try {
+      int totalQty = 0;
+
+      // Lấy tất cả variants
+      final variantsSnapshot = await _firestore
+          .collection('shop_products')
+          .doc(shopProductID)
+          .collection('shop_product_variants')
+          .get();
+
+      // Duyệt qua từng variant và cộng dồn quantity của size này
+      for (var variantDoc in variantsSnapshot.docs) {
+        final sizeDoc = await _firestore
+            .collection('shop_products')
+            .doc(shopProductID)
+            .collection('shop_product_variants')
+            .doc(variantDoc.id)
+            .collection('product_sizes')
+            .doc(sizeID)
+            .get();
+
+        if (sizeDoc.exists) {
+          final data = sizeDoc.data();
+          totalQty += (data?['quantity'] as int? ?? 0);
+        }
+      }
+
+      return totalQty;
+    } catch (e) {
+      print('❌ Error getTotalQuantityBySize: $e');
+      return 0;
+    }
+  }
+
   /// Lấy tất cả sizes (ít dùng, chỉ cho mục đích test)
   Future<List<ProductSizeModel>> getAllSizes() async {
     try {
@@ -20,6 +103,7 @@ class ProductSizeSource {
       rethrow;
     }
   }
+  
 
   /// ✅ Lấy sizes theo variant - CẤU TRÚC ĐÚNG
   /// Path: shop_products/{shopProductID}/shop_product_variants/{variantID}/product_sizes

@@ -299,5 +299,31 @@ class AuthViewModel extends ChangeNotifier {
     await _userRepository.updateUser(userId, data);
   }
 
+  // getUserNameById
+  Future<String> getUserNameById(String userId) async {
+    return await _userRepository.getUserNameById(userId);
+  }
+
+  Future<void> updateNotificationToken(String userId, String token) async {
+    try {
+      await _userRepository.updateNotificationToken(userId, token);
+      if (currentUser != null && currentUser!.id == userId) {
+        currentUser = currentUser!.copyWith(notificationToken: token);
+      }
+    } catch (e) {
+      print(' Lỗi khi cập nhật notification token: $e');
+    }
+  }
+  Future<void> resetNotificationToken(String userId) async {
+    try {
+      await _userRepository.resetNotificationToken(userId);
+      if (currentUser != null && currentUser!.id == userId) {
+        currentUser = currentUser!.copyWith(notificationToken: null);
+      }
+    } catch (e) {
+      print(' Lỗi khi reset notification token: $e');
+    }
+  }
+
   
 }

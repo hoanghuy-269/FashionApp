@@ -158,7 +158,6 @@ class _ShopScreenState extends State<ShopScreen> {
         if (vm.isLoading) {
           return _buildLoadingShopInfo(width);
         }
-
         final shop = vm.currentShop;
         return Row(
           children: [

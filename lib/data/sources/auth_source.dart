@@ -109,7 +109,6 @@ class FirebaseService {
       email: user.email ?? "",
       password: password,
     );
-    final fcmToken = await FirebaseMessaging.instance.getToken();
 
     final firebaseUser = credential.user!;
 
@@ -125,7 +124,7 @@ class FirebaseService {
       loginMethodId: 'local',
       roleId: 'role002',
       // thêm token xử lí thông báo
-      notificationToken: fcmToken,
+      notificationToken: "",
     );
 
     await addOrUpdateUser(newUser);
@@ -283,5 +282,25 @@ class FirebaseService {
     }
 
     await user.updatePassword(newPassword);
+  }
+
+  // getUserNameById
+  Future<String> getUserNameById(String userId) async {
+    final doc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    return doc.exists ? doc.get('name') : 'Unknown';
+  }
+
+  Future<void> updateNotificationToken(String userId, String token) async {
+    await _firestore.collection('users').doc(userId).update({
+      'notificationToken': token,
+    });
+  }
+  
+  // reset NotificationToken 
+  Future<void> resetNotificationToken(String userId) async {
+    await _firestore.collection('users').doc(userId).update({
+      'notificationToken': '',
+    });
   }
 }

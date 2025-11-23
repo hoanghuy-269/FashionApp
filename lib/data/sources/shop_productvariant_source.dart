@@ -5,32 +5,65 @@ class ShopProductVariantSource {
   final _firestore = FirebaseFirestore.instance;
 
   // Lấy variants của 1 product
-  Future<List<ShopProductVariantModel>> getVariants(String shopProductID) async {
-    final snapshot = await _firestore
-        .collection('shop_products')
-        .doc(shopProductID)
-        .collection('shop_product_variants')
-        .get();
+  Future<List<ShopProductVariantModel>> getVariants(
+    String shopProductID,
+  ) async {
+    final snapshot =
+        await _firestore
+            .collection('shop_products')
+            .doc(shopProductID)
+            .collection('shop_product_variants')
+            .get();
 
     return snapshot.docs
         .map((doc) => ShopProductVariantModel.fromMap(doc.data(), doc.id))
         .toList();
   }
 
-Future<String> addVariant(String shopProductID, Map<String, dynamic> data) async {
-  final ref = _firestore
-      .collection('shop_products')
-      .doc(shopProductID)
-      .collection('shop_product_variants')
-      .doc();
+  Future<String?> getVariantIdByColor(
+    String shopProductId,
+    String colorId,
+  ) async {
+    try {
+      final snapshot =
+          await _firestore
+              .collection('shop_products')
+              .doc(shopProductId)
+              .collection('shop_product_variants')
+              .where('colorID', isEqualTo: colorId)
+              .limit(1)
+              .get();
+      if (snapshot.docs.isNotEmpty) {
+        final variantId = snapshot.docs.first.id;
+        return variantId;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 
-  data['shopProductVariantID'] = ref.id;
-  await ref.set(data);
-  return ref.id; 
-}
+  Future<String> addVariant(
+    String shopProductID,
+    Map<String, dynamic> data,
+  ) async {
+    final ref =
+        _firestore
+            .collection('shop_products')
+            .doc(shopProductID)
+            .collection('shop_product_variants')
+            .doc();
 
+    data['shopProductVariantID'] = ref.id;
+    await ref.set(data);
+    return ref.id;
+  }
 
-  Future<void> updateVariant(String shopProductID, String variantID, Map<String, dynamic> data) async {
+  Future<void> updateVariant(
+    String shopProductID,
+    String variantID,
+    Map<String, dynamic> data,
+  ) async {
     await _firestore
         .collection('shop_products')
         .doc(shopProductID)
@@ -46,11 +79,12 @@ Future<String> addVariant(String shopProductID, Map<String, dynamic> data) async
     try {
       final batch = _firestore.batch();
 
-      final snapshot = await _firestore
-          .collection('shop_products')
-          .doc(shopProductID)
-          .collection('shop_product_variants')
-          .get();
+      final snapshot =
+          await _firestore
+              .collection('shop_products')
+              .doc(shopProductID)
+              .collection('shop_product_variants')
+              .get();
 
       for (var doc in snapshot.docs) {
         if (dataToUpdate.containsKey(doc.id)) {
@@ -60,11 +94,12 @@ Future<String> addVariant(String shopProductID, Map<String, dynamic> data) async
 
       await batch.commit();
 
-      final variantsSnapshot = await _firestore
-          .collection('shop_products')
-          .doc(shopProductID)
-          .collection('shop_product_variants')
-          .get();
+      final variantsSnapshot =
+          await _firestore
+              .collection('shop_products')
+              .doc(shopProductID)
+              .collection('shop_product_variants')
+              .get();
 
       int newTotalQuantity = 0;
       for (var doc in variantsSnapshot.docs) {
@@ -79,7 +114,6 @@ Future<String> addVariant(String shopProductID, Map<String, dynamic> data) async
       rethrow;
     }
   }
-  
 
   Future<void> deleteVariant(String shopProductID, String variantID) async {
     await _firestore
@@ -89,9 +123,4 @@ Future<String> addVariant(String shopProductID, Map<String, dynamic> data) async
         .doc(variantID)
         .delete();
   }
-
-  
-
-  
-
 }

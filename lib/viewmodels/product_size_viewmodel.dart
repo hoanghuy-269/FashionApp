@@ -32,20 +32,26 @@ class ProductSizeViewmodel extends ChangeNotifier {
     }
   }
 
-
-
   /// Thêm size mới
-  Future<bool> addSize(String shopProductID, String variantID, ProductSizeModel size) async {
+  Future<bool> addSize(
+    String shopProductID,
+    String variantID,
+    ProductSizeModel size,
+  ) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final newId = await _source.addProductSize(shopProductID, variantID, size);
+      final newId = await _source.addProductSize(
+        shopProductID,
+        variantID,
+        size,
+      );
       final newSize = ProductSizeModel(
         sizeID: size.sizeID,
         quantity: size.quantity,
         price: size.price,
-    
+
         costPrice: size.costPrice,
       );
       _sizes.add(newSize);
@@ -75,30 +81,37 @@ class ProductSizeViewmodel extends ChangeNotifier {
   }
 
   Future<void> updateSize(
-  String shopProductID,
-  String variantID,
-  ProductSizeModel size,
-) async {
-  _isLoading = true;
-  notifyListeners();
-
-  try {
-    await _source.updateProductSize(shopProductID, variantID, size.sizeID, size);
-    final index = _sizes.indexWhere((s) => s.sizeID == size.sizeID);
-    if (index != -1) {
-      _sizes[index] = size;
-    }
-    _error = null;
-  } catch (e) {
-    _error = e.toString();
-  } finally {
-    _isLoading = false;
+    String shopProductID,
+    String variantID,
+    ProductSizeModel size,
+  ) async {
+    _isLoading = true;
     notifyListeners();
+
+    try {
+      await _source.updateProductSize(
+        shopProductID,
+        variantID,
+        size.sizeID,
+        size,
+      );
+      final index = _sizes.indexWhere((s) => s.sizeID == size.sizeID);
+      if (index != -1) {
+        _sizes[index] = size;
+      }
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
-}
 
-
-  Future<List<ProductSizeModel>> getSizesForVariant(String shopProductID, String variantID) async {
+  Future<List<ProductSizeModel>> getSizesForVariant(
+    String shopProductID,
+    String variantID,
+  ) async {
     try {
       final sizes = await _source.getSizesByVariant(shopProductID, variantID);
       return sizes;
@@ -109,7 +122,10 @@ class ProductSizeViewmodel extends ChangeNotifier {
     }
   }
 
-  Future<void> featchSizesForVariant(String shopProductID, String variantID) async {
+  Future<void> featchSizesForVariant(
+    String shopProductID,
+    String variantID,
+  ) async {
     _isLoading = true;
     notifyListeners();
 
@@ -124,10 +140,30 @@ class ProductSizeViewmodel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
   Stream<List<ProductSizeModel>> watchSizesForVariant(
-  String shopProductID, 
-  String variantID
-) {
-  return _source.watchSizesByVariant(shopProductID, variantID);
-}
+    String shopProductID,
+    String variantID,
+  ) {
+    return _source.watchSizesByVariant(shopProductID, variantID);
+  }
+
+  // addOrUpdateSize
+  Future<String?> addOrUpdateSize(
+    String shopProductId,
+    String variantId,
+    ProductSizeModel productSize,
+  ) async {
+    try {
+      final result = await _source.addOrUpdateSize(
+        shopProductID: shopProductId,
+        variantID: variantId,
+        size: productSize,
+      );
+      notifyListeners();
+      return result;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

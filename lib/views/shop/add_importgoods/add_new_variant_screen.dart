@@ -1,46 +1,35 @@
 import 'package:fashion_app/data/models/brands_model.dart';
-import 'package:fashion_app/data/models/category_model.dart';
 import 'package:fashion_app/data/models/colors_model.dart';
 import 'package:fashion_app/data/models/product_size_model.dart';
 import 'package:fashion_app/data/models/products_model.dart';
-import 'package:fashion_app/data/models/shop_product_model.dart';
 import 'package:fashion_app/data/models/shop_product_variant_model.dart';
 import 'package:fashion_app/data/models/sizes_model.dart';
 import 'package:fashion_app/viewmodels/brand_viewmodel.dart';
 import 'package:fashion_app/viewmodels/category_viewmodel.dart';
 import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
 import 'package:fashion_app/viewmodels/product_size_viewmodel.dart';
-import 'package:fashion_app/viewmodels/product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/productdetail_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_productvariant_viewmodel.dart';
-import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:fashion_app/viewmodels/sizes_viewmodel.dart';
-import 'package:fashion_app/views/shop/add_importgoods/buildBranchDropdown.dart';
-import 'package:fashion_app/views/shop/add_importgoods/buildCategoryDropdown.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildColor_shop.dart';
-import 'package:fashion_app/views/shop/add_importgoods/buildProductDropdown.dart';
 import 'package:fashion_app/views/shop/add_importgoods/buildSize_shop.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class AddImportgoodsScreen extends StatefulWidget {
-  const AddImportgoodsScreen({super.key});
+class AddNewVariantScreen extends StatefulWidget {
+  final String shopProductID;
+  const AddNewVariantScreen({super.key, required this.shopProductID});
 
   @override
-  State<AddImportgoodsScreen> createState() => _AddImportgoodsScreenState();
+  State<AddNewVariantScreen> createState() => _AddNewVariantScreenState();
 }
 
-class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
+class _AddNewVariantScreenState extends State<AddNewVariantScreen> {
   final _descriptionController = TextEditingController();
-
-  // Lưu image theo màu
   final Map<String, String> _imagesByColor = {};
-
   final Map<String, Map<String, _SizeData>> _dataBySizeColor = {};
 
-  BrandsModel? _selectedBrand;
-  CategoryModel? _selectedCategory;
   ProductsModel? _selectedProduct;
   List<SizesModel> _selectedSizes = [];
   List<ColorsModel> _selectedColors = [];
@@ -50,18 +39,41 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      context.read<BrandViewmodel>().fetchAllBrands();
-      context.read<CategoryViewmodel>().fetchCategories();
-      context.read<ColorsViewmodel>().fetchAllColors();
+      _initializeData();
     });
+  }
+
+  Future<void> _initializeData() async {
+    final productVM = context.read<ShopProductViewModel>();
+    final sizeVM = context.read<SizesViewmodel>();
+
+    // 1. Load product
+    await productVM.getProductByShopProductID(widget.shopProductID);
+
+    if (!mounted) return;
+
+    // 2. Gán _selectedProduct từ productVM
+    setState(() {
+      _selectedProduct = productVM.product;
+    });
+
+    // 3. Load sizes theo category
+    final categoryID = productVM.product?.categoryID;
+    if (categoryID != null) {
+      await sizeVM.fetchSizes(categoryID);
+    }
+
+    // 4. Load data khác
+    context.read<BrandViewmodel>().fetchAllBrands();
+    context.read<CategoryViewmodel>().fetchCategories();
+    context.read<ColorsViewmodel>().fetchAllColors();
   }
 
   @override
   void dispose() {
     _descriptionController.dispose();
-    // Dispose tất cả controllers
     for (var colorMap in _dataBySizeColor.values) {
       for (var data in colorMap.values) {
         data.dispose();
@@ -70,7 +82,6 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
     super.dispose();
   }
 
-  // Lấy hoặc tạo data cho size + color
   _SizeData _getSizeData(String colorID, String sizeID) {
     if (!_dataBySizeColor.containsKey(colorID)) {
       _dataBySizeColor[colorID] = {};
@@ -81,13 +92,13 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
     return _dataBySizeColor[colorID]![sizeID]!;
   }
 
-  // Load ảnh cho màu
   Future<void> _loadImages() async {
     if (_selectedProduct == null) return;
 
     final detailVM = context.read<ProductDetailViewModel>();
+    final colorsList = List<ColorsModel>.from(_selectedColors);
 
-    for (var color in _selectedColors) {
+    for (var color in colorsList) {
       if (_imagesByColor.containsKey(color.colorID)) continue;
 
       try {
@@ -107,14 +118,11 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
     }
   }
 
-  // Validate dữ liệu
   String? _validate() {
     if (_selectedProduct == null) return 'Chọn sản phẩm';
-    if (_selectedBrand == null) return 'Chọn thương hiệu';
     if (_selectedSizes.isEmpty) return 'Chọn ít nhất 1 size';
     if (_selectedColors.isEmpty) return 'Chọn ít nhất 1 màu';
 
-    // Kiểm tra từng màu + size
     for (var color in _selectedColors) {
       for (var size in _selectedSizes) {
         final data = _dataBySizeColor[color.colorID]?[size.sizeID];
@@ -140,7 +148,6 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
     return null;
   }
 
-  // Tính tổng số lượng
   int _getTotalQuantity() {
     int total = 0;
     for (var colorMap in _dataBySizeColor.values) {
@@ -151,19 +158,6 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
     return total;
   }
 
-  // Lấy shop ID
-  Future<String?> _getShopId() async {
-    final shopVM = context.read<ShopViewModel>();
-    var shop = shopVM.currentShop;
-
-    if (shop == null) {
-      shop = await shopVM.fetchShopForCurrentUser();
-    }
-
-    return shop?.shopId;
-  }
-
-  // Lưu sản phẩm
   Future<void> _save() async {
     final error = _validate();
     if (error != null) {
@@ -174,41 +168,17 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Lấy shopId
-      final shopId = await _getShopId();
-      if (shopId == null) {
-        _showError('Không tìm thấy cửa hàng');
-        return;
-      }
+      // Chỉ cần thêm variants và sizes cho shopProductID đã có
+      await _createVariantsAndSizes(widget.shopProductID);
 
-      // 2. Tạo ShopProduct
-      final shopProduct = ShopProductModel(
-        shopproductID: '',
-        shopId: shopId,
-        productID: _selectedProduct!.productID,
-        name: _selectedProduct!.name,
-        totalQuantity: _getTotalQuantity(),
-        imageUrls: _imagesByColor.values.firstOrNull ?? '',
-        rating: 0,
-        sold: 0,
-        description: _descriptionController.text.trim(),
-        
-      );
-
+      // Cập nhật totalQuantity cho shopProduct (nếu cần)
+      final totalQty = _getTotalQuantity();
       final shopProductVM = context.read<ShopProductViewModel>();
-      final shopProductId = await shopProductVM.addShopProduct(shopProduct);
-
-      if (shopProductId == null) {
-        _showError('Lỗi tạo shop product');
-        return;
-      }
-
-      // 3. Tạo variants + sizes
-      await _createVariantsAndSizes(shopProductId);
+      await shopProductVM.updateQuantity(widget.shopProductID, totalQty);
 
       if (mounted) {
-        _showSuccess('Thêm sản phẩm thành công!');
-        Navigator.pop(context);
+        _showSuccess('Thêm variant thành công!');
+        Navigator.pop(context, true); // Trả về true để refresh
       }
     } catch (e) {
       debugPrint('Lỗi save: $e');
@@ -218,29 +188,41 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
     }
   }
 
-  // Tạo variants và sizes
   Future<void> _createVariantsAndSizes(String shopProductId) async {
     final variantVM = context.read<ShopProductVariantViewModel>();
     final sizeVM = context.read<ProductSizeViewmodel>();
 
     for (var color in _selectedColors) {
-      // Tạo variant cho màu này
-      final variant = ShopProductVariantModel(
-        shopProductVariantID: '',
-        colorID: color.colorID,
-        imageUrls: _imagesByColor[color.colorID] ?? '',
+      // 1. Kiểm tra variant (màu) đã tồn tại chưa
+      String? variantId = await variantVM.getVariantIdByColor(
+        shopProductId,
+        color.colorID,
       );
 
-      final variantId = await variantVM.addVariant(
-        shopProductId,
-        variant.toMap(),
-      );
+      // 2. Nếu variant chưa tồn tại → Tạo mới
       if (variantId == null || variantId.isEmpty) {
-        debugPrint('Lỗi tạo variant cho màu: ${color.colorID}');
-        continue;
+        final variant = ShopProductVariantModel(
+          shopProductVariantID: '',
+          colorID: color.colorID,
+          imageUrls: _imagesByColor[color.colorID] ?? '',
+        );
+
+        variantId = await variantVM.addVariant(
+          shopProductId,
+          variant.toMap(),
+        );
+        
+        if (variantId == null || variantId.isEmpty) {
+          debugPrint('❌ Lỗi tạo variant cho màu: ${color.colorID}');
+          continue;
+        }
+        
+        debugPrint('✅ Đã tạo variant mới: $variantId cho màu ${color.colorID}');
+      } else {
+        debugPrint('✅ Variant đã tồn tại: $variantId cho màu ${color.colorID}');
       }
 
-      // Tạo sizes cho variant này
+      // 3. Thêm hoặc cập nhật sizes
       for (var size in _selectedSizes) {
         final data = _dataBySizeColor[color.colorID]?[size.sizeID];
         if (data == null) continue;
@@ -253,9 +235,11 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
         );
 
         try {
-          await sizeVM.addSize(shopProductId, variantId, productSize);
+          // 🔥 GỌI Ở ĐÂY: Tự động thêm mới hoặc cập nhật
+          await sizeVM.addOrUpdateSize(shopProductId, variantId, productSize);
+          debugPrint('✅ Đã thêm/cập nhật size ${size.sizeID} cho variant $variantId');
         } catch (e) {
-          debugPrint('Lỗi thêm size ${size.sizeID}: $e');
+          debugPrint('❌ Lỗi thêm/cập nhật size ${size.sizeID}: $e');
         }
       }
     }
@@ -263,16 +247,16 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+    );
   }
 
   void _showSuccess(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.green));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.green),
+    );
   }
 
   @override
@@ -295,7 +279,7 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                       ),
                       const Expanded(
                         child: Text(
-                          'Nhập sản phẩm',
+                          'Thêm variant mới',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 18,
@@ -324,25 +308,17 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-                        Consumer<BrandViewmodel>(
-                          builder:
-                              (context, vm, _) => Buildbranchdropdown(
-                                onBrandSelected: (brand) async {
-                                  setState(() {
-                                    _selectedBrand = brand;
-                                    _selectedProduct = null;
-                                    _selectedSizes.clear();
-                                    _selectedColors.clear();
-                                    _imagesByColor.clear();
-                                    _dataBySizeColor.clear();
-                                  });
-                                  if (brand != null) {
-                                    await context
-                                        .read<ProductViewModel>()
-                                        .fetchProductsByBrand(brand.brandID);
-                                  }
-                                },
-                              ),
+                        Consumer<ShopProductViewModel>(
+                          builder: (context, vm, _) {
+                            final id = vm.product?.brandID ?? '';
+                            final name = vm.getBranchNameCacher(id);
+
+                            if (name == null && id.isNotEmpty) {
+                              vm.fetchBranchName(id);
+                              return const Text('Đang tải...');
+                            }
+                            return Text(name ?? 'Không tìm thấy thương hiệu');
+                          },
                         ),
 
                         const SizedBox(height: 16),
@@ -353,20 +329,14 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-                        Consumer<ProductViewModel>(
-                          builder:
-                              (context, vm, _) => BuildProductDropdown(
-                                brandID: _selectedBrand?.brandID ?? '',
-                                onProductSelected: (product) {
-                                  setState(() {
-                                    _selectedProduct = product;
-                                    _selectedSizes.clear();
-                                    _selectedColors.clear();
-                                    _imagesByColor.clear();
-                                    _dataBySizeColor.clear();
-                                  });
-                                },
-                              ),
+                        Consumer<ShopProductViewModel>(
+                          builder: (context, vm, _) {
+                            final name = vm.product?.name;
+                            if (name == null) {
+                              return const Text('Đang tải...');
+                            }
+                            return Text(name);
+                          },
                         ),
 
                         const SizedBox(height: 16),
@@ -377,19 +347,17 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-                        Consumer<CategoryViewmodel>(
-                          builder:
-                              (context, vm, _) => Buildcategorydropdown(
-                                onCategorySelected:
-                                    (cat) => setState(() {
-                                      _selectedCategory = cat;
-                                      _selectedProduct = null;
-                                      _selectedSizes.clear();
-                                      _selectedColors.clear();
-                                      _imagesByColor.clear();
-                                      _dataBySizeColor.clear();
-                                    }),
-                              ),
+                        Consumer<ShopProductViewModel>(
+                          builder: (context, vm, _) {
+                            final id = vm.product?.categoryID ?? '';
+                            final name = vm.getCategoryrNameCacher(id);
+
+                            if (name == null && id.isNotEmpty) {
+                              vm.fetchCategoryName(id);
+                              return const Text('Đang tải...');
+                            }
+                            return Text(name ?? 'Không tìm thấy danh mục');
+                          },
                         ),
 
                         const SizedBox(height: 16),
@@ -401,31 +369,26 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                         ),
                         const SizedBox(height: 8),
                         Consumer<SizesViewmodel>(
-                          builder:
-                              (context, vm, _) => BuildsizeShop(
-                                onSizeToggled: (size, selected) {
-                                  setState(() {
-                                    if (selected) {
-                                      _selectedSizes.add(size);
-                                    } else {
-                                      // Xóa size khỏi danh sách
-                                      _selectedSizes.removeWhere(
-                                        (s) => s.sizeID == size.sizeID,
-                                      );
+                          builder: (context, vm, _) => BuildsizeShop(
+                            onSizeToggled: (size, selected) {
+                              setState(() {
+                                if (selected) {
+                                  _selectedSizes.add(size);
+                                } else {
+                                  _selectedSizes.removeWhere(
+                                    (s) => s.sizeID == size.sizeID,
+                                  );
 
-                                      // Xóa data liên quan đến size này an toàn bằng removeWhere
-                                      _dataBySizeColor.forEach((
-                                        colorId,
-                                        colorMap,
-                                      ) {
-                                        colorMap.removeWhere(
-                                          (sizeId, _) => sizeId == size.sizeID,
-                                        );
-                                      });
-                                    }
-                                  });
-                                },
-                              ),
+                                  final keysToModify = _dataBySizeColor.keys.toList();
+                                  for (var colorId in keysToModify) {
+                                    _dataBySizeColor[colorId]?.removeWhere(
+                                      (sizeId, _) => sizeId == size.sizeID,
+                                    );
+                                  }
+                                }
+                              });
+                            },
+                          ),
                         ),
 
                         const SizedBox(height: 16),
@@ -437,49 +400,27 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                         ),
                         const SizedBox(height: 8),
                         Consumer<ColorsViewmodel>(
-                          builder:
-                              (context, vm, _) => BuildcolorShop(
-                                onColorsSelected: (colors) {
-                                  setState(() {
-                                    _selectedColors = colors;
-                                    // Xóa data của màu không còn chọn
-                                    _dataBySizeColor.removeWhere(
-                                      (colorId, _) =>
-                                          !colors.any(
-                                            (c) => c.colorID == colorId,
-                                          ),
-                                    );
-                                  });
-                                  _loadImages();
-                                },
-                              ),
+                          builder: (context, vm, _) => BuildcolorShop(
+                            onColorsSelected: (colors) {
+                              setState(() {
+                                _selectedColors = colors;
+                                _dataBySizeColor.removeWhere(
+                                  (colorId, _) => !colors.any(
+                                    (c) => c.colorID == colorId,
+                                  ),
+                                );
+                              });
+                              
+                              _loadImages();
+                            },
+                          ),
                         ),
 
                         const SizedBox(height: 24),
 
                         // Input fields
-                        if (_selectedColors.isNotEmpty &&
-                            _selectedSizes.isNotEmpty)
-                          ..._selectedColors.map(
-                            (color) => _buildColorSection(color),
-                          ),
-
-                        const SizedBox(height: 16),
-
-                        // Description
-                        const Text(
-                          'Mô tả',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _descriptionController,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            hintText: 'Nhập mô tả...',
-                          ),
-                        ),
+                        if (_selectedColors.isNotEmpty && _selectedSizes.isNotEmpty)
+                          ..._selectedColors.map((color) => _buildColorSection(color)),
 
                         const SizedBox(height: 100),
                       ],
@@ -490,7 +431,6 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
             ),
           ),
 
-          // Loading
           if (_isLoading)
             Container(
               color: Colors.black54,
@@ -514,7 +454,7 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Color name + image
+          // Color name + hex
           Row(
             children: [
               Text(
@@ -555,11 +495,23 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                 child: Image.network(
                   _imagesByColor[color.colorID]!,
                   fit: BoxFit.cover,
-                  errorBuilder:
-                      (_, __, ___) => const Center(
-                        child: Icon(Icons.error, color: Colors.red),
-                      ),
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Icon(Icons.error, color: Colors.red),
+                  ),
                 ),
+              ),
+            )
+          else
+            Container(
+              height: 150,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.grey.shade100,
+              ),
+              child: const Center(
+                child: Icon(Icons.image_not_supported, color: Colors.grey),
               ),
             ),
 
@@ -635,7 +587,6 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
   }
 }
 
-// Class lưu data cho 1 size
 class _SizeData {
   final quantity = TextEditingController();
   final importPrice = TextEditingController();

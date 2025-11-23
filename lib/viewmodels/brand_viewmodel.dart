@@ -24,8 +24,8 @@ class BrandViewmodel extends ChangeNotifier {
     _currentBrand = brand;
     notifyListeners();
     return brand;
-  } 
-  
+  }
+
   /// ✅ Lấy tất cả brand
   Future<void> fetchAllBrands() async {
     _isLoading = true;
@@ -36,38 +36,38 @@ class BrandViewmodel extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
+
   Future<void> addBrandWithImage(String name, File? imageFile) async {
-  try {
-    _isLoading = true;
-    notifyListeners();
+    try {
+      _isLoading = true;
+      notifyListeners();
 
-    String imageUrl = "";
+      String imageUrl = "";
 
-    if (imageFile != null) {
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child("brand_logos")
-          .child("brand_${DateTime.now().millisecondsSinceEpoch}.jpg");
+      if (imageFile != null) {
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child("brand_logos")
+            .child("brand_${DateTime.now().millisecondsSinceEpoch}.jpg");
 
-      await storageRef.putFile(imageFile);
-      imageUrl = await storageRef.getDownloadURL();
+        await storageRef.putFile(imageFile);
+        imageUrl = await storageRef.getDownloadURL();
+      }
+
+      await _repository.addBrand(name, imageUrl);
+      await fetchAllBrands();
+    } catch (e) {
+      print("🔥 ERROR addBrandWithImage: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    await _repository.addBrand(name, imageUrl);
-    await fetchAllBrands();
-  } catch (e) {
-    print("🔥 ERROR addBrandWithImage: $e");
-  } finally {
-    _isLoading = false;
-    notifyListeners();
   }
-}
-
 
   /// ✅ THÊM BRAND
   Future<void> addBrand(String name, String logoUrl) async {
     await _repository.addBrand(name, logoUrl);
-    await fetchAllBrands();        // refresh lại danh sách
+    await fetchAllBrands(); // refresh lại danh sách
   }
 
   /// ✅ SỬA BRAND
@@ -81,10 +81,11 @@ class BrandViewmodel extends ChangeNotifier {
     await _repository.deleteBrand(id);
     await fetchAllBrands();
   }
-   Future<void> updateBrandWithImage(
-      String brandID,
-      String name,
-      File? newImageFile,
+
+  Future<void> updateBrandWithImage(
+    String brandID,
+    String name,
+    File? newImageFile,
   ) async {
     try {
       _isLoading = true;
@@ -114,7 +115,6 @@ class BrandViewmodel extends ChangeNotifier {
       }
 
       await fetchAllBrands();
-
     } catch (e) {
       print("🔥 ERROR updateBrandWithImage: $e");
     } finally {
@@ -123,5 +123,5 @@ class BrandViewmodel extends ChangeNotifier {
     }
   }
 
-
+ 
 }
