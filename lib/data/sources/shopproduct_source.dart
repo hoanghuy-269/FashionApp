@@ -1,11 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/data/models/product_size_model.dart';
-import 'package:fashion_app/data/models/product_request_model.dart';
 import 'package:fashion_app/data/models/products_model.dart';
 import 'package:fashion_app/data/models/shop_product_model.dart';
 import 'package:fashion_app/data/models/shop_product_variant_model.dart';
 import 'package:fashion_app/data/models/shop_product_with_detail.dart';
-import 'package:rxdart/rxdart.dart';
 
 class ShopproductSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -24,6 +22,9 @@ class ShopproductSource {
     }
   }
 
+  // lấy tổng sản phẩm của shop theo shopId
+  
+
   Future<List<ShopProductModel>> getShopProductsByShop(String shopId) async {
     try {
       final snapshot =
@@ -38,7 +39,9 @@ class ShopproductSource {
     } catch (e) {
       return [];
     }
-  }
+  
+}
+
 
   // Real-time stream of shop products for a shop
   Stream<List<ShopProductModel>> getShopProductsByShopStream(String shopId) {
@@ -91,6 +94,61 @@ class ShopproductSource {
       return null;
     }
   }
+  Future<String?> getNameBranch(String id) async {
+    final doc = await _firestore.collection('brands').doc(id).get();
+    if(doc.exists){
+      return doc.data()!['name'];
+    }
+    return null;
+  }
+
+  Future<String?> getNameCategory(String id) async {
+    final doc = await _firestore.collection('categories').doc(id).get();
+    if(doc.exists){
+      return doc.data()!['categoryName'];
+    }
+    return null;
+  }
+
+  // lấy productis theo shopproductID
+  Future<ProductsModel?> getProductOfShopProduct(String shopProductID) async {
+    try {
+      final doc =
+          await _firestore.collection(_collection).doc(shopProductID).get();
+
+      if (!doc.exists) return null;
+
+      final shopProductData = doc.data()!;
+      final productID = shopProductData['productID'];
+
+      if (productID == null) return null;
+
+      final productDoc =
+          await _firestore.collection('products').doc(productID).get();
+
+      if (!productDoc.exists) return null;
+
+      return ProductsModel.fromMap(productDoc.data()!, productDoc.id);
+    } catch (e) {
+      print(' Lỗi lấy product theo shopProductID: $e');
+      return null;
+    }
+  }
+
+  // cập nhật totalQuantity 
+  Future<void> incrementTotalQuantity(String shopProductID, int additionalQty) async {
+  try {
+    await _firestore
+        .collection(_collection)
+        .doc(shopProductID)
+        .update({'totalQuantity': FieldValue.increment(additionalQty)});
+  } catch (e) {
+    print('Lỗi khi increment totalQuantity: $e');
+    rethrow;
+  }
+}
+  
+  // ------------------------------- STREAMS -------------------------------//
 
   Stream<List<Map<String, dynamic>>> getProductsByShopProduct(String shopId) {
     return _firestore
@@ -263,4 +321,5 @@ class ShopproductSource {
       return Stream.value([]);
     }
   }
+
 }

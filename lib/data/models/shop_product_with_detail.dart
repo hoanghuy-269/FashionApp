@@ -1,5 +1,4 @@
 import 'package:fashion_app/data/models/shop_product_variant_model.dart';
-
 import 'shop_product_model.dart';
 import 'products_model.dart';
 

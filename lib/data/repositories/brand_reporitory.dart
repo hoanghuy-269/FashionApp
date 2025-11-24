@@ -50,4 +50,5 @@ class BrandReporitory {
       print("Delete brand error: $e");
     }
   }  
+
 }

@@ -18,4 +18,6 @@ class ShopRepositories {
   Future<void> deleteShop(String shopId) => _remoteSources.deleteShop(shopId);
 
   Future<void> updateShop(ShopModel shop) => _remoteSources.updateShop(shop);
+
+  Future<int> countStaffByShop(String shopId) => _remoteSources.countStaffByShop(shopId);
 }

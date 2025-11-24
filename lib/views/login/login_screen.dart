@@ -1,11 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fashion_app/data/models/oder_status_model.dart';
 import 'package:fashion_app/viewmodels/role_viewmodel.dart';
 import 'package:fashion_app/views/admin/admin_home_screen.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/login/staff_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
-import 'package:fashion_app/views/staff/warehousemanagement/warehouse_screen.dart';
+import 'package:fashion_app/views/staff/shipper/shipper_screen.dart';
 import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '.././login/register_screen.dart';
@@ -126,13 +129,23 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => WarehouseScreen(shopID: staff.shopId),
+          builder:
+              (_) => ShipperScreen(
+                shopID: staff.shopId,
+                staffID: staff.employeeId,
+              ),
         ),
       );
 
       _showSuccess('Đăng nhập nhân viên thành công!');
       return;
     }
+    if (user != null) {
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+          await _authViewModel.updateNotificationToken(user.id, fcmToken);
+        }
+      }
 
     if (user == null) {
       _showError('Không tìm thấy thông tin người dùng!');

@@ -29,7 +29,8 @@ class _ShopproductDetalScreenState extends State<ShopproductDetalScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ColorsViewmodel>().fetchAllColors();
             context.read<ShopProductVariantViewModel>().fetchVariants(
-        productdetalID ?? '',
+     productdetalID ?? '',
+     
       );
     });
   }
@@ -49,7 +50,6 @@ class _ShopproductDetalScreenState extends State<ShopproductDetalScreen> {
           ),
           TextButton(
             onPressed: () {
-              // TODO: Implement send logic
               Navigator.pop(context);
             },
             child: Text("Gửi"),
@@ -115,7 +115,7 @@ class _ShopproductDetalScreenState extends State<ShopproductDetalScreen> {
                     itemBuilder: (context, index) {
                       final variant = shoproductvariantVM.variants[index];
                       final colorID = variant.colorID;
-                      final imageURL = variant.imageUrls ?? '';
+                      final imageURL = variant.imageUrls;
                       final variantID = variant.shopProductVariantID;
 
                       return Card(
@@ -188,7 +188,7 @@ class _ShopproductDetalScreenState extends State<ShopproductDetalScreen> {
                                 builder: (context, colorVM, _) {
                                   final colorName = colorVM.getColorNameById(colorID);
                                   return Text(
-                                    colorName ?? colorID ?? 'Không xác định',
+                                    colorName ?? colorID ,
                                     style: TextStyle(fontWeight: FontWeight.w500),
                                   );
                                 },
@@ -260,7 +260,7 @@ class _ShopproductDetalScreenState extends State<ShopproductDetalScreen> {
                                     ...sizes.map((size) {
                                       return ListTile(
                                         title: FutureBuilder<String?>(
-                                          future: context.read<SizesViewmodel>().getSizeNameById(size.sizeID ?? ''),
+                                          future: context.read<SizesViewmodel>().getSizeNameById(size.sizeID),
                                           builder: (context, sizeSnapshot) {
                                             if (sizeSnapshot.connectionState == ConnectionState.waiting) {
                                               return Row(
@@ -278,7 +278,7 @@ class _ShopproductDetalScreenState extends State<ShopproductDetalScreen> {
                                               );
                                             }
                                             
-                                            final sizeName = sizeSnapshot.data ?? size.sizeID ?? 'N/A';
+                                            final sizeName = sizeSnapshot.data ?? size.sizeID ;
                                             return Text(
                                               'Size: $sizeName',
                                               style: TextStyle(fontWeight: FontWeight.w500),
@@ -297,13 +297,13 @@ class _ShopproductDetalScreenState extends State<ShopproductDetalScreen> {
                                                   color: Colors.grey[600]
                                                 ),
                                                 SizedBox(width: 4),
-                                                Text('Số lượng: ${size.quantity ?? 0}'),
+                                                Text('Số lượng: ${size.quantity}'),
                                               ],
                                             ),
                                           ],
                                         ),
                                         trailing: Text(
-                                          '${size.price ?? 0}đ',
+                                          '${size.price}đ',
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,

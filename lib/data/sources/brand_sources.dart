@@ -43,4 +43,5 @@ class BrandSources {
   Future<void> deleteBrand(String id) async {
     await _firestore.collection('brands').doc(id).delete();
   }
+  
 }

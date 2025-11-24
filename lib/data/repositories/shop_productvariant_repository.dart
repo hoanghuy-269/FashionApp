@@ -22,4 +22,7 @@ class ShopProductvariantRepository {
   Future<void> updateMultipleVariants(String shopProductID, Map<String, Map<String, dynamic>> dataToUpdate) {
     return _source.updateMultipleVariants(shopProductID, dataToUpdate);
   }
+  Future<String?> getVariantIdByColor(String shopProductId, String colorId) {
+    return _source.getVariantIdByColor(shopProductId, colorId);
+  }
 }

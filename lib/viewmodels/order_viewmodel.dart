@@ -108,6 +108,9 @@ class OrderViewModel extends ChangeNotifier {
       return false;
     }
   }
+  Stream<List<FashionOrder>> getShopOrders(String shopId) {
+    return _repository.getShopOrders(shopId);
+  }
 
   /// Hủy đơn hàng
   Future<bool> cancelOrder(String orderId, String reason) async {
@@ -117,6 +120,7 @@ class OrderViewModel extends ChangeNotifier {
       cancellationReason: reason,
     );
   }
+  
 
   /// Lấy chi tiết đơn hàng
   Future<FashionOrder?> getOrderDetail(String orderId) async {
@@ -146,6 +150,9 @@ class OrderViewModel extends ChangeNotifier {
       return {};
     }
   }
+
+  // get shop by order
+
 
   /// Clear error
   void clearError() {

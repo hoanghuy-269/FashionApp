@@ -61,6 +61,22 @@ dependencies:
   path_provider: ^2.1.5
   url_launcher: ^6.3.2
 
+  # notification
+  firebase_messaging: ^16.0.4
+  flutter_local_notifications: ^19.5.0
+
+  # thư viên map 
+  geolocator: ^14.0.2
+  geocoding: ^2.0.5
+
+  # chart 
+  fl_chart: ^0.69.0
+
+  #http 
+  http: ^1.6.0
+
+  # thu vien intlm: 
+  intl: ^0.18.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

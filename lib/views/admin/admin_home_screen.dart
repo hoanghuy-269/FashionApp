@@ -1,6 +1,7 @@
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/views/admin/AdminBranch.dart';
 import 'package:fashion_app/views/admin/Admincategories.dart';
+import 'package:fashion_app/views/admin/admin_importgoods_screen.dart';
 import 'package:fashion_app/views/admin/admin_manageShop_screen.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/login/login_screen.dart';
@@ -141,6 +142,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       'Khách hàng',
                       Colors.teal,
                       const AdminShopaccountScreen(),
+                    ),
+                      SizedBox(height: isTablet ? 18 : 14),
+                    _buildGridItemFullWidth(
+                      Icons.manage_accounts_rounded,
+                      'Quản lý Sản phẩm ',
+                      Colors.deepPurple,
+                      const AdminImportgoodsScreen(),
                     ),
                     SizedBox(height: isTablet ? 18 : 14),
                     _buildGridItemFullWidth(

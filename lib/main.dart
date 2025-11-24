@@ -1,9 +1,13 @@
+import 'package:fashion_app/core/utils/firebase_messaging.dart';
+import 'package:fashion_app/data/models/User.dart';
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/brand_viewmodel.dart';
 import 'package:fashion_app/viewmodels/cart_view_model.dart';
 import 'package:fashion_app/viewmodels/category_viewmodel.dart';
 import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
 import 'package:fashion_app/viewmodels/employeerole_viewmodel.dart';
+import 'package:fashion_app/viewmodels/oder_item_viewmodel.dart';
+import 'package:fashion_app/viewmodels/order_viewmodel.dart';
 import 'package:fashion_app/viewmodels/product_size_viewmodel.dart';
 import 'package:fashion_app/viewmodels/product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/productdetail_viewmodel.dart';
@@ -17,6 +21,8 @@ import 'package:fashion_app/views/admin/AdminBranch.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/admin/Admincategories.dart';
 import 'package:fashion_app/views/login/auth_wrapper.dart';
+import 'package:fashion_app/views/login/login_screen.dart';
+import 'package:fashion_app/views/staff/shipper/shipper_screen.dart';
 import 'package:fashion_app/views/staff/warehousemanagement/warehouse_screen.dart';
 import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:fashion_app/views/user/product_detail.dart';
@@ -27,23 +33,17 @@ import 'package:fashion_app/views/admin/admin_shopAccount_screeen.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:fashion_app/viewmodels/sizes_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
-import 'package:fashion_app/views/login/auth_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    print(" đã kết nối thành công!");
-  } catch (e) {
-    print(" Lỗi kết nối Firebase: $e");
-  }
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await setupFirebaseMessaging();
   runApp(
     MultiProvider(
       providers: [
@@ -62,6 +62,9 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ShopProductVariantViewModel()),
         ChangeNotifierProvider(create: (_) => ShopProductRequestViewmodel()),
         ChangeNotifierProvider(create: (_) => ProductSizeViewmodel()),
+        ChangeNotifierProvider(create: (_) => OrderItemViewModel()),
+        ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => ShopViewModel()),
         ChangeNotifierProvider(
           create: (context) => CartViewModel(userId: 'current_user_id'),
         ),
