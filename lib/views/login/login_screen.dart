@@ -6,7 +6,6 @@ import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/login/staff_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:fashion_app/views/staff/shipper/shipper_screen.dart';
-import 'package:fashion_app/views/staff/warehouse_screen.dart';
 import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';

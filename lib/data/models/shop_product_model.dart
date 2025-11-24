@@ -8,7 +8,7 @@ class ShopProductModel {
   final String imageUrls;
   final int? rating;  // đánh giá                        
   final int? sold;  // đã bán  
-  final String description;                 
+  final String description;    
 
   ShopProductModel({
     required this.shopproductID,

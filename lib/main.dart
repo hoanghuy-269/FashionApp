@@ -23,6 +23,7 @@ import 'package:fashion_app/views/admin/Admincategories.dart';
 import 'package:fashion_app/views/login/auth_wrapper.dart';
 import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:fashion_app/views/staff/shipper/shipper_screen.dart';
+import 'package:fashion_app/views/staff/warehousemanagement/warehouse_screen.dart';
 import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:fashion_app/views/user/product_detail.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
@@ -93,6 +94,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
+   // return Scaffold(body: Center(child: Danhmucj()));
     return Scaffold(body: Center(child: AuthWrapper()));
   }
 }
