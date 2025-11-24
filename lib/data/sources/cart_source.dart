@@ -13,10 +13,6 @@ class CartSource extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ==========================
-  // 🔶 LẤY GIỎ HÀNG THEO USER
-  // ==========================
-
   Stream<List<CartItem>> getCartByUser(String userId) {
     return _firestore
         .collection('carts')
@@ -29,10 +25,6 @@ class CartSource extends ChangeNotifier {
               snap.docs.map((doc) => CartItem.fromFirestore(doc)).toList(),
         );
   }
-
-  // ==========================
-  // 🔶 THÊM HOẶC CẬP NHẬT ITEM
-  // ==========================
 
   Future<void> addOrUpdateCartItem(CartItem item) async {
     print("🟢 addOrUpdateCartItem: ${item.productName}");
@@ -76,10 +68,6 @@ class CartSource extends ChangeNotifier {
     }
   }
 
-  // ==========================
-  // 🔶 CẬP NHẬT SỐ LƯỢNG
-  // ==========================
-
   Future<void> updateCartItemQuantity(
     String userId,
     String cartItemId,
@@ -102,10 +90,6 @@ class CartSource extends ChangeNotifier {
     }
   }
 
-  // ==========================
-  // 🔶 XOÁ ITEM TRONG GIỎ
-  // ==========================
-
   Future<void> deleteCartItem(String userId, String cartItemId) async {
     try {
       await _firestore
@@ -122,10 +106,6 @@ class CartSource extends ChangeNotifier {
       print("❌ Lỗi deleteCartItem: $e");
     }
   }
-
-  // ==========================
-  // 🔶 XOÁ TOÀN BỘ GIỎ CỦA USER
-  // ==========================
 
   Future<void> clearCartByUser(String userId) async {
     try {
@@ -146,5 +126,15 @@ class CartSource extends ChangeNotifier {
     } catch (e) {
       print("❌ Lỗi clearCartByUser: $e");
     }
+  }
+
+  // LẤY TỔNG SỐ LƯỢNG ITEM TRONG GIỎ
+  Stream<int> getCartItemCount(String userId) {
+    return _firestore
+        .collection('carts')
+        .doc(userId)
+        .collection('cart_items')
+        .snapshots()
+        .map((snapshot) => snapshot.size);
   }
 }

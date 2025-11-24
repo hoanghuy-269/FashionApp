@@ -1,12 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fashion_app/data/models/order_item_model.dart';
 import 'package:fashion_app/data/models/order_model.dart'; // Không cần hide nữa
 
 class OrderSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  // ==========================
-  // 🛒 TẠO ĐƠN HÀNG MỚI
-  // ==========================
 
   Future<String> createOrder(FashionOrder order) async {
     try {
@@ -16,30 +13,55 @@ class OrderSource {
       final orderRef = _firestore.collection('orders').doc(order.orderId);
       batch.set(orderRef, order.toMap());
 
-      // 2. Tạo các order items
+      // 2. Tạo các order items trong subcollection
       for (final item in order.items) {
         final itemRef = _firestore
+            .collection('orders')
+            .doc(order.orderId)
             .collection('order_items')
             .doc(item.orderItemId);
         batch.set(itemRef, item.toMap());
       }
 
-      // 3. Execute batch write
       await batch.commit();
 
-      print(
-        '✅ Đã tạo đơn hàng: ${order.orderId} với ${order.items.length} sản phẩm',
-      );
+      await removeCartItemsAfterOrder(order.items, order.userId);
       return order.orderId;
     } catch (e) {
-      print('❌ Lỗi tạo đơn hàng: $e');
+      print(' Lỗi tạo đơn hàng: $e');
       rethrow;
     }
   }
 
-  // ==========================
-  // 📥 LẤY ĐƠN HÀNG THEO USER
-  // ==========================
+  // Thêm vào OrderRepository hoặc CartRepository
+  Future<void> removeCartItemsAfterOrder(
+    List<OrderItem> orderItems,
+    String userId,
+  ) async {
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+
+      for (final item in orderItems) {
+        if (item.cartId != null && item.cartId!.isNotEmpty) {
+          final cartItemRef = FirebaseFirestore.instance
+              .collection('carts')
+              .doc(userId)
+              .collection('cart_items')
+              .doc(item.cartId!);
+
+          batch.delete(cartItemRef);
+        }
+      }
+
+      await batch.commit();
+      print(
+        '✅ Đã xóa ${orderItems.where((item) => item.cartId != null).length} items khỏi giỏ hàng',
+      );
+    } catch (e) {
+      print('❌ Lỗi xóa cart items: $e');
+      // Không rethrow để không ảnh hưởng đến order
+    }
+  }
 
   Stream<List<FashionOrder>> getOrdersByUser(String userId) {
     return _firestore

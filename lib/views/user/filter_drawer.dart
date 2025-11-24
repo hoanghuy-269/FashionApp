@@ -1,4 +1,4 @@
-import 'package:fashion_app/views/user/category.dart';
+import 'package:fashion_app/views/user/widget/category.dart';
 import 'package:flutter/material.dart';
 
 class FilterDrawer extends StatefulWidget {
@@ -11,12 +11,12 @@ class FilterDrawer extends StatefulWidget {
 }
 
 class _FilterDrawerState extends State<FilterDrawer> {
-  double _minPrice = 10;
-  double _maxPrice = 10000000.0;
+  double _minPrice = 10000;
+  double _maxPrice = 1000000.0;
   double _rating = 0;
 
-  String _selectedBrand = "All";
-  String _selectedCategory = "All";
+  Set<String> _selectedBrands = {};
+  Set<String> _selectedCategories = {};
 
   late final TextEditingController _minController;
   late final TextEditingController _maxController;
@@ -34,8 +34,8 @@ class _FilterDrawerState extends State<FilterDrawer> {
   void initState() {
     super.initState();
     _initializeFromFilters();
-    _minController = TextEditingController(text: _minPrice.toStringAsFixed(0));
-    _maxController = TextEditingController(text: _maxPrice.toStringAsFixed(0));
+    _minController = TextEditingController(text: _formatPrice(_minPrice));
+    _maxController = TextEditingController(text: _formatPrice(_maxPrice));
 
     // Load data một lần duy nhất
     _loadBrands();
@@ -43,11 +43,21 @@ class _FilterDrawerState extends State<FilterDrawer> {
   }
 
   void _initializeFromFilters() {
-    _minPrice = (widget.initialFilters['minPrice'] as double?) ?? 0.0;
-    _maxPrice = (widget.initialFilters['maxPrice'] as double?) ?? 10000000.0;
+    _minPrice = (widget.initialFilters['minPrice'] as double?) ?? 1000.0;
+    _maxPrice = (widget.initialFilters['maxPrice'] as double?) ?? 1000000.0;
     _rating = (widget.initialFilters['rating'] as double?) ?? 0.0;
-    _selectedBrand = (widget.initialFilters['brand'] as String?) ?? "All";
-    _selectedCategory = (widget.initialFilters['category'] as String?) ?? "All";
+
+    final brands = widget.initialFilters['brand'];
+    final categories = widget.initialFilters['category'];
+
+    _selectedBrands =
+        (brands is List)
+            ? List<String>.from(brands).toSet()
+            : (brands is String ? {brands} : <String>{});
+    _selectedCategories =
+        (categories is List)
+            ? List<String>.from(categories).toSet()
+            : (categories is String ? {categories} : <String>{});
   }
 
   void _loadBrands() {
@@ -75,25 +85,37 @@ class _FilterDrawerState extends State<FilterDrawer> {
   Widget _buildChoiceChip({
     required String label,
     required String value,
-    required String selectedValue,
-    required ValueChanged<String> onSelected,
+    required Set<String> selectedValues,
+    required ValueChanged<Set<String>> onSelected,
   }) {
-    final bool isSelected = selectedValue == value;
+    final bool isSelected = selectedValues.contains(value);
+
     return ChoiceChip(
       label: Text(
         label,
         style: TextStyle(
-          color:
-              isSelected
-                  ? const Color.fromARGB(255, 238, 240, 141)
-                  : Colors.black87,
+          color: isSelected ? Colors.white : Colors.black87,
           fontWeight: FontWeight.w500,
         ),
       ),
       selected: isSelected,
       selectedColor: Colors.blueAccent,
       backgroundColor: Colors.grey.shade200,
-      onSelected: (_) => onSelected(value),
+      onSelected: (_) {
+        final newSet = Set<String>.from(selectedValues);
+        if (isSelected) {
+          newSet.remove(value);
+        } else {
+          if (value == 'All') {
+            newSet.clear();
+            newSet.add('All');
+          } else {
+            newSet.remove('All');
+            newSet.add(value);
+          }
+        }
+        onSelected(newSet);
+      },
     );
   }
 
@@ -168,9 +190,7 @@ class _FilterDrawerState extends State<FilterDrawer> {
   }
 
   Widget _buildBrandsSection() {
-    if (!_brandsLoaded) {
-      return const CircularProgressIndicator();
-    }
+    if (!_brandsLoaded) return const CircularProgressIndicator();
 
     return Wrap(
       spacing: 8,
@@ -179,15 +199,15 @@ class _FilterDrawerState extends State<FilterDrawer> {
         _buildChoiceChip(
           label: "All",
           value: "All",
-          selectedValue: _selectedBrand,
-          onSelected: (value) => setState(() => _selectedBrand = value),
+          selectedValues: _selectedBrands,
+          onSelected: (val) => setState(() => _selectedBrands = val),
         ),
         ..._cachedBrands.map(
           (brand) => _buildChoiceChip(
             label: brand['name'] ?? 'Unknown',
             value: brand['brandID'] ?? brand['id'],
-            selectedValue: _selectedBrand,
-            onSelected: (value) => setState(() => _selectedBrand = value),
+            selectedValues: _selectedBrands,
+            onSelected: (val) => setState(() => _selectedBrands = val),
           ),
         ),
       ],
@@ -195,9 +215,7 @@ class _FilterDrawerState extends State<FilterDrawer> {
   }
 
   Widget _buildCategoriesSection() {
-    if (!_categoriesLoaded) {
-      return const CircularProgressIndicator();
-    }
+    if (!_categoriesLoaded) return const CircularProgressIndicator();
 
     return Wrap(
       spacing: 8,
@@ -206,15 +224,15 @@ class _FilterDrawerState extends State<FilterDrawer> {
         _buildChoiceChip(
           label: "All",
           value: "All",
-          selectedValue: _selectedCategory,
-          onSelected: (value) => setState(() => _selectedCategory = value),
+          selectedValues: _selectedCategories,
+          onSelected: (val) => setState(() => _selectedCategories = val),
         ),
         ..._cachedCategories.map(
           (category) => _buildChoiceChip(
             label: category['categoryName'] ?? 'Unknown',
             value: category['categoryID'] ?? category['id'],
-            selectedValue: _selectedCategory,
-            onSelected: (value) => setState(() => _selectedCategory = value),
+            selectedValues: _selectedCategories,
+            onSelected: (val) => setState(() => _selectedCategories = val),
           ),
         ),
       ],
@@ -232,16 +250,16 @@ class _FilterDrawerState extends State<FilterDrawer> {
         RangeSlider(
           values: RangeValues(_minPrice, _maxPrice),
           min: 0,
-          max: 10000000.0,
+          max: 1000000.0,
           divisions: 20,
-          labels: RangeLabels('${_minPrice.round()}k', '${_maxPrice.round()}k'),
+          labels: RangeLabels(_formatPrice(_minPrice), _formatPrice(_maxPrice)),
           activeColor: Colors.blueAccent,
           onChanged: (values) {
             setState(() {
               _minPrice = values.start;
               _maxPrice = values.end;
-              _minController.text = _minPrice.toStringAsFixed(0);
-              _maxController.text = _maxPrice.toStringAsFixed(0);
+              _minController.text = _formatPrice(_minPrice);
+              _maxController.text = _formatPrice(_maxPrice);
             });
           },
         ),
@@ -356,6 +374,22 @@ class _FilterDrawerState extends State<FilterDrawer> {
     );
   }
 
+  String _formatPrice(double price) {
+    String priceStr = price.toStringAsFixed(0);
+    String result = '';
+    int count = 0;
+
+    for (int i = priceStr.length - 1; i >= 0; i--) {
+      result = priceStr[i] + result;
+      count++;
+      if (count % 3 == 0 && i != 0) {
+        result = '.$result';
+      }
+    }
+
+    return '$result';
+  }
+
   Widget _buildActionButtons() {
     return Row(
       children: [
@@ -370,8 +404,8 @@ class _FilterDrawerState extends State<FilterDrawer> {
             ),
             onPressed: () {
               Navigator.pop(context, {
-                'brand': _selectedBrand,
-                'category': _selectedCategory,
+                'brand': _selectedBrands.toList(),
+                'category': _selectedCategories.toList(),
                 'minPrice': _minPrice,
                 'maxPrice': _maxPrice,
                 'rating': _rating,
@@ -397,15 +431,16 @@ class _FilterDrawerState extends State<FilterDrawer> {
             ),
             onPressed: () {
               setState(() {
-                _selectedBrand = "All";
-                _selectedCategory = "All";
+                _selectedBrands = {'All'};
+                _selectedCategories = {'All'};
                 _minPrice = 0.0;
-                _maxPrice = 10000000.0;
+                _maxPrice = 1000000.0;
                 _rating = 0;
-                _minController.text = _minPrice.toStringAsFixed(0);
-                _maxController.text = _maxPrice.toStringAsFixed(0);
+                _minController.text = _formatPrice(_minPrice);
+                _maxController.text = _formatPrice(_maxPrice);
               });
             },
+
             child: const Text(
               "Xóa lọc",
               style: TextStyle(fontWeight: FontWeight.w600),

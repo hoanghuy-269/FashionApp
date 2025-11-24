@@ -93,6 +93,35 @@ class FashionOrder {
     return order.copyWith(items: items);
   }
 
+  static Future<FashionOrder> fromFirestoreWithItems2(
+    DocumentSnapshot doc,
+  ) async {
+    // First, create basic order from document
+    final order = FashionOrder.fromFirestore(doc);
+
+    try {
+      // Lấy items từ subcollection 'order_items'
+      final orderItemsSnap =
+          await FirebaseFirestore.instance
+              .collection('orders')
+              .doc(
+                order.orderId,
+              ) // 👈 Sử dụng orderId để truy cập subcollection
+              .collection('order_items')
+              .get();
+
+      final items =
+          orderItemsSnap.docs.map((itemDoc) {
+            return OrderItem.fromFirestore(itemDoc);
+          }).toList();
+
+      return order.copyWith(items: items);
+    } catch (e) {
+      print('❌ Lỗi lấy order items: $e');
+      return order; // Trả về order không có items nếu có lỗi
+    }
+  }
+
   // Copy with method
   FashionOrder copyWith({
     String? orderId,
@@ -126,5 +155,48 @@ class FashionOrder {
       shipperId: shipperId ?? this.shipperId,
       cancellationReason: cancellationReason ?? this.cancellationReason,
     );
+  }
+
+  String getCalculatedStatus() {
+    if (items.isEmpty) return 'status_001';
+
+    final allStatuses = items.map((item) => item.itemStatus).toSet();
+
+    // Nếu có item bị hủy
+    if (allStatuses.contains('status_006')) {
+      return 'status_006';
+    }
+
+    // Nếu có item hoàn thành hết
+    if (allStatuses.every((status) => status == 'status_005')) {
+      return 'status_005';
+    }
+
+    // Nếu có item đang giao hàng
+    if (allStatuses.any((status) => status == 'status_004')) {
+      return 'status_004';
+    }
+
+    // Nếu có item đang xử lý
+    if (allStatuses.any((status) => status == 'status_003')) {
+      return 'status_003';
+    }
+
+    // Nếu có item đã xác nhận
+    if (allStatuses.any((status) => status == 'status_002')) {
+      // Nếu tất cả đều đã xác nhận -> status_002, ngược lại status_001
+      return allStatuses.every((status) => status == 'status_002')
+          ? 'status_002'
+          : 'status_001';
+    }
+
+    // Mặc định là đang chờ
+    return 'status_001';
+  }
+
+  // Helper method để kiểm tra xem có nên hiển thị trạng thái tính toán không
+  bool get shouldUseCalculatedStatus {
+    // Chỉ tính toán khi có nhiều hơn 1 item
+    return items.length > 1;
   }
 }
