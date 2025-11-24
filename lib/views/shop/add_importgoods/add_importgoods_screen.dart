@@ -192,6 +192,7 @@ import 'package:provider/provider.dart';
           rating: 0,
           sold: 0,
           description: _descriptionController.text.trim(),
+          totalPrice: 0.0,
         );
 
         final shopProductVM = context.read<ShopProductViewModel>();
