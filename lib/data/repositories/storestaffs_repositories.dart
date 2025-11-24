@@ -17,4 +17,5 @@ class StorestaffsRepositories {
   Future<void> deleteStaff(String shopId, String employeeId) => _remoteDataSource.deleteStaff(shopId, employeeId);
 
   Future<bool> isStaffEmailExists(String email, String shopId) => _remoteDataSource.isStaffEmailExists(email,shopId);
+  
 }

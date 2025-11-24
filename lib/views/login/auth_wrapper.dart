@@ -1,6 +1,6 @@
 import 'package:fashion_app/views/admin/admin_home_screen.dart';
 import 'package:fashion_app/views/login/staff_screen.dart';
-import 'package:fashion_app/views/staff/warehouse_screen.dart';
+import 'package:fashion_app/views/staff/shipper/shipper_screen.dart';
 import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -92,7 +92,7 @@ class AuthWrapper extends StatelessWidget {
               default:
                 // Nếu là nhân viên (staff)
                 if (source == 'staff') {
-                  return WarehouseScreen(shopID: shopId , staffID: user.uid);
+                  return ShipperScreen(shopID: shopId , staffID: user.uid);
                 } else {
                   return const LoginScreen();
                 }

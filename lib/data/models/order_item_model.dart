@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fashion_app/data/models/order_model.dart';
 
 class OrderItem {
   final String orderItemId;
@@ -15,6 +16,7 @@ class OrderItem {
   final String voucherId;
   final String imageUrl;
   final String? cartId;
+  FashionOrder? parentOrder;
 
   OrderItem({
     required this.orderItemId,
@@ -31,6 +33,7 @@ class OrderItem {
     required this.voucherId,
     required this.imageUrl,
     this.cartId,
+    this.parentOrder,
   });
 
   factory OrderItem.fromFirestore(DocumentSnapshot doc) {

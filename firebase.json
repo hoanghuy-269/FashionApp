@@ -1,1 +1,35 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"fashional-app","appId":"1:314949258585:android:720eb557102781a9ec9048","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"fashional-app","configurations":{"android":"1:314949258585:android:720eb557102781a9ec9048","ios":"1:314949258585:ios:61f6effa567e9bfeec9048"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "fashional-app",
+          "appId": "1:314949258585:android:720eb557102781a9ec9048",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "fashional-app",
+          "configurations": {
+            "android": "1:314949258585:android:720eb557102781a9ec9048",
+            "ios": "1:314949258585:ios:61f6effa567e9bfeec9048"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import 'package:fashion_app/data/models/products_model.dart';
 import 'package:fashion_app/data/models/shop_product_model.dart';
 import 'package:fashion_app/data/models/shop_product_with_detail.dart';
 import 'package:fashion_app/data/sources/shopproduct_source.dart';
@@ -37,4 +38,32 @@ class ShopProductRepository {
   Stream<List<ShopProductWithDetail>> getAllShopProductsWithDetail() {
     return _source.getAllShopProductsWithDetail();
   }
+
+  // lấy product theo shopProductID
+  Future<ProductsModel?> getProductByShopProductID(String shopProductID) async {
+    return await _source.getProductOfShopProduct(shopProductID);
+  }
+
+  Future<void> incrementTotalQuantity(String shopProductID, int additionalQty) async {
+    await _source.incrementTotalQuantity(shopProductID, additionalQty);
+  }
+
+  Future<String?> getNameBranch(String id) async {
+    try {
+      return await _source.getNameBranch(id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<String?> getNameCategory(String id) async {
+    try {
+      return await _source.getNameCategory(id);
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  
+  
 }

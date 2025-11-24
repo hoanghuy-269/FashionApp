@@ -12,6 +12,7 @@ class ShopSources {
   Future<void> deleteShop(String shopId) async {
     await _db.collection('shops').doc(shopId).delete();
   }
+
   Future<void> updateShop(ShopModel shop) async {
     await _db.collection('shops').doc(shop.shopId).update(shop.toMap());
   }
@@ -21,7 +22,8 @@ class ShopSources {
     final shopId = docRef.id;
 
     if (shopData['createdAt'] is DateTime) {
-      shopData['createdAt'] = (shopData['createdAt'] as DateTime).toIso8601String();
+      shopData['createdAt'] =
+          (shopData['createdAt'] as DateTime).toIso8601String();
     }
 
     shopData['shopId'] = shopId;
@@ -50,9 +52,13 @@ class ShopSources {
     return null;
   }
 
-
   Future<ShopModel?> getShopByOwnerId(String ownerId) async {
-    final query = await _db.collection('shops').where('userId', isEqualTo: ownerId).limit(1).get();
+    final query =
+        await _db
+            .collection('shops')
+            .where('userId', isEqualTo: ownerId)
+            .limit(1)
+            .get();
     if (query.docs.isNotEmpty) {
       final e = query.docs.first;
       final data = e.data();
@@ -61,13 +67,21 @@ class ShopSources {
     }
     return null;
   }
-
   Future<List<ShopModel>> getShopsByOwnerId(String ownerId) async {
-    final query = await _db.collection('shops').where('userId', isEqualTo: ownerId).get();
+    final query =
+        await _db.collection('shops').where('userId', isEqualTo: ownerId).get();
     return query.docs.map((e) {
       final data = e.data();
       data['shopId'] = e.id;
       return ShopModel.fromtoMap(data);
     }).toList();
   }
+
+  Future<int> countStaffByShop(String shopId) async {
+    final q =
+        await _db.collection('shops').doc(shopId).collection('staff').get();
+
+    return q.size;
+  }
+
 }

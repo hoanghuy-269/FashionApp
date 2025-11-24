@@ -16,6 +16,11 @@ class ColorRepository {
   Future<Map<String, Map<String, dynamic>>> getAllColors() async {
     return await _remoteSource.getAllColors();
   }
+
+  // láu ten màu theo id
+  Future<String> fetchColorName(String colorID) async {
+    return await _remoteSource.getColorName(colorID);
+  }
   
 
 }

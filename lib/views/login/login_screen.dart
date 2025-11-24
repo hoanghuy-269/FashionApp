@@ -1,11 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fashion_app/data/models/oder_status_model.dart';
 import 'package:fashion_app/viewmodels/role_viewmodel.dart';
 import 'package:fashion_app/views/admin/admin_home_screen.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/login/staff_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
-import 'package:fashion_app/views/staff/warehouse_screen.dart';
+import 'package:fashion_app/views/staff/cashier.dart';
+import 'package:fashion_app/views/staff/shipper/shipper_screen.dart';
 import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '.././login/register_screen.dart';
@@ -121,17 +125,46 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      print('✅ Nhân viên: ${staff.fullName}, Shop: ${staff.shopId}');
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => WarehouseScreen(shopID: staff.shopId),
-        ),
+      print(
+        '✅ Nhân viên: ${staff.fullName}, Shop: ${staff.shopId}, Roles: ${staff.roleIds}',
       );
 
-      _showSuccess('Đăng nhập nhân viên thành công!');
+      // Kiểm tra role và chuyển hướng đến màn hình phù hợp
+      if (staff.roleIds.contains('R01')) {
+        // Role R01: Shipper
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => ShipperScreen(
+                  shopID: staff.shopId,
+                  staffID: staff.employeeId,
+                ),
+          ),
+        );
+        _showSuccess('Đăng nhập nhân viên giao hàng thành công!');
+      } else if (staff.roleIds.contains('R02')) {
+        // Role R02: Cashier - Thay bằng màn hình thu ngân thực tế
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => Cashier(shopID: staff.shopId, staffID: staff.employeeId),
+          ),
+        );
+        _showSuccess('Đăng nhập thu ngân thành công!');
+      } else {
+        // Nếu có nhiều role hoặc role khác
+        _showError('Không tìm thấy quyền phù hợp! Vui lòng liên hệ quản lý.');
+        return;
+      }
       return;
+    }
+    if (user != null) {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        await _authViewModel.updateNotificationToken(user.id, fcmToken);
+      }
     }
 
     if (user == null) {
