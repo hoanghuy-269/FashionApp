@@ -7,6 +7,7 @@ import 'package:fashion_app/views/login/staff_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:fashion_app/views/staff/cashier.dart';
 import 'package:fashion_app/views/staff/shipper/shipper_screen.dart';
+import 'package:fashion_app/views/staff/warehousemanagement/warehouse_screen.dart';
 import 'package:fashion_app/views/user/home_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -150,6 +151,19 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(
             builder:
                 (_) => Cashier(shopID: staff.shopId, staffID: staff.employeeId),
+          ),
+        );
+        _showSuccess('Đăng nhập thu ngân thành công!');
+      } else if (staff.roleIds.contains('R03')) {
+        // Role R02: Cashier - Thay bằng màn hình thu ngân thực tế
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => WarehouseScreen(
+                  shopID: staff.shopId,
+                  staffID: staff.employeeId,
+                ),
           ),
         );
         _showSuccess('Đăng nhập thu ngân thành công!');

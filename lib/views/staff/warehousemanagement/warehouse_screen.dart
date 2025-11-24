@@ -156,8 +156,8 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-           
-// nút đơn hàng với xử lí đơn hàng
+
+                // nút đơn hàng với xử lí đơn hàng
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -167,7 +167,9 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => Ordermanagement(shopID: widget.shopID),
+                              builder:
+                                  (context) =>
+                                      Ordermanagement(shopID: widget.shopID),
                             ),
                           );
                         },
@@ -187,61 +189,40 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      
+
                       // đơn hàng
-                      
-                                 // Đoạn mã nơi bạn chuyển đến màn hình Orderprocessing
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Orderprocessing(shopID: widget.shopID), // Truyền shopID
+
+                      // Đoạn mã nơi bạn chuyển đến màn hình Orderprocessing
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => Orderprocessing(
+                                    shopID: widget.shopID,
+                                  ), // Truyền shopID
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'Đóng gói ',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
                         ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
-                        'Đóng gói ',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                    ),
-                  ),
-                      const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Cashier(shopID: widget.shopID), // Truyền shopID
-                        ),
-                      );
-                    },
-                      
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'thu ngân ',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                    ),
-                  ),
-                  
                     ],
                   ),
                 ),
-
-
-
 
                 // Tổng số đơn
                 Padding(
