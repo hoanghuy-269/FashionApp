@@ -15,6 +15,7 @@ class OrderItem {
   final String itemStatus;
   final String voucherId;
   final String imageUrl;
+  final String? cartId;
   FashionOrder? parentOrder;
 
   OrderItem({
@@ -31,6 +32,7 @@ class OrderItem {
     required this.itemStatus,
     required this.voucherId,
     required this.imageUrl,
+    this.cartId,
     this.parentOrder,
   });
 
@@ -50,6 +52,7 @@ class OrderItem {
       itemStatus: data['itemStatus'] ?? '',
       voucherId: data['voucherId'] ?? '',
       imageUrl: data['imageUrl'] ?? '',
+      cartId: data['cartId'],
     );
   }
 
@@ -68,6 +71,7 @@ class OrderItem {
       'itemStatus': itemStatus,
       'voucherId': voucherId,
       'imageUrl': imageUrl,
+      'cartId': cartId,
       'createdAt': Timestamp.now(),
     };
   }

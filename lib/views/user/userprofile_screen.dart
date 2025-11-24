@@ -9,6 +9,7 @@ import 'package:fashion_app/views/login/change_password_screen.dart';
 import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:fashion_app/views/user/approved_shop_dialog.dart';
+import 'package:fashion_app/views/user/order_list_screen.dart';
 import 'package:fashion_app/views/user/requesttoopentshop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -400,7 +401,18 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
             icon: Icons.credit_card,
             title: "Phương thức thanh toán",
           ),
-          _buildMenuItem(icon: Icons.shopping_bag, title: "Đơn hàng của tôi"),
+          _buildMenuItem(
+            icon: Icons.shopping_bag,
+            title: "Đơn hàng của tôi",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => OrderListScreen(userId: currentUser!.id),
+                ),
+              );
+            },
+          ),
           _buildMenuItem(
             icon: Icons.settings,
             title: "Đổi mật khẩu",

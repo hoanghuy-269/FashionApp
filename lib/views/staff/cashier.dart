@@ -3,15 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Cashier extends StatefulWidget {
   final String shopID;
+  final String? staffID;
 
-  const Cashier({super.key, required this.shopID});
+  const Cashier({super.key, required this.shopID, this.staffID});
 
   @override
   State<Cashier> createState() => _CashierState();
 }
 
-class _CashierState extends State<Cashier>
-    with SingleTickerProviderStateMixin {
+class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   bool isLoading = true;
@@ -39,13 +39,14 @@ class _CashierState extends State<Cashier>
   /// Lấy tên nhân viên có roleIds = 'R02' trong shop hiện tại
   Future<void> _loadCashierName() async {
     try {
-      final staffSnapshot = await FirebaseFirestore.instance
-          .collection('shops')
-          .doc(widget.shopID)
-          .collection('staff')
-          .where('roleIds', isEqualTo: 'R02')
-          .limit(1)
-          .get();
+      final staffSnapshot =
+          await FirebaseFirestore.instance
+              .collection('shops')
+              .doc(widget.shopID)
+              .collection('staff')
+              .where('roleIds', isEqualTo: 'R02')
+              .limit(1)
+              .get();
 
       if (staffSnapshot.docs.isNotEmpty) {
         final data = staffSnapshot.docs.first.data() as Map<String, dynamic>;
@@ -70,12 +71,13 @@ class _CashierState extends State<Cashier>
         final orderId = orderDoc.id;
         final orderData = orderDoc.data() as Map<String, dynamic>;
 
-        final orderItemsSnapshot = await FirebaseFirestore.instance
-            .collection('orders')
-            .doc(orderId)
-            .collection('order_items')
-            .where('shopId', isEqualTo: widget.shopID)
-            .get();
+        final orderItemsSnapshot =
+            await FirebaseFirestore.instance
+                .collection('orders')
+                .doc(orderId)
+                .collection('order_items')
+                .where('shopId', isEqualTo: widget.shopID)
+                .get();
 
         List<Map<String, dynamic>> orderItems = [];
 
@@ -151,13 +153,15 @@ class _CashierState extends State<Cashier>
           itemTotal = rawTotal.toDouble();
         } else {
           final rawPrice = item['price'] ?? 0;
-          final double price = rawPrice is num
-              ? rawPrice.toDouble()
-              : double.tryParse(rawPrice.toString()) ?? 0;
+          final double price =
+              rawPrice is num
+                  ? rawPrice.toDouble()
+                  : double.tryParse(rawPrice.toString()) ?? 0;
 
-          final int qty = (item['quantity'] ?? 1) is int
-              ? item['quantity'] as int
-              : int.tryParse(item['quantity'].toString()) ?? 1;
+          final int qty =
+              (item['quantity'] ?? 1) is int
+                  ? item['quantity'] as int
+                  : int.tryParse(item['quantity'].toString()) ?? 1;
 
           itemTotal = price * qty;
         }
@@ -187,13 +191,9 @@ class _CashierState extends State<Cashier>
                 double.tryParse(rawProductTotal.toString()) ?? 0;
           }
 
-          tx.update(productRef, {
-            'totalPrice': currentTotalPrice + itemTotal,
-          });
+          tx.update(productRef, {'totalPrice': currentTotalPrice + itemTotal});
 
-          tx.update(itemRef, {
-            'itemStatus': 'status_006',
-          });
+          tx.update(itemRef, {'itemStatus': 'status_006'});
         });
       }
 
@@ -243,9 +243,10 @@ class _CashierState extends State<Cashier>
           continue;
         }
 
-        final int qty = (item['quantity'] ?? 1) is int
-            ? item['quantity'] as int
-            : int.tryParse(item['quantity'].toString()) ?? 1;
+        final int qty =
+            (item['quantity'] ?? 1) is int
+                ? item['quantity'] as int
+                : int.tryParse(item['quantity'].toString()) ?? 1;
 
         final productRef = FirebaseFirestore.instance
             .collection("shop_products")
@@ -271,22 +272,25 @@ class _CashierState extends State<Cashier>
 
           final data = productSnap.data() as Map<String, dynamic>;
 
-          int total = (data['totalQuantity'] ?? 0) is int
-              ? data['totalQuantity'] as int
-              : int.tryParse(data['totalQuantity'].toString()) ?? 0;
+          int total =
+              (data['totalQuantity'] ?? 0) is int
+                  ? data['totalQuantity'] as int
+                  : int.tryParse(data['totalQuantity'].toString()) ?? 0;
 
-          int sold = (data['sold'] ?? 0) is int
-              ? data['sold'] as int
-              : int.tryParse(data['sold'].toString()) ?? 0;
+          int sold =
+              (data['sold'] ?? 0) is int
+                  ? data['sold'] as int
+                  : int.tryParse(data['sold'].toString()) ?? 0;
 
           final sizeSnap = await tx.get(sizeRef);
 
           int? sizeQty;
           if (sizeSnap.exists) {
             final sizeData = sizeSnap.data() as Map<String, dynamic>;
-            sizeQty = (sizeData['quantity'] ?? 0) is int
-                ? sizeData['quantity'] as int
-                : int.tryParse(sizeData['quantity'].toString()) ?? 0;
+            sizeQty =
+                (sizeData['quantity'] ?? 0) is int
+                    ? sizeData['quantity'] as int
+                    : int.tryParse(sizeData['quantity'].toString()) ?? 0;
           }
 
           tx.update(productRef, {
@@ -295,14 +299,10 @@ class _CashierState extends State<Cashier>
           });
 
           if (sizeQty != null) {
-            tx.update(sizeRef, {
-              'quantity': sizeQty + qty,
-            });
+            tx.update(sizeRef, {'quantity': sizeQty + qty});
           }
 
-          tx.update(itemRef, {
-            'itemStatus': 'status_006',
-          });
+          tx.update(itemRef, {'itemStatus': 'status_006'});
         });
       }
 
@@ -359,10 +359,7 @@ class _CashierState extends State<Cashier>
                       children: [
                         const Text(
                           'Nhân viên thu ngân',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                         Text(
                           cashierName.isEmpty ? "Đang tải..." : cashierName,
@@ -395,8 +392,10 @@ class _CashierState extends State<Cashier>
                   color: const Color(0xff4ea0ff),
                   borderRadius: BorderRadius.circular(30),
                 ),
-                labelPadding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                labelPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 0,
+                ),
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.black87,
                 tabs: const [
@@ -410,31 +409,32 @@ class _CashierState extends State<Cashier>
 
             // TAB CONTENT
             Expanded(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : orders.isEmpty
+              child:
+                  isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : orders.isEmpty
                       ? const Center(
-                          child: Text('Không có đơn nào cho shop này'),
-                        )
+                        child: Text('Không có đơn nào cho shop này'),
+                      )
                       : TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _OrderListView(
-                              itemStatus: 'status_004',
-                              orders: orders,
-                              isReturn: false,
-                              onConfirmPayment: _handleConfirmPayment,
-                              onConfirmReturn: _handleConfirmReturn,
-                            ),
-                            _OrderListView(
-                              itemStatus: 'status_005',
-                              orders: orders,
-                              isReturn: true,
-                              onConfirmPayment: _handleConfirmPayment,
-                              onConfirmReturn: _handleConfirmReturn,
-                            ),
-                          ],
-                        ),
+                        controller: _tabController,
+                        children: [
+                          _OrderListView(
+                            itemStatus: 'status_004',
+                            orders: orders,
+                            isReturn: false,
+                            onConfirmPayment: _handleConfirmPayment,
+                            onConfirmReturn: _handleConfirmReturn,
+                          ),
+                          _OrderListView(
+                            itemStatus: 'status_005',
+                            orders: orders,
+                            isReturn: true,
+                            onConfirmPayment: _handleConfirmPayment,
+                            onConfirmReturn: _handleConfirmReturn,
+                          ),
+                        ],
+                      ),
             ),
           ],
         ),
@@ -460,17 +460,16 @@ class _OrderListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final filteredOrders = orders.where((order) {
-      final items = order['orderItems'] as List;
-      return items.any((item) => item['itemStatus'] == itemStatus);
-    }).toList();
+    final filteredOrders =
+        orders.where((order) {
+          final items = order['orderItems'] as List;
+          return items.any((item) => item['itemStatus'] == itemStatus);
+        }).toList();
 
     if (filteredOrders.isEmpty) {
       return Center(
         child: Text(
-          isReturn
-              ? 'Không có đơn trả nào'
-              : 'Không có đơn chưa thanh toán',
+          isReturn ? 'Không có đơn trả nào' : 'Không có đơn chưa thanh toán',
         ),
       );
     }
@@ -512,23 +511,24 @@ class _OrderCard extends StatelessWidget {
   }) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Hủy'),
+      builder:
+          (_) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Hủy'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await onConfirm();
+                },
+                child: const Text('Đồng ý'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await onConfirm();
-            },
-            child: const Text('Đồng ý'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -567,10 +567,7 @@ class _OrderCard extends StatelessWidget {
                 : 'Mã đơn hàng: ${order['orderId']}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
 
           const SizedBox(height: 6),

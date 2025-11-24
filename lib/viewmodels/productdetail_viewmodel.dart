@@ -64,6 +64,7 @@ class ProductDetailViewModel extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
+
   Future<String?> getImageByID({
     required String productId,
     required String productDetailId,

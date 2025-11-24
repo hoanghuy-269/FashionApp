@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:fashion_app/data/models/cart_model.dart';
 import 'package:fashion_app/data/sources/cart_source.dart';
+import 'package:flutter/material.dart';
 
 class CartViewModel extends ChangeNotifier {
   final CartSource _cartSource = CartSource();
@@ -10,10 +10,8 @@ class CartViewModel extends ChangeNotifier {
 
   List<CartItem> get items => _items;
 
-  // Tổng số lượng sản phẩm (tính tổng quantity của tất cả items)
   int get itemCount => _items.fold(0, (sum, item) => sum + item.quantity);
 
-  // Tổng số loại sản phẩm (số document trong cart)
   int get uniqueItemCount => _items.length;
 
   CartViewModel({required this.userId}) {
@@ -32,7 +30,7 @@ class CartViewModel extends ChangeNotifier {
     try {
       await _cartSource.addOrUpdateCartItem(item);
     } catch (e) {
-      debugPrint("❌ Error addOrUpdateItem: $e");
+      debugPrint("Error addOrUpdateItem: $e");
     }
   }
 
@@ -43,7 +41,7 @@ class CartViewModel extends ChangeNotifier {
     try {
       await _cartSource.updateCartItemQuantity(userId, cartItemId, quantity);
     } catch (e) {
-      debugPrint("❌ Error updateQuantity: $e");
+      debugPrint("Error updateQuantity: $e");
     }
   }
 
@@ -51,7 +49,27 @@ class CartViewModel extends ChangeNotifier {
     try {
       await _cartSource.deleteCartItem(userId, cartItemId);
     } catch (e) {
-      debugPrint("❌ Error deleteItem: $e");
+      debugPrint("Error deleteItem: $e");
+    }
+  }
+
+  // THÊM HÀM removeFromCart - ĐÂY LÀ ALIAS CỦA deleteItem
+  Future<void> removeFromCart(String cartItemId) async {
+    try {
+      await _cartSource.deleteCartItem(userId, cartItemId);
+    } catch (e) {
+      debugPrint("❌ Error removeFromCart: $e");
+    }
+  }
+
+  // HOẶC NẾU BẠN MUỐN XÓA NHIỀU ITEMS CÙNG LÚC, THÊM HÀM NÀY:
+  Future<void> removeMultipleFromCart(List<String> cartItemIds) async {
+    try {
+      for (String cartItemId in cartItemIds) {
+        await _cartSource.deleteCartItem(userId, cartItemId);
+      }
+    } catch (e) {
+      debugPrint("❌ Error removeMultipleFromCart: $e");
     }
   }
 
