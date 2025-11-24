@@ -1,3 +1,4 @@
+import 'package:fashion_app/core/utils/colorhelper.dart';
 import 'package:flutter/material.dart';
 import 'package:fashion_app/data/models/colors_model.dart';
 import 'package:fashion_app/data/repositories/color_repository.dart';
@@ -46,6 +47,19 @@ class ColorsViewmodel extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Lỗi khi thêm màu: $e');
+    }
+  }
+
+   Future<Color> getColorFromFirestore(String? colorID) async {
+    if (colorID == null || colorID.isEmpty) return Colors.grey;
+    
+    try {
+      final hexCode = await _repository.getColorHexCode(colorID);
+      final color = ColorHelper.hexToColor(hexCode);
+      return color;
+    } catch (e) {
+      print('Error fetching color $colorID: $e');
+      return Colors.grey;
     }
   }
 

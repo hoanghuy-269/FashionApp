@@ -37,10 +37,8 @@ import 'package:provider/provider.dart';
     // Lưu image theo màu
     final Map<String, String> _imagesByColor = {};
     
-    // Lưu data theo màu -> size
     final Map<String, Map<String, _SizeData>> _dataBySizeColor = {};
 
-    // Selected items
     BrandsModel? _selectedBrand;
     CategoryModel? _selectedCategory;
     ProductsModel? _selectedProduct;
@@ -194,6 +192,7 @@ import 'package:provider/provider.dart';
           rating: 0,
           sold: 0,
           description: _descriptionController.text.trim(),
+          totalPrice: 0.0,
         );
 
         final shopProductVM = context.read<ShopProductViewModel>();

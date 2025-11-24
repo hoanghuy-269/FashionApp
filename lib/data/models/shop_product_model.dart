@@ -7,7 +7,8 @@ class ShopProductModel {
   final String imageUrls;
   final int? rating;  // đánh giá                        
   final int? sold;  // đã bán  
-  final String description;                 
+  final String description;    
+  final double? totalPrice;  // thêm trường giá
 
   ShopProductModel({
     required this.shopproductID,
@@ -19,6 +20,7 @@ class ShopProductModel {
     required this.imageUrls,
     this.sold,
     required this.description,
+    this.totalPrice,
   });
 
   factory ShopProductModel.fromMap(Map<String, dynamic> json, String id) {
@@ -32,6 +34,7 @@ class ShopProductModel {
       imageUrls: json['imageUrls'] ?? '',
       sold: json['sold'],
       description: json['description'] ?? '',
+      totalPrice: (json['totalPrice'] != null) ? (json['totalPrice'] as num).toDouble() : null,
     );
   }
 
@@ -46,6 +49,7 @@ class ShopProductModel {
       'imageUrls': imageUrls,
       'sold': sold,
       'description': description,
+      'totalPrice': totalPrice,
     };
   }
 }

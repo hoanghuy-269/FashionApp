@@ -103,8 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final user = _authViewModel.currentUser;
     if (user != null && user.status == false) {
       _showError('Tài khoản của bạn đã bị khóa hoặc chưa được kích hoạt!');
-      print('🔒 User status: ${user.status}');
-      return; // Dừng lại, không chuyển trang
+      return;
     }
     await _storage.write(key: 'pwd_$email', value: password);
     final existingEmails = await _storage.read(key: 'emails');
@@ -123,10 +122,12 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       print('✅ Nhân viên: ${staff.fullName}, Shop: ${staff.shopId}');
-      
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => WarehouseScreen(shopID: staff.shopId)),
+        MaterialPageRoute(
+          builder: (_) => WarehouseScreen(shopID: staff.shopId),
+        ),
       );
 
       _showSuccess('Đăng nhập nhân viên thành công!');

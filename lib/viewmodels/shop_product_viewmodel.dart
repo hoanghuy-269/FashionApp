@@ -1,3 +1,4 @@
+import 'package:fashion_app/data/models/shop_product_with_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:fashion_app/data/models/shop_product_model.dart';
 import 'package:fashion_app/data/repositories/shop_product_repository.dart';
@@ -109,6 +110,14 @@ class ShopProductViewModel extends ChangeNotifier {
       notifyListeners();
       return null;
     }
+  }
+
+  Stream<List<Map<String, dynamic>>> getShopProductsStream(String shopId) {
+    return _repository.getProductsByShopProduct(shopId);
+  }
+
+  Stream<List<ShopProductWithDetail>> getAllShopProductsStream() {
+    return _repository.getAllShopProductsWithDetail();
   }
 
   // Expose stream for real-time shop products
