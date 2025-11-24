@@ -14,6 +14,7 @@ class ShopProductViewModel extends ChangeNotifier {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+  double totalPrice = 0;
 
   // lấy name của branch
   Map<String, BrandsModel> branchNameCache = {};
@@ -51,6 +52,7 @@ class ShopProductViewModel extends ChangeNotifier {
         brandID: '',
         categoryID: '',
       );
+      
     }
   } catch (e) {
     _error = e.toString();
@@ -59,7 +61,24 @@ class ShopProductViewModel extends ChangeNotifier {
   _isLoading = false;
   notifyListeners();
 }
-
+ Future<void> feachShopProductsID(String shopID) async {
+  _isLoading = true;
+  notifyListeners();
+  
+  try {
+    _shopProducts = await _repository.getShopProductsByShop(shopID);
+    
+    // Tính tổng totalPrice từ tất cả sản phẩm
+    totalPrice = _shopProducts.fold(0.0, (sum, product) => sum + (product.totalPrice ?? 0.0));
+    
+    _error = null;
+  } catch (e) {
+    _error = e.toString();
+  } finally {
+    _isLoading = false;
+    notifyListeners();
+  }
+}
 
   //  Thêm sản phẩm
   Future<String?> addShopProduct(ShopProductModel model) async {
@@ -77,6 +96,7 @@ class ShopProductViewModel extends ChangeNotifier {
         name: model.name,
         imageUrls: model.imageUrls,
         rating: model.rating,
+        totalPrice: model.totalPrice,
         sold: model.sold,
         description: model.description,
       );
@@ -141,6 +161,8 @@ class ShopProductViewModel extends ChangeNotifier {
       return null;
     }
   }
+
+ 
   
   Future<void> updateQuantity(String shopProductID, int additionalQty) async {
     try {
@@ -214,4 +236,6 @@ class ShopProductViewModel extends ChangeNotifier {
       }
     }
   }
+
+  
 }

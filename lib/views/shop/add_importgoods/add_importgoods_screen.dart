@@ -189,6 +189,7 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
         name: _selectedProduct!.name,
         totalQuantity: _getTotalQuantity(),
         imageUrls: _imagesByColor.values.firstOrNull ?? '',
+        totalPrice: 0.0,
         rating: 0,
         sold: 0,
         description: _descriptionController.text.trim(),

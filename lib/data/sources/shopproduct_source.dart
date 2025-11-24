@@ -22,6 +22,9 @@ class ShopproductSource {
     }
   }
 
+  // lấy tổng sản phẩm của shop theo shopId
+  
+
   Future<List<ShopProductModel>> getShopProductsByShop(String shopId) async {
     try {
       final snapshot =
@@ -36,7 +39,9 @@ class ShopproductSource {
     } catch (e) {
       return [];
     }
-  }
+  
+}
+
 
   // Real-time stream of shop products for a shop
   Stream<List<ShopProductModel>> getShopProductsByShopStream(String shopId) {
@@ -316,4 +321,5 @@ class ShopproductSource {
       return Stream.value([]);
     }
   }
+
 }

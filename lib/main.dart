@@ -63,6 +63,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ProductSizeViewmodel()),
         ChangeNotifierProvider(create: (_) => OrderItemViewModel()),
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => ShopViewModel()),
         ChangeNotifierProvider(
           create: (context) => CartViewModel(userId: 'current_user_id'),
         ),

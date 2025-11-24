@@ -2,7 +2,8 @@ class ShopProductModel {
   final String shopproductID; 
   final String shopId;
   final String name;
-  final String productID;     
+  final String productID;  
+  final double? totalPrice;    
   final int totalQuantity;
   final String imageUrls;
   final int? rating;  // đánh giá                        
@@ -14,6 +15,7 @@ class ShopProductModel {
     required this.shopId,
     required this.productID,
     required this.totalQuantity,
+    required this.totalPrice,
     required this.name,
     this.rating,
     required this.imageUrls,
@@ -29,6 +31,7 @@ class ShopProductModel {
       totalQuantity: json['totalQuantity'] ?? 0,
       name: json['name'] ?? '',
       rating: json['rating'],
+    totalPrice: (json['totalPrice'] as num?)?.toDouble() ?? 0.0, 
       imageUrls: json['imageUrls'] ?? '',
       sold: json['sold'],
       description: json['description'] ?? '',
@@ -41,6 +44,7 @@ class ShopProductModel {
       'shopId': shopId,
       'productID': productID,
       'totalQuantity': totalQuantity,
+      'totalPrice': totalPrice,
       'name': name,
       'rating': rating,
       'imageUrls': imageUrls,
