@@ -1,14 +1,14 @@
 class ShopProductModel {
-  final String shopproductID; 
+  final String shopproductID;
   final String shopId;
   final String name;
-  final String productID;  
-  final double? totalPrice;    
+  final String productID;
+  final double? totalPrice;
   final int totalQuantity;
   final String imageUrls;
-  final int? rating;  // đánh giá                        
-  final int? sold;  // đã bán  
-  final String description;    
+  final double? rating;
+  final int? sold;
+  final String description;
 
   ShopProductModel({
     required this.shopproductID,
@@ -30,8 +30,8 @@ class ShopProductModel {
       productID: json['productID'] ?? '',
       totalQuantity: json['totalQuantity'] ?? 0,
       name: json['name'] ?? '',
-      rating: json['rating'],
-    totalPrice: (json['totalPrice'] as num?)?.toDouble() ?? 0.0, 
+      rating: (json['rating'] as num?)?.toDouble(),
+      totalPrice: (json['totalPrice'] as num?)?.toDouble() ?? 0.0,
       imageUrls: json['imageUrls'] ?? '',
       sold: json['sold'],
       description: json['description'] ?? '',

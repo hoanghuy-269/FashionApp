@@ -17,6 +17,10 @@ class OderItemRepository {
   Future<void> updateOrderItemStatus(String orderItemId, String newStatus) {
     return _source.updateOrderItemStatus(orderItemId, newStatus);
   }
+  // lấy tổng số lượng đơn hàng theo idShop
+  Stream<int> getTotalOrderItemsByShopStream(String shopId) {
+    return _source.getTotalOrderItemsByShopStream(shopId);
+  }
 
   Future<void> updateOrderShipper(
     String orderId, {

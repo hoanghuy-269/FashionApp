@@ -21,4 +21,8 @@ class ProductRequestRepository {
 
   Future<void> approvedRequest(String productRequestID) =>
       _source.approvedRequest(productRequestID);
+  // lấy tổng số lượng yêu cầu sản phẩm theo shopId
+  Stream<int> getTotalProductRequestsByShopStream(String shopId) {
+    return _source.getTotalPendingRequestsByShopStream(shopId);
+  }
 }

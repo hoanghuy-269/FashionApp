@@ -16,6 +16,16 @@ class ShopProductRequestSources {
       throw Exception('Lỗi thêm yêu cầu: $e');
     }
   }
+ // Tổng số yêu cầu pending theo shopId
+Stream<int> getTotalPendingRequestsByShopStream(String shopId) {
+  return _firestore
+      .collection(_collection)
+      .where('shopID', isEqualTo: shopId)
+      .where('status', isEqualTo: 'pending') 
+      .snapshots()
+      .map((snapshot) => snapshot.docs.length); 
+}
+
 
   // Cập nhật trạng thái
   Future<void> updateStatus(String productRequestID, String status) async {

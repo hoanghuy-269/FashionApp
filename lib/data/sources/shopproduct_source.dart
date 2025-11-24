@@ -21,9 +21,15 @@ class ShopproductSource {
       rethrow;
     }
   }
+  // lấy tổng các sản phẩm của shop
+Stream<int> getTotalProductsByShopStream(String shopId) {
+  return _firestore
+      .collection(_collection)
+      .where('shopId', isEqualTo: shopId)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.length);
+}
 
-  // lấy tổng sản phẩm của shop theo shopId
-  
 
   Future<List<ShopProductModel>> getShopProductsByShop(String shopId) async {
     try {
@@ -39,8 +45,8 @@ class ShopproductSource {
     } catch (e) {
       return [];
     }
-  
-}
+  }
+
 
 
   // Real-time stream of shop products for a shop
@@ -94,9 +100,10 @@ class ShopproductSource {
       return null;
     }
   }
+
   Future<String?> getNameBranch(String id) async {
     final doc = await _firestore.collection('brands').doc(id).get();
-    if(doc.exists){
+    if (doc.exists) {
       return doc.data()!['name'];
     }
     return null;
@@ -104,7 +111,7 @@ class ShopproductSource {
 
   Future<String?> getNameCategory(String id) async {
     final doc = await _firestore.collection('categories').doc(id).get();
-    if(doc.exists){
+    if (doc.exists) {
       return doc.data()!['categoryName'];
     }
     return null;
@@ -135,19 +142,21 @@ class ShopproductSource {
     }
   }
 
-  // cập nhật totalQuantity 
-  Future<void> incrementTotalQuantity(String shopProductID, int additionalQty) async {
-  try {
-    await _firestore
-        .collection(_collection)
-        .doc(shopProductID)
-        .update({'totalQuantity': FieldValue.increment(additionalQty)});
-  } catch (e) {
-    print('Lỗi khi increment totalQuantity: $e');
-    rethrow;
+  // cập nhật totalQuantity
+  Future<void> incrementTotalQuantity(
+    String shopProductID,
+    int additionalQty,
+  ) async {
+    try {
+      await _firestore.collection(_collection).doc(shopProductID).update({
+        'totalQuantity': FieldValue.increment(additionalQty),
+      });
+    } catch (e) {
+      print('Lỗi khi increment totalQuantity: $e');
+      rethrow;
+    }
   }
-}
-  
+
   // ------------------------------- STREAMS -------------------------------//
 
   Stream<List<Map<String, dynamic>>> getProductsByShopProduct(String shopId) {
@@ -321,5 +330,4 @@ class ShopproductSource {
       return Stream.value([]);
     }
   }
-
 }

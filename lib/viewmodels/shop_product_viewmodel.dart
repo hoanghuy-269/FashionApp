@@ -24,7 +24,7 @@ class ShopProductViewModel extends ChangeNotifier {
   Map<String, CategoryModel> categoryNameCache = {};
   String? getCategoryrNameCacher(String id) =>
       categoryNameCache[id]?.categoryName;
-  
+
   Map<String, ProductsModel> productNameCache = {};
   ProductsModel? getProductNameCacher(String id) => productNameCache[id];
 
@@ -33,52 +33,55 @@ class ShopProductViewModel extends ChangeNotifier {
   String? get error => _error;
 
   //  Fetch sản phẩm theo ShopID
- Future<void> fetchShopProducts(String shopId) async {
-  if(productNameCache.containsKey(shopId)){
-    product = productNameCache[shopId];
-    notifyListeners();
-    return;
-  }
-  try {
-      _isLoading = true;
-  notifyListeners();
-    _shopProducts = await _repository.getShopProductsByShop(shopId);
-    _error = null;
-
-    for (var p in _shopProducts) {
-      productNameCache[p.productID] = ProductsModel(
-        productID: p.productID,
-        name: p.name,
-        brandID: '',
-        categoryID: '',
-      );
-      
+  Future<void> fetchShopProducts(String shopId) async {
+    if (productNameCache.containsKey(shopId)) {
+      product = productNameCache[shopId];
+      notifyListeners();
+      return;
     }
-  } catch (e) {
-    _error = e.toString();
-  }
+    try {
+      _isLoading = true;
+      notifyListeners();
+      _shopProducts = await _repository.getShopProductsByShop(shopId);
+      _error = null;
 
-  _isLoading = false;
-  notifyListeners();
-}
- Future<void> feachShopProductsID(String shopID) async {
-  _isLoading = true;
-  notifyListeners();
-  
-  try {
-    _shopProducts = await _repository.getShopProductsByShop(shopID);
-    
-    // Tính tổng totalPrice từ tất cả sản phẩm
-    totalPrice = _shopProducts.fold(0.0, (sum, product) => sum + (product.totalPrice ?? 0.0));
-    
-    _error = null;
-  } catch (e) {
-    _error = e.toString();
-  } finally {
+      for (var p in _shopProducts) {
+        productNameCache[p.productID] = ProductsModel(
+          productID: p.productID,
+          name: p.name,
+          brandID: '',
+          categoryID: '',
+        );
+      }
+    } catch (e) {
+      _error = e.toString();
+    }
+
     _isLoading = false;
     notifyListeners();
   }
-}
+
+  Future<void> feachShopProductsID(String shopID) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _shopProducts = await _repository.getShopProductsByShop(shopID);
+
+      // Tính tổng totalPrice từ tất cả sản phẩm
+      totalPrice = _shopProducts.fold(
+        0.0,
+        (sum, product) => sum + (product.totalPrice ?? 0.0),
+      );
+
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   //  Thêm sản phẩm
   Future<String?> addShopProduct(ShopProductModel model) async {
@@ -111,6 +114,16 @@ class ShopProductViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // láy getTotalProductsByShopStream
+ Stream<int> getTotalProductsByShopStream(String shopId) {
+  try {
+    return _repository.getTotalProductsByShopStream(shopId);
+  } catch (e) {
+    print('Lỗi: $e');
+    return Stream.value(0);
+  }
+}
 
   //  Cập nhật sản phẩm
   Future<void> updateShopProduct(ShopProductModel model) async {
@@ -162,8 +175,6 @@ class ShopProductViewModel extends ChangeNotifier {
     }
   }
 
- 
-  
   Future<void> updateQuantity(String shopProductID, int additionalQty) async {
     try {
       _isLoading = true;
@@ -213,12 +224,8 @@ class ShopProductViewModel extends ChangeNotifier {
     if (!branchNameCache.containsKey(id)) {
       final name = await _repository.getNameBranch(id);
       if (name != null) {
-        branchNameCache[id] = BrandsModel(
-          brandID: id,
-          name: name,
-          logoUrl: '',
-        );
-        notifyListeners(); 
+        branchNameCache[id] = BrandsModel(brandID: id, name: name, logoUrl: '');
+        notifyListeners();
       }
     }
   }
@@ -232,10 +239,8 @@ class ShopProductViewModel extends ChangeNotifier {
           categoryName: name,
           logoUrl: '',
         );
-        notifyListeners(); 
+        notifyListeners();
       }
     }
   }
-
-  
 }

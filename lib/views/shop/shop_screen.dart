@@ -1,4 +1,5 @@
-import 'package:another_flushbar/flushbar.dart';
+import 'package:fashion_app/viewmodels/oder_item_viewmodel.dart';
+import 'package:fashion_app/viewmodels/shop_product_request_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
@@ -150,7 +151,6 @@ class _ShopScreenState extends State<ShopScreen> {
               Expanded(child: _buildShopInfo()),
               Row(
                 children: [
-                  _buildHeaderIconButton(LucideIcons.bell, onTap: () {}),
                   const SizedBox(width: 12),
                   _buildHeaderIconButton(
                     LucideIcons.logOut,
@@ -399,33 +399,54 @@ class _ShopScreenState extends State<ShopScreen> {
           ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // ✅ tránh chiếm hết không gian
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(height: 8),
-            FittedBox(
-              child: Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 30),
                 ),
-              ),
+                Positioned(
+                  top: -6,
+                  right: -6,
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            FittedBox(
-              child: Text(
-                label,
-                style: const TextStyle(fontSize: 14, color: Colors.black),
+
+            const SizedBox(height: 12),
+
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -455,50 +476,83 @@ class _ShopScreenState extends State<ShopScreen> {
             physics: const NeverScrollableScrollPhysics(),
             childAspectRatio: 0.8,
             children: [
-              _buildStatCard(
-                '',
-                "Đơn hàng",
-                LucideIcons.fileText,
-                Colors.orange,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => (ShopOrderManagement(
-                            shopID: shopID,
-                            staffID: staffID,
-                          )),
-                    ),
+              Consumer<OrderItemViewModel>(
+                builder: (context, orderVm, _) {
+                  return StreamBuilder<int?>(
+                    stream: orderVm.getTotalOrderItemsByShopStream(shopID),
+                    builder: (context, snapshot) {
+                      final totalOrders = snapshot.data ?? 0;
+                      return _buildStatCard(
+                        '$totalOrders',
+                        "Đơn hàng",
+                        LucideIcons.fileText,
+                        Colors.orange,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => (ShopOrderManagement(
+                                    shopID: shopID,
+                                    staffID: staffID,
+                                  )),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
-              _buildStatCard(
-                '',
-                "Kho hàng",
-                LucideIcons.warehouse,
-
-                Colors.green,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const WarehouseManagement(),
-                    ),
+              Consumer<ShopProductViewModel>(
+                builder: (context, shopVm, _) {
+                  return StreamBuilder<int>(
+                    stream: shopVm.getTotalProductsByShopStream(shopID),
+                    builder: (context, snapshot) {
+                      final totalProducts = snapshot.data ?? 0;
+                      return _buildStatCard(
+                        '$totalProducts',
+                        "Kho hàng",
+                        LucideIcons.warehouse,
+                        Colors.green,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      const WarehouseManagementScreen(),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
-              _buildStatCard(
-                '',
-                "Nhập hàng",
-                LucideIcons.packagePlus,
-                Colors.blue,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ImportgoodsCreen(),
+              Consumer<ShopProductRequestViewmodel>(
+                builder: (context, requestVM, _) {
+                  return StreamBuilder<int>(
+                    stream: requestVM.getTotalProductRequestsByShopStream(
+                      shopID,
                     ),
+                    builder: (context, snapshot) {
+                      final totalRequests = snapshot.data ?? 0;
+                      return _buildStatCard(
+                        '$totalRequests',
+                        "Nhập hàng",
+                        LucideIcons.packagePlus,
+                        Colors.blue,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ImportgoodsCreen(),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
@@ -506,18 +560,11 @@ class _ShopScreenState extends State<ShopScreen> {
               Consumer<ShopViewModel>(
                 builder: (context, shopVm, _) {
                   return _buildStatCard(
-                    'Số lượng : ${shopVm.staffCount}',
+                    '${shopVm.staffCount}',
                     "Nhân viên",
                     LucideIcons.users,
                     Colors.purple,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ShopPersonnalScreen(),
-                        ),
-                      );
-                    },
+                    onTap: _navigateToPersonnel,
                   );
                 },
               ),

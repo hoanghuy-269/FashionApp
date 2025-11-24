@@ -41,6 +41,14 @@ class OrderItemViewModel extends ChangeNotifier {
         );
   }
 
+  Stream<int?> getTotalOrderItemsByShopStream(String shopId) {
+    try {
+      return _repository.getTotalOrderItemsByShopStream(shopId);
+    } catch (e) {
+      return Stream.value(0);
+    }
+  }
+
   Future<String> getUserNameCached(String userId) async {
     if (_userCache.containsKey(userId)) return _userCache[userId]!;
 
@@ -53,19 +61,20 @@ class OrderItemViewModel extends ChangeNotifier {
     return _repository.updateOrderItemStatus(orderItemId, newStatus);
   }
 
-Future<void> updateOrderShipper(
-  String orderId, {           // Thêm dấu { ở đây
-  String? shipperId,
-  String? cancellationReason,
-  String? deliveryProofUrl,
-}) {
-  return _repository.updateOrderShipper(
-    orderId,
-    shipperId: shipperId,
-    cancellationReason: cancellationReason,
-    deliveryProofUrl: deliveryProofUrl,
-  );
-}
+  Future<void> updateOrderShipper(
+    String orderId, { // Thêm dấu { ở đây
+    String? shipperId,
+    String? cancellationReason,
+    String? deliveryProofUrl,
+  }) {
+    return _repository.updateOrderShipper(
+      orderId,
+      shipperId: shipperId,
+      cancellationReason: cancellationReason,
+      deliveryProofUrl: deliveryProofUrl,
+    );
+  }
+
   Future<String> uploadDeliveryProof(File imageFile, String orderId) {
     return _repository.uploadDeliveryProof(imageFile, orderId);
   }

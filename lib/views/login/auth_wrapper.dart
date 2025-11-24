@@ -120,9 +120,8 @@ class AuthWrapper extends StatelessWidget {
             final role = data['roleId'];
             final source = data['source'];
 
-            // ✅ Điều hướng dựa theo role
+            //  Điều hướng dựa theo role
             if (source == 'staff') {
-              // Xử lý đăng nhập nhân viên
               return _handleStaffNavigation(data);
             } else {
               // Xử lý các role khác

@@ -156,6 +156,7 @@ class _ShipperScreenState extends State<ShipperScreen> {
 
 class _ShipperHeader extends StatelessWidget {
   final String staffName;
+  
   final VoidCallback onLogout;
 
   const _ShipperHeader({required this.staffName, required this.onLogout});
