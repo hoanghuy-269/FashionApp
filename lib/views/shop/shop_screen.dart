@@ -1,3 +1,5 @@
+import 'package:fashion_app/viewmodels/oder_item_viewmodel.dart';
+import 'package:fashion_app/viewmodels/shop_product_request_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
@@ -6,7 +8,6 @@ import 'package:fashion_app/views/shop/shop_order_management.dart';
 import 'package:fashion_app/views/shop/shop_personnal_screen.dart';
 import 'package:fashion_app/views/shop/shop_profile_screen.dart';
 import 'package:fashion_app/views/shop/warehouse_management.dart';
-import 'package:fashion_app/views/staff/shipper/view_oder_screen.dart';
 import 'package:fashion_app/views/user/userprofile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,20 +31,16 @@ class _ShopScreenState extends State<ShopScreen> {
     super.initState();
     _setupSystemUI();
     _loadShopData();
-   WidgetsBinding.instance.addPostFrameCallback((_) async {
-  final shopVm = Provider.of<ShopViewModel>(context, listen: false);
-  shopVm.loadStaffCount(widget.idShop ?? '');
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final shopVm = Provider.of<ShopViewModel>(context, listen: false);
+      shopVm.loadStaffCount(widget.idShop ?? '');
 
-  final shopProductVm = context.read<ShopProductViewModel>();
-  await shopProductVm.feachShopProductsID(widget.idShop ?? '');
+      final shopProductVm = context.read<ShopProductViewModel>();
+      await shopProductVm.feachShopProductsID(widget.idShop ?? '');
 
-  final staffVM = context.read<StorestaffViewmodel>();
-  await staffVM.fetchStaffsByShop(widget.idShop ?? '');
-
-
-});
-
-   
+      final staffVM = context.read<StorestaffViewmodel>();
+      await staffVM.fetchStaffsByShop(widget.idShop ?? '');
+    });
   }
 
   void _setupSystemUI() {
@@ -126,9 +123,6 @@ class _ShopScreenState extends State<ShopScreen> {
             // Revenue Card
             SliverToBoxAdapter(child: _buildModernRevenueSection()),
 
-            // Quick Stats
-            SliverToBoxAdapter(child: _buildQuickStats()),
-
             // Features Grid
             SliverToBoxAdapter(child: _buildModernFeatureGrid()),
 
@@ -157,7 +151,6 @@ class _ShopScreenState extends State<ShopScreen> {
               Expanded(child: _buildShopInfo()),
               Row(
                 children: [
-                  _buildHeaderIconButton(LucideIcons.bell, onTap: () {}),
                   const SizedBox(width: 12),
                   _buildHeaderIconButton(
                     LucideIcons.logOut,
@@ -298,126 +291,83 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
- Widget _buildModernRevenueSection() {
-  final shopProductVm = context.watch<ShopProductViewModel>();
-  final formatter = NumberFormat('#,###', 'vi_VN');
+  Widget _buildModernRevenueSection() {
+    final shopProductVm = context.watch<ShopProductViewModel>();
+    final formatter = NumberFormat('#,###', 'vi_VN');
 
-  return Padding(
-    padding: const EdgeInsets.all(20),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Doanh thu hôm nay',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF6C757D),
-          ),
-        ),
-        const SizedBox(height: 12),
-        GestureDetector(
-          onTap: (){
-            
-          },
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.blue[500]!, Colors.blue[700]!],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    LucideIcons.trendingUp,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Tổng doanh thu',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${formatter.format(shopProductVm.totalPrice)} đ',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-               
-              ],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-  Widget _buildQuickStats() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: _buildStatCard(
-              'Đơn hàng',
-              '12',
-              LucideIcons.shoppingBag,
-              Colors.orange,
+          const Text(
+            'Doanh thu hôm nay',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF6C757D),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildStatCard(
-              'Sản phẩm',
-              '48',
-              LucideIcons.package,
-              Colors.green,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Consumer<ShopViewModel>(
-              builder: (context, shopVm, _) {
-                return _buildStatCard(
-                  'Nhân viên',
-                  "${shopVm.staffCount}",
-                  LucideIcons.users,
-                  Colors.purple,
-                );
-              },
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () {},
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.blue[500]!, Colors.blue[700]!],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      LucideIcons.trendingUp,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tổng doanh thu',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${formatter.format(shopProductVm.totalPrice)} đ',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -429,51 +379,85 @@ class _ShopScreenState extends State<ShopScreen> {
     String label,
     String value,
     IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              // ignore: deprecated_member_use
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+    Color color, {
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 80, maxWidth: 150),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 30),
+                ),
+                Positioned(
+                  top: -6,
+                  right: -6,
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildModernFeatureGrid() {
     final shopID = context.read<ShopViewModel>().currentShop?.shopId ?? '';
-    final staffID = context.read<StorestaffViewmodel>().currentStaff?.employeeId ?? '';
+    final staffID =
+        context.read<StorestaffViewmodel>().currentStaff?.employeeId ?? '';
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -490,141 +474,103 @@ class _ShopScreenState extends State<ShopScreen> {
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
             physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 0.9,
+            childAspectRatio: 0.8,
             children: [
-              _buildModernFeatureCard(
-                'Đơn hàng',
-                LucideIcons.fileText,
-                Colors.orange,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>  (ShopOrderManagement(shopID: shopID, staffID: staffID)),
-                    ),
-                  );
-                },
-              ),    
-              _buildModernFeatureCard(
-                'Kho hàng',
-                LucideIcons.warehouse,
-                Colors.green,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const WarehouseManagement(),
-                    ),
-                  );
-                },
-              ),
-              _buildModernFeatureCard(
-                'Nhập hàng',
-                LucideIcons.packagePlus,
-                Colors.blue,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ImportgoodsCreen(),
-                    ),
+              Consumer<OrderItemViewModel>(
+                builder: (context, orderVm, _) {
+                  return StreamBuilder<int?>(
+                    stream: orderVm.getTotalOrderItemsByShopStream(shopID),
+                    builder: (context, snapshot) {
+                      final totalOrders = snapshot.data ?? 0;
+                      return _buildStatCard(
+                        '$totalOrders',
+                        "Đơn hàng",
+                        LucideIcons.fileText,
+                        Colors.orange,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => (ShopOrderManagement(
+                                    shopID: shopID,
+                                    staffID: staffID,
+                                  )),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
-              _buildModernFeatureCard(
-                'Nhân viên',
-                LucideIcons.users,
-                Colors.purple,
-                onTap: _navigateToPersonnel,
+              Consumer<ShopProductViewModel>(
+                builder: (context, shopVm, _) {
+                  return StreamBuilder<int>(
+                    stream: shopVm.getTotalProductsByShopStream(shopID),
+                    builder: (context, snapshot) {
+                      final totalProducts = snapshot.data ?? 0;
+                      return _buildStatCard(
+                        '$totalProducts',
+                        "Kho hàng",
+                        LucideIcons.warehouse,
+                        Colors.green,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      const WarehouseManagementScreen(),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
               ),
-             
+              Consumer<ShopProductRequestViewmodel>(
+                builder: (context, requestVM, _) {
+                  return StreamBuilder<int>(
+                    stream: requestVM.getTotalProductRequestsByShopStream(
+                      shopID,
+                    ),
+                    builder: (context, snapshot) {
+                      final totalRequests = snapshot.data ?? 0;
+                      return _buildStatCard(
+                        '$totalRequests',
+                        "Nhập hàng",
+                        LucideIcons.packagePlus,
+                        Colors.blue,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ImportgoodsCreen(),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+
+              Consumer<ShopViewModel>(
+                builder: (context, shopVm, _) {
+                  return _buildStatCard(
+                    '${shopVm.staffCount}',
+                    "Nhân viên",
+                    LucideIcons.users,
+                    Colors.purple,
+                    onTap: _navigateToPersonnel,
+                  );
+                },
+              ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildModernFeatureCard(
-    String title,
-    IconData icon,
-    Color color, {
-    int badgeCount = 0,
-    VoidCallback? onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              // ignore: deprecated_member_use
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    // ignore: deprecated_member_use
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(icon, color: color, size: 32),
-                ),
-                if (badgeCount > 0)
-                  Positioned(
-                    top: -4,
-                    right: -4,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 20,
-                        minHeight: 20,
-                      ),
-                      child: Text(
-                        '$badgeCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

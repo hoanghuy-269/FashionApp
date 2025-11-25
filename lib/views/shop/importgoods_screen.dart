@@ -1,6 +1,7 @@
 import 'package:fashion_app/viewmodels/shop_product_request_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:fashion_app/views/shop/add_importgoods/add_importgoods_screen.dart';
+import 'package:fashion_app/views/shop/add_variant_request.dart';
 import 'package:fashion_app/views/shop/importgoods_warehouse_screen.dart';
 import 'package:fashion_app/data/models/product_request_model.dart';
 import 'package:flutter/material.dart';
@@ -279,7 +280,7 @@ class _ImportgoodsCreenState extends State<ImportgoodsCreen> {
                     context,
                     MaterialPageRoute(
                       builder:
-                          (context) => ImportgoodsWarehouseScreen(
+                          (context) => AddVariantRequest(
                             shopProductID: request.shopProductID,
                             productRequestID: request.productRequestID,
                           ),
@@ -294,50 +295,110 @@ class _ImportgoodsCreenState extends State<ImportgoodsCreen> {
     );
   }
 
-  // Tab 2: Đã nhập (approved)
   Widget _buildApprovedRequestsTab() {
-    if (_shopID == null) {
-      return const Center(child: Text('Đang tải...'));
-    }
-
-    return StreamBuilder<List<ProductRequestModel>>(
-      stream: context
-          .read<ShopProductRequestViewmodel>()
-          .getAllRequestsByShopStream(_shopID!),
-      builder: (context, snapshot) {
-        // Nếu đang load
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        // Lọc các request đã approved
-        final approvedRequests =
-            snapshot.data!
-                .where((request) => request.status == 'approved')
-                .toList();
-
-        // Nếu không có data
-        if (approvedRequests.isEmpty) {
-          return const Center(child: Text('Chưa có đơn hàng nào được duyệt'));
-        }
-
-        // Hiển thị list
-        return ListView.builder(
-          itemCount: approvedRequests.length,
-          itemBuilder: (context, index) {
-            final request = approvedRequests[index];
-
-            return ListTile(
-              leading: const Icon(Icons.check_circle, color: Colors.green),
-              title: Text('Sản phẩm: ${request.shopProductID}'),
-              subtitle: Text('Số lượng: ${request.quantity}'),
-              trailing: const Text('Đã nhập kho'),
-            );
-          },
-        );
-      },
-    );
+  if (_shopID == null) {
+    return const Center(child: Text('Đang tải...'));
   }
+
+  return StreamBuilder<List<ProductRequestModel>>(
+    stream: context
+        .read<ShopProductRequestViewmodel>()
+        .getAllRequestsByShopStream(_shopID!),
+    builder: (context, snapshot) {
+      if (!snapshot.hasData) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      final approvedRequests = snapshot.data!
+          .where((request) => request.status == 'approved')
+          .toList();
+
+      if (approvedRequests.isEmpty) {
+        return const Center(
+          child: Text(
+            'Chưa có đơn hàng nào được duyệt',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+        );
+      }
+
+      return ListView.builder(
+        padding: const EdgeInsets.all(12),
+        itemCount: approvedRequests.length,
+        itemBuilder: (context, index) {
+          final request = approvedRequests[index];
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                )
+              ],
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 10),
+
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.inventory_2, color: Colors.green),
+              ),
+
+              title: Text(
+                'Mã Sản phẩm: ${request.shopProductID}',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 6),
+                  Text(
+                    "Thời gian  ${request.createdAt}",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+
+              trailing: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  "Đã nhập kho",
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
 
   @override
   void dispose() {

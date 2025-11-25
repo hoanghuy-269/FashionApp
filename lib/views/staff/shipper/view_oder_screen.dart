@@ -1,8 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
 import 'package:fashion_app/viewmodels/oder_item_viewmodel.dart';
 import 'package:fashion_app/viewmodels/sizes_viewmodel.dart';
 import 'package:fashion_app/viewmodels/storestaff_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class ViewOderScreen extends StatefulWidget {
@@ -18,7 +20,8 @@ class ViewOderScreen extends StatefulWidget {
   State<ViewOderScreen> createState() => _ViewOderScreenState();
 }
 
-class _ViewOderScreenState extends State<ViewOderScreen> with TickerProviderStateMixin {
+class _ViewOderScreenState extends State<ViewOderScreen>
+    with TickerProviderStateMixin {
   late TabController _tabController;
   final Set<int> _expandedItems = {};
   @override
@@ -51,10 +54,7 @@ class _ViewOderScreenState extends State<ViewOderScreen> with TickerProviderStat
 
       body: TabBarView(
         controller: _tabController,
-        children: [
-          data("status_004"),
-          data("status_005"),
-        ],
+        children: [data("status_004"), data("status_005")],
       ),
     );
   }
@@ -98,9 +98,10 @@ class _ViewOderScreenState extends State<ViewOderScreen> with TickerProviderStat
     );
   }
 
-  Widget data(String status)  {
+  Widget data(String status) {
     final colorVM = context.watch<ColorsViewmodel>();
     final sizeVM = context.watch<SizesViewmodel>();
+    final formatter = NumberFormat('#,###', 'vi_VN');
 
     return Column(
       children: [
@@ -173,25 +174,39 @@ class _ViewOderScreenState extends State<ViewOderScreen> with TickerProviderStat
                         children: [
                           ListTile(
                             contentPadding: const EdgeInsets.all(12),
+
                             leading: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                item.imageUrl,
-                                width: 60,
-                                height: 60,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: 60,
-                                    height: 60,
-                                    color: Colors.grey[300],
-                                    child: const Icon(
-                                      Icons.image_not_supported,
-                                    ),
-                                  );
-                                },
-                              ),
+                              child:
+                                  (item.imageUrl.trim().isEmpty)
+                                      ? Container(
+                                        width: 64,
+                                        height: 64,
+                                        color: Colors.grey[300],
+                                        alignment: Alignment.center,
+                                        child: const Icon(
+                                          Icons.photo,
+                                          size: 28,
+                                        ),
+                                      )
+                                      : CachedNetworkImage(
+                                        imageUrl: item.imageUrl!,
+                                        width: 64,
+                                        height: 64,
+                                        fit: BoxFit.cover,
+                                        errorWidget:
+                                            (_, __, ___) => Container(
+                                              width: 64,
+                                              height: 64,
+                                              color: Colors.grey[300],
+                                              alignment: Alignment.center,
+                                              child: const Icon(
+                                                Icons.broken_image,
+                                              ),
+                                            ),
+                                      ),
                             ),
+
                             title: FutureBuilder<String>(
                               future: vm.getUserNameCached(
                                 item.parentOrder?.userId ?? '',
@@ -245,7 +260,7 @@ class _ViewOderScreenState extends State<ViewOderScreen> with TickerProviderStat
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      "${item.totalPrice.toStringAsFixed(0)}đ",
+                                      "${formatter.format(item.totalPrice)}đ",
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
@@ -330,6 +345,15 @@ class _ViewOderScreenState extends State<ViewOderScreen> with TickerProviderStat
                                     label: "Địa chỉ",
                                     value:
                                         item.parentOrder?.customerAddress ??
+                                        'N/A',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  
+                                    _buildDetailRow(
+                                    icon: Icons.description,
+                                    label: " Lý do từ chối đơn hàng",
+                                    value:
+                                        item.parentOrder?.cancellationReason ??
                                         'N/A',
                                   ),
                                   const SizedBox(height: 16),

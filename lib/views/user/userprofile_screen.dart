@@ -9,6 +9,7 @@ import 'package:fashion_app/views/login/change_password_screen.dart';
 import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:fashion_app/views/shop/shop_screen.dart';
 import 'package:fashion_app/views/user/approved_shop_dialog.dart';
+import 'package:fashion_app/views/user/contactsupport_screen.dart';
 import 'package:fashion_app/views/user/order_list_screen.dart';
 import 'package:fashion_app/views/user/requesttoopentshop_screen.dart';
 import 'package:flutter/material.dart';
@@ -420,6 +421,16 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+              );
+            },
+          ),
+          _buildMenuItem(
+            icon: Icons.support_agent,
+            title: "Liên hệ hỗ trợ",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ContactSupportScreen()),
               );
             },
           ),

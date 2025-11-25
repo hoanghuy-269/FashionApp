@@ -71,6 +71,38 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
     }
   }
 
+  String? validateCCCD(String? value) {
+  if (value == null || value.isEmpty) {
+    return "CCCD không được để trống";
+  }
+
+  if (value.length != 12) {
+    return "CCCD phải gồm đúng 12 số";
+  }
+
+  if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
+    return "CCCD chỉ được gồm các chữ số";
+  }
+
+  // Kiểm tra mã tỉnh (3 số đầu) — optional
+  final validProvinceCodes = {
+    "001","002","004","006","008","010","011","012","014","015",
+    "017","019","020","022","024","025","026","027","030","031",
+    "033","034","035","036","037","038","040","042","044","045",
+    "046","048","049","051","052","054","056","058","060","062",
+    "064","066","067","068","070","072","074","075","077","079",
+    "080","082","083","084","086",
+  };
+
+  final provinceCode = value.substring(0, 3);
+  if (!validProvinceCodes.contains(provinceCode)) {
+    return "Mã tỉnh/thành không hợp lệ (3 số đầu)";
+  }
+
+  return null; // Hợp lệ
+}
+
+
   bool validateFields() {
     bool isValid = true;
     
@@ -379,8 +411,11 @@ class _ShopAddemployCreenState extends State<ShopAddemployCreen> {
       hasError: cccdError != null,
       errorMessage: cccdError ?? "CCCD không được để trống",
       onChanged: (value) {
-        if (cccdError != null) {
+       final msg = validateCCCD(value);
+        if (msg == null) {
           setState(() => cccdError = null);
+        } else {
+          setState(() => cccdError = msg);
         }
       },
     );
