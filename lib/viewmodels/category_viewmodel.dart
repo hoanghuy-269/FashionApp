@@ -22,7 +22,7 @@ class CategoryViewmodel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ Thêm
+  //  Thêm
   Future<void> addCategory(CategoryModel model) async {
     isLoading = true;
     notifyListeners();
@@ -34,7 +34,7 @@ class CategoryViewmodel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ Sửa
+  //  Sửa
   Future<void> updateCategory(CategoryModel model) async {
     isLoading = true;
     notifyListeners();
@@ -46,7 +46,7 @@ class CategoryViewmodel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ Xóa
+  //  Xóa
   Future<void> deleteCategory(String id) async {
     isLoading = true;
     notifyListeners();

@@ -142,7 +142,6 @@ class OrderRepository {
               .collection('order_items')
               .get();
 
-      print('📦 Tìm thấy ${orderItemsSnapshot.docs.length} order_items');
 
       // 2. Cập nhật order chính
       final orderRef = _firestore.collection('orders').doc(orderId);
@@ -161,9 +160,6 @@ class OrderRepository {
         final sizeId = itemData['sizeId'];
         final variantId = itemData['variantId'];
 
-        print(
-          '🔄 Xử lý sản phẩm $productId, số lượng: $quantity, size: $sizeId, variant: $variantId',
-        );
 
         // Cập nhật trạng thái order_item
         final itemRef = _firestore
@@ -220,7 +216,6 @@ class OrderRepository {
       // Cập nhật sold và totalQuantity trong shop_product
       await _updateShopProductSoldAndTotal(shopProductId, quantity, batch);
     } catch (e) {
-      print('❌ Lỗi khi cập nhật số lượng shop_product $shopProductId: $e');
       throw e;
     }
   }
@@ -242,10 +237,7 @@ class OrderRepository {
           .collection('product_sizes')
           .doc(sizeId);
 
-      print(
-        '📍 Đường dẫn size: shop_products/$shopProductId/shop_product_variants/$variantId/product_sizes/$sizeId',
-      );
-
+  
       // Sử dụng transaction để đảm bảo tính nhất quán
       await _firestore.runTransaction((transaction) async {
         final snapshot = await transaction.get(sizeRef);
@@ -257,9 +249,7 @@ class OrderRepository {
         final sizeData = snapshot.data() as Map<String, dynamic>;
         final currentQuantity = sizeData['quantity'] ?? 0;
 
-        print(
-          '📊 Số lượng size hiện tại: $currentQuantity, cần cộng: $quantity',
-        );
+     
 
         final newQuantity = currentQuantity + quantity;
         transaction.update(sizeRef, {
@@ -267,10 +257,8 @@ class OrderRepository {
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
-        print('✅ Đã cập nhật size: $currentQuantity -> $newQuantity');
       });
     } catch (e) {
-      print('❌ Lỗi khi cập nhật product_size: $e');
       throw e;
     }
   }
@@ -286,7 +274,6 @@ class OrderRepository {
           .collection('shop_products')
           .doc(shopProductId);
 
-      print('📍 Đường dẫn shop_product: shop_products/$shopProductId');
 
       await _firestore.runTransaction((transaction) async {
         final snapshot = await transaction.get(shopProductRef);
@@ -314,12 +301,10 @@ class OrderRepository {
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
-        print('✅ Đã cập nhật shop_product:');
-        print('   - sold: $currentSold -> $newSold');
-        print('   - totalQuantity: $currentTotalQuantity -> $newTotalQuantity');
+     
       });
     } catch (e) {
-      print('❌ Lỗi khi cập nhật sold và totalQuantity: $e');
+      print(' Lỗi khi cập nhật sold và totalQuantity: $e');
       throw e;
     }
   }

@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class CartItem {
   final String cartItemId;
   final String productId;
-  final String shopProductId; // THÊM DÒNG NÀY
+  final String shopProductId; 
   final String productName;
   final String variantId;
   final String shopId;
@@ -18,7 +18,7 @@ class CartItem {
   CartItem({
     required this.cartItemId,
     required this.productId,
-    required this.shopProductId, // THÊM VÀO CONSTRUCTOR
+    required this.shopProductId, 
     required this.productName,
     required this.variantId,
     required this.shopId,
@@ -35,7 +35,7 @@ class CartItem {
     return {
       'cartItemId': cartItemId,
       'productId': productId,
-      'shopProductId': shopProductId, // THÊM VÀO TO MAP
+      'shopProductId': shopProductId, 
       'productName': productName,
       'variantId': variantId,
       'shopId': shopId,
@@ -55,7 +55,7 @@ class CartItem {
     return CartItem(
       cartItemId: data['cartItemId'] ?? '',
       productId: data['productId'] ?? '',
-      shopProductId: data['shopProductId'] ?? '', // THÊM VÀO FROM MAP
+      shopProductId: data['shopProductId'] ?? '', 
       productName: data['productName'] ?? '',
       variantId: data['variantId'] ?? '',
       shopId: data['shopId'] ?? '',
@@ -76,7 +76,6 @@ class CartItem {
 
   String get uniqueKey => '$productId-$variantId-$sizeId';
 
-  // Có thể thêm copyWith nếu cần
   CartItem copyWith({
     String? cartItemId,
     String? productId,

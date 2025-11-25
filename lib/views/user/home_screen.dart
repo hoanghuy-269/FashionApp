@@ -3,6 +3,7 @@ import 'dart:math' as Math;
 import 'package:fashion_app/data/models/User.dart';
 import 'package:fashion_app/data/models/cart_model.dart';
 import 'package:fashion_app/data/models/shop_product_with_detail.dart';
+import 'package:fashion_app/data/repositories/notification_repository.dart';
 import 'package:fashion_app/data/repositories/shop_product_repository.dart';
 import 'package:fashion_app/viewmodels/auth_viewmodel.dart';
 import 'package:fashion_app/viewmodels/cart_view_model.dart';
@@ -44,6 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final ProductDetailHelper _helper = ProductDetailHelper();
   Stream<List<ShopProductWithDetail>>? _bannerProductStream;
   List<ShopProductWithDetail> _bannerProducts = [];
+  final NotificationRepository _notificationRepo = NotificationRepository();
+
   //Hiệu ứng
   final GlobalKey _imageKey = GlobalKey();
   bool _showCartAnimation = false;
@@ -258,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
       runAddToCartAnimation();
       await cartVM.addOrUpdateItem(cartItem);
     } catch (e) {
-      _showSnackBar("❌ Lỗi thêm giỏ hàng: $e", isError: true);
+      _showSnackBar(" Lỗi thêm giỏ hàng: $e", isError: true);
     }
   }
 
@@ -572,21 +575,63 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         children: [
                           _buildCartIcon(),
-                          IconButton(
-                            onPressed: () {
-                              // Chuyển qua màn hình thông báo
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => NotificationScreen(
-                                        userId:
-                                            user.id, // Thay bằng userId thực tế
+                          // Notification Icon với badge số lượng chưa đọc
+                          StreamBuilder<int>(
+                            stream: _notificationRepo.getUnreadCount(
+                              user.id,
+                            ), // Dùng hàm có sẵn
+                            builder: (context, snapshot) {
+                              final unreadCount = snapshot.data ?? 0;
+
+                              return Stack(
+                                children: [
+                                  IconButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) => NotificationScreen(
+                                                userId: user.id,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.notifications_none),
+                                  ),
+                                  // Hiển thị badge nếu có thông báo chưa đọc
+                                  if (unreadCount > 0)
+                                    Positioned(
+                                      right: 8,
+                                      top: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 16,
+                                          minHeight: 16,
+                                        ),
+                                        child: Text(
+                                          unreadCount > 9
+                                              ? '9+'
+                                              : unreadCount.toString(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
                                       ),
-                                ),
+                                    ),
+                                ],
                               );
                             },
-                            icon: const Icon(Icons.notifications_none),
                           ),
                         ],
                       ),

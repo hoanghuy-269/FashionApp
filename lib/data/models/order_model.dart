@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'order_item_model.dart';
 
-// Đổi tên class thành FashionOrder hoặc đặt alias
 class FashionOrder {
   final String orderId;
   final String userId;
@@ -58,7 +57,6 @@ class FashionOrder {
     };
   }
 
-  /// Factory thông thường không load items
   factory FashionOrder.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return FashionOrder(
@@ -80,7 +78,6 @@ class FashionOrder {
     );
   }
 
-  /// Factory mới: load cả items từ Firestore
   static Future<FashionOrder> fromFirestoreWithItems(
     DocumentSnapshot doc,
   ) async {
@@ -111,7 +108,7 @@ class FashionOrder {
               .collection('orders')
               .doc(
                 order.orderId,
-              ) // 👈 Sử dụng orderId để truy cập subcollection
+              ) // Sử dụng orderId để truy cập subcollection
               .collection('order_items')
               .get();
 
@@ -122,7 +119,7 @@ class FashionOrder {
 
       return order.copyWith(items: items);
     } catch (e) {
-      print('❌ Lỗi lấy order items: $e');
+      print(' Lỗi lấy order items: $e');
       return order; // Trả về order không có items nếu có lỗi
     }
   }

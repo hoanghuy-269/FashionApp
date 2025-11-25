@@ -25,6 +25,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   final NotificationRepository _notificationRepo = NotificationRepository();
   final OrderRequestRepository _orderRequestRepo = OrderRequestRepository();
   final OrderService _orderService = OrderService();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -36,9 +37,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
-  void _scrollToRequest(String requestId) {
-    // TODO: Implement scroll to specific notification
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
+
+  void _scrollToRequest(String requestId) {}
 
   @override
   Widget build(BuildContext context) {
@@ -121,22 +126,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: _clearAllNotifications,
-                      child: const Text(
-                        'Xóa tất cả',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.red,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
               Expanded(
                 child: ListView.builder(
+                  controller: _scrollController,
                   padding: const EdgeInsets.all(16),
                   itemCount: notifications.length,
                   itemBuilder: (context, index) {
@@ -169,211 +164,195 @@ class _NotificationScreenState extends State<NotificationScreen> {
       confirmDismiss: (direction) async {
         return await _showDeleteConfirmation(notification);
       },
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        color: notification.isRead ? Colors.white : Colors.blue[50],
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: notification.isRead ? Colors.grey[200]! : Colors.blue[100]!,
-            width: 1,
+      child: GestureDetector(
+        onTap: () {
+          if (!notification.isRead) {
+            _markAsRead(notification.id);
+          }
+        },
+        child: Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          color: notification.isRead ? Colors.white : Colors.blue[50],
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color:
+                  notification.isRead ? Colors.grey[200]! : Colors.blue[100]!,
+              width: 1,
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header với icon và tiêu đề
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _getNotificationIcon(notification.type),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                notification.title,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight:
-                                      notification.isRead
-                                          ? FontWeight.normal
-                                          : FontWeight.bold,
-                                  color:
-                                      notification.isRead
-                                          ? Colors.grey[700]
-                                          : Colors.black,
-                                ),
-                              ),
-                            ),
-                            if (requiresAction)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  'Cần xác nhận',
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header với icon và tiêu đề
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _getNotificationIcon(notification.type),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  notification.title,
                                   style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    fontWeight:
+                                        notification.isRead
+                                            ? FontWeight.normal
+                                            : FontWeight.bold,
+                                    color:
+                                        notification.isRead
+                                            ? Colors.grey[700]
+                                            : Colors.black,
                                   ),
                                 ),
                               ),
-                            if (isOrderSuccess)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  'Thành công',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                              if (requiresAction)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    'Cần xác nhận',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          notification.message,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                            height: 1.4,
+                              if (isOrderSuccess)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    'Thành công',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'delete') {
-                        _deleteNotification(notification);
-                      }
-                    },
-                    itemBuilder:
-                        (context) => [
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.delete_outline,
-                                  size: 18,
-                                  color: Colors.red,
-                                ),
-                                SizedBox(width: 8),
-                                Text('Xóa'),
-                              ],
+                          const SizedBox(height: 4),
+                          Text(
+                            notification.message,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              height: 1.4,
                             ),
                           ),
                         ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Thời gian
-              Text(
-                _formatTime(notification.createdAt),
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-              ),
-
-              // Nút hành động (nếu có)
-              if (requiresAction) ...[
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _confirmOrder(notification),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          'Xác nhận đặt hàng',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => _cancelOrder(notification),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          side: BorderSide(color: Colors.grey[400]!),
-                        ),
-                        child: Text(
-                          'Hủy',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[700],
-                          ),
-                        ),
                       ),
                     ),
                   ],
                 ),
-              ],
-
-              // Nút xem đơn hàng (cho thông báo thành công)
-              if (isOrderSuccess && orderId != null) ...[
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _viewOrder(orderId),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+
+                // Thời gian
+                Text(
+                  _formatTime(notification.createdAt),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
+
+                // Nút hành động (nếu có)
+                if (requiresAction) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _confirmOrder(notification),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Xác nhận đặt hàng',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      'Xem đơn hàng',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _cancelOrder(notification),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            side: BorderSide(color: Colors.grey[400]!),
+                          ),
+                          child: Text(
+                            'Hủy',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                // Nút xem đơn hàng (cho thông báo thành công)
+                if (isOrderSuccess && orderId != null) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => _viewOrder(orderId),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Xem đơn hàng',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -512,30 +491,37 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
       );
 
-      // Tạo đơn hàng - hàm trả về bool
+      // SỬA: Đổi tên biến và xử lý theo kiểu bool
       final success = await _orderService.confirmOrderAndCreate(requestId);
 
       // Ẩn loading
       if (mounted) Navigator.of(context).pop();
 
       if (success) {
-        // XÓA thông báo xác nhận cũ
+        // thành công
         await _notificationRepo.deleteNotification(notification.id);
-
-        // Tạo orderId tạm thời (hoặc lấy từ service nếu có)
         final orderId = 'ORDER_${DateTime.now().millisecondsSinceEpoch}';
-
-        // GỬI thông báo thành công mới
         await _sendOrderSuccessNotification(requestId, orderId);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Đã xác nhận đơn hàng thành công!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã xác nhận đơn hàng thành công!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } else {
-        throw Exception('Không thể tạo đơn hàng');
+        // có lỗi - cần lấy error message từ service
+        // SỬA: Thêm property lastError trong OrderService
+        final errorMessage =
+            _orderService.lastError ?? "Không thể tạo đơn hàng";
+
+        if (_isConflictError(errorMessage)) {
+          await _showConflictErrorDialog(requestId, notification, errorMessage);
+        } else {
+          await _showGenericErrorDialog(errorMessage);
+        }
       }
     } catch (e) {
       // Ẩn loading nếu có lỗi
@@ -677,14 +663,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           );
                           await _orderRequestRepo.cancelOrderRequest(requestId);
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Đã hủy yêu cầu đặt hàng'),
-                              backgroundColor: Colors.orange,
-                            ),
-                          );
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Đã hủy yêu cầu đặt hàng'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          }
 
-                          setState(() {});
+                          if (mounted) setState(() {});
                         },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.grey.shade700,
@@ -809,12 +797,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('❌ Lỗi xác nhận đơn hàng: $errorMessage'),
-        backgroundColor: Colors.red,
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Lỗi xác nhận đơn hàng: $errorMessage'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _cancelOrder(AppNotification notification) async {
@@ -944,30 +934,32 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             notification.id,
                           );
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Row(
-                                children: [
-                                  Icon(
-                                    Icons.check_circle,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Expanded(
-                                    child: Text('Đã hủy đơn hàng thành công'),
-                                  ),
-                                ],
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Expanded(
+                                      child: Text('Đã hủy đơn hàng thành công'),
+                                    ),
+                                  ],
+                                ),
+                                backgroundColor: Colors.orange.shade600,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
-                              backgroundColor: Colors.orange.shade600,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          );
+                            );
+                          }
 
-                          setState(() {});
+                          if (mounted) setState(() {});
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red.shade600,
@@ -1037,19 +1029,23 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Future<void> _deleteNotification(AppNotification notification) async {
     try {
       await _notificationRepo.deleteNotification(notification.id);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đã xóa thông báo'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã xóa thông báo'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lỗi xóa thông báo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi xóa thông báo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -1077,19 +1073,23 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (result == true) {
       try {
         await _notificationRepo.clearAllNotifications(widget.userId);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã xóa tất cả thông báo'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã xóa tất cả thông báo'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi xóa thông báo: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi xóa thông báo: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
