@@ -152,9 +152,8 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
+                
                 TextField(
                   controller: emailController,
                   readOnly: true,

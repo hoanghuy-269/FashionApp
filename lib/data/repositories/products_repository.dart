@@ -15,7 +15,7 @@ class ProductsRepository {
   Future<void> deleteProduct(String productId) async {
     await _productSource.deleteProduct(productId);
   }
- Future<List<ProductsModel>> getProductsByBrand(String brandID) async {
-    return await _productSource.getProductsByBrand(brandID);
+ Future<List<ProductsModel>> getProductsByBrandAndCategory(String brandID, String categoryID) async {
+    return await _productSource.getProductsByBrandAndCategory(brandID, categoryID);
   }
 }

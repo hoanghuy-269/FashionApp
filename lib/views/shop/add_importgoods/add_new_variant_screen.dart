@@ -102,7 +102,7 @@ class _AddNewVariantScreenState extends State<AddNewVariantScreen> {
       if (_imagesByColor.containsKey(color.colorID)) continue;
 
       try {
-        final imageUrl = await detailVM.getImageByID(
+        final imageUrl = await detailVM.getImageByIDViewmodel(
           productId: _selectedProduct!.productID,
           productDetailId: color.colorID,
         );

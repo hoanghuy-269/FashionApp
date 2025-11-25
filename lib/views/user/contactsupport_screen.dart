@@ -20,29 +20,6 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
     );
     await launchUrl(uri);
   }
-
-  // Gọi hotline
-  Future<void> _callHotline() async {
-    final Uri uri = Uri(scheme: 'tel', path: "0971145573");
-    await launchUrl(uri);
-  }
-
-  // Gửi tin nhắn in-app (tuỳ bạn xử lý Firestore)
-  Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập nội dung cần hỗ trợ')),
-      );
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Tin nhắn đã được gửi!')),
-    );
-
-    _messageController.clear();
-  }
-
   // Mở Zalo
   Future<void> _openZalo() async {
     const zaloUrl = 'https://zalo.me/0971145573'; // đổi số của bạn
@@ -80,14 +57,6 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
               title: "Gửi email hỗ trợ",
               subtitle: "người hỗ trợ của bạn : Hoàng Huy Fashion",
               onTap: _sendEmail,
-            ),
-            const SizedBox(height: 12),
-
-            _buildSupportCard(
-              icon: Icons.phone,
-              title: "Hotline hỗ trợ",
-              subtitle: "người hỗ trợ của bạn : Tùng fashion",
-              onTap: _callHotline,
             ),
             const SizedBox(height: 12),
 

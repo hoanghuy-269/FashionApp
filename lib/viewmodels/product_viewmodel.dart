@@ -49,12 +49,12 @@ class ProductViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
- Future<void> fetchProductsByBrand(String brandID) async {
+ Future<void> fetchProductsByBrandandCategory(String brandID, String categoryID) async {
     isLoading = true;
     notifyListeners();
 
     try {
-      productList = await _productsRepository.getProductsByBrand(brandID);
+      productList = await _productsRepository.getProductsByBrandAndCategory(brandID, categoryID);
     } catch (e) {
       print("Lỗi khi fetch sản phẩm: $e");
     }

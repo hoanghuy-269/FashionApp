@@ -85,13 +85,13 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
   Future<void> _loadImages() async {
     if (_selectedProduct == null) return;
 
-    final detailVM = context.read<ProductDetailViewModel>();
+   final detailVM = context.read<ProductDetailViewModel>();
 
     for (var color in _selectedColors) {
       if (_imagesByColor.containsKey(color.colorID)) continue;
 
       try {
-        final imageUrl = await detailVM.getImageByID(
+        final imageUrl = await detailVM.getImageByIDViewmodel(
           productId: _selectedProduct!.productID,
           productDetailId: color.colorID,
         );
@@ -331,7 +331,6 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                                 onBrandSelected: (brand) async {
                                   setState(() {
                                     _selectedBrand = brand;
-                                    _selectedProduct = null;
                                     _selectedSizes.clear();
                                     _selectedColors.clear();
                                     _imagesByColor.clear();
@@ -340,32 +339,10 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                                   if (brand != null) {
                                     await context
                                         .read<ProductViewModel>()
-                                        .fetchProductsByBrand(brand.brandID);
+                                        .fetchProductsByBrandandCategory(brand.brandID,
+                                            _selectedCategory?.categoryID ?? ''
+                                          );
                                   }
-                                },
-                              ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Product
-                        const Text(
-                          'Sản phẩm',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Consumer<ProductViewModel>(
-                          builder:
-                              (context, vm, _) => BuildProductDropdown(
-                                brandID: _selectedBrand?.brandID ?? '',
-                                onProductSelected: (product) {
-                                  setState(() {
-                                    _selectedProduct = product;
-                                    _selectedSizes.clear();
-                                    _selectedColors.clear();
-                                    _imagesByColor.clear();
-                                    _dataBySizeColor.clear();
-                                  });
                                 },
                               ),
                         ),
@@ -382,17 +359,49 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                           builder:
                               (context, vm, _) => Buildcategorydropdown(
                                 onCategorySelected:
-                                    (cat) => setState(() {
+                                    (cat)async { setState(() {
                                       _selectedCategory = cat;
-                                      _selectedProduct = null;
                                       _selectedSizes.clear();
                                       _selectedColors.clear();
                                       _imagesByColor.clear();
                                       _dataBySizeColor.clear();
-                                    }),
+                                    });
+                                    if (cat != null) {
+                                      await context
+                                          .read<ProductViewModel>()
+                                          .fetchProductsByBrandandCategory(
+                                            _selectedBrand?.brandID ?? '',
+                                            cat.categoryID,
+                                          );
+                                    }
+                                    }      
+                              ),
+                              
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Product
+                        const Text(
+                          'Sản phẩm',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Consumer<ProductViewModel>(
+                          builder:
+                              (context, vm, _) => BuildProductDropdown(
+                                brandID: _selectedBrand?.brandID ?? '', 
+                                categoryID: _selectedCategory?.categoryID ?? '',
+                                onProductSelected: (product) {
+                                  setState(() {
+                                    _selectedProduct = product;
+                                    _selectedSizes.clear();
+                                    _selectedColors.clear();
+                                    _imagesByColor.clear();
+                                    _dataBySizeColor.clear();
+                                  });
+                                },
                               ),
                         ),
-
                         const SizedBox(height: 16),
 
                         // Size
@@ -545,7 +554,7 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
           // Image
           if (_imagesByColor.containsKey(color.colorID))
             Container(
-              height: 150,
+              height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey.shade300),
@@ -555,7 +564,7 @@ class _AddImportgoodsScreenState extends State<AddImportgoodsScreen> {
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
                   _imagesByColor[color.colorID]!,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   errorBuilder:
                       (_, __, ___) => const Center(
                         child: Icon(Icons.error, color: Colors.red),

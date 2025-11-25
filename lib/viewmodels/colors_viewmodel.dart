@@ -2,6 +2,7 @@ import 'package:fashion_app/core/utils/colorhelper.dart';
 import 'package:flutter/material.dart';
 import 'package:fashion_app/data/models/colors_model.dart';
 import 'package:fashion_app/data/repositories/color_repository.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class ColorsViewmodel extends ChangeNotifier {
   final ColorRepository _repository = ColorRepository();
@@ -33,24 +34,31 @@ class ColorsViewmodel extends ChangeNotifier {
     }
   }
 
-  Future<void> addColor(String name, String hexCode) async {
+  Future<bool> addColor(String name, String hexCode) async {
     try {
+      // Tạo color model
       final color = ColorsModel(
-        colorID: DateTime.now().millisecondsSinceEpoch.toString(),
+        colorID: '',
         name: name,
         hexCode: hexCode,
       );
 
+      // Lưu thẳng vào Firebase
       await _repository.addColor(color);
-
-      _colors.add(color); 
-      notifyListeners();
+      
+      // Reload lại danh sách từ Firebase
+      await fetchAllColors();
+      
+      debugPrint('Đã thêm màu thành công: $name');
+      return true;
+      
     } catch (e) {
       debugPrint('Lỗi khi thêm màu: $e');
+      return false;
     }
   }
 
-   Future<Color> getColorFromFirestore(String? colorID) async {
+  Future<Color> getColorFromFirestore(String? colorID) async {
     if (colorID == null || colorID.isEmpty) return Colors.grey;
     
     try {
@@ -63,21 +71,23 @@ class ColorsViewmodel extends ChangeNotifier {
     }
   }
 
-  // lay ten mau theo ID
-  String? getColorNameById(String colorID) {
-    try {
-      final color = _colors.firstWhere((c) => c.colorID == colorID);
-      return color.name;
-    } catch (e) {
-      debugPrint('Lỗi khi lấy tên màu theo ID: $e');
-      return null;
-    }
+  // Lấy tên màu theo ID
+String getColorNameById(String colorID) {
+  try {
+    final color = _colors.firstWhere(
+      (c) => c.colorID == colorID,
+      orElse: () => ColorsModel(colorID: '', name: 'Unknown' , hexCode: '#808080'),
+    );
+    return color.name;
+  } catch (e) {
+    debugPrint('Lỗi khi lấy tên màu theo ID: $e');
+    return 'Unknown';
   }
+}
+  
 
-  // lay ten mau theo id
+  // Lấy tên màu theo id từ Firestore
   Future<String> fetchColorName(String colorID) async {
     return await _repository.fetchColorName(colorID);
   }
- 
-  
 }

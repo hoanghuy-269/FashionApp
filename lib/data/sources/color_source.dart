@@ -5,22 +5,44 @@ class ColorSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // add color
-Future<ColorsModel> addColor(ColorsModel color) async {
-    final collection = _firestore.collection('colors');
+  Future<ColorsModel> addColor(ColorsModel color) async {
+    try {
+      final collection = _firestore.collection('colors');
 
-    // Lấy tổng số document 
-    final snapshot = await collection.get();
-    final count = snapshot.docs.length + 1;
+      // Lấy document có số thứ tự cao nhất
+      final snapshot = await collection
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
 
-    final formattedId = 'color_${count.toString().padLeft(3, '0')}';
+      int nextCount = 1;
+      if (snapshot.docs.isNotEmpty) {
+        final lastDoc = snapshot.docs.first;
+        final lastId = lastDoc.id;
+        final match = RegExp(r'color_(\d+)').firstMatch(lastId);
+        if (match != null) {
+          nextCount = int.parse(match.group(1)!) + 1;
+        }
+      }
 
-    // Gán ID đó vào model
-    final colorWithId = color.copyWith(colorID: formattedId);
+      final formattedId = 'color_${nextCount.toString().padLeft(3, '0')}';
+      final colorWithId = color.copyWith(colorID: formattedId);
+      
+      await collection.doc(formattedId).set({
+        ...colorWithId.toMap(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-    await collection.doc(formattedId).set(colorWithId.toMap());
-
-    return colorWithId; 
+      print('✅ Đã thêm màu mới: ${colorWithId.name} với ID: $formattedId');
+      
+      return colorWithId;
+    } catch (e) {
+      print('❌ Lỗi khi thêm màu: $e');
+      throw e;
+    }
   }
+
+
   // lấy ten mau theo id
   Future<String> getColorName(String colorID) async {
     try {
@@ -33,6 +55,7 @@ Future<ColorsModel> addColor(ColorsModel color) async {
       return colorID;
     }
   }
+
   // lay ma hex theo id
   Future<String> getColorHexCode(String colorID) async {
     try {
@@ -46,11 +69,12 @@ Future<ColorsModel> addColor(ColorsModel color) async {
       return '#808080';
     }
   }
+
   Future<Map<String, Map<String, dynamic>>> getAllColors() async {
     try {
       final snapshot = await _firestore.collection('colors').get();
       Map<String, Map<String, dynamic>> colorsMap = {};
-      
+
       for (var doc in snapshot.docs) {
         colorsMap[doc.id] = {
           'name': doc.data()['name'],
@@ -63,7 +87,4 @@ Future<ColorsModel> addColor(ColorsModel color) async {
       return {};
     }
   }
-
-  
-  
 }

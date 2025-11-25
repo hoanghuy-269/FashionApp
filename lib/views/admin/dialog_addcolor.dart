@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:provider/provider.dart';
+import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
 
 class DialogAddcolor extends StatefulWidget {
   const DialogAddcolor({super.key});
@@ -10,10 +12,47 @@ class DialogAddcolor extends StatefulWidget {
 
 class _DialogAddcolorState extends State<DialogAddcolor> {
   final nameController = TextEditingController();
-  Color selectedColor = Colors.blue; // màu mặc định
+  Color selectedColor = Colors.blue;
+  bool _isLoading = false;
 
   String get hexCode =>
       '#${selectedColor.value.toRadixString(16).substring(2).toUpperCase()}';
+
+  Future<void> _addColorToDatabase(BuildContext context) async {
+    final name = nameController.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập tên màu'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final colorVM = context.read<ColorsViewmodel>();
+      
+      // Gọi hàm addColor từ ColorsViewmodel
+      await colorVM.addColor(name, hexCode);
+      
+      // Thành công
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đã thêm màu $name'), backgroundColor: Colors.green),
+      );
+      Navigator.pop(context);
+      
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi thêm màu: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,9 +73,8 @@ class _DialogAddcolorState extends State<DialogAddcolor> {
               GestureDetector(
                 onTap: () {
                   showDialog(
-                context: context,
-                builder:
-                    (_) => AlertDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
                       title: const Text('Chọn màu'),
                       content: SingleChildScrollView(
                         child: BlockPicker(
@@ -71,17 +109,17 @@ class _DialogAddcolorState extends State<DialogAddcolor> {
                         ),
                       ),
                     ),
-              );
+                  );
                 },
-               child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: selectedColor,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: selectedColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey),
+                  ),
                 ),
-              ),
               )
             ],
           ),
@@ -89,19 +127,18 @@ class _DialogAddcolorState extends State<DialogAddcolor> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
           child: const Text('Hủy'),
         ),
         TextButton(
-          onPressed: () {
-            final name = nameController.text.trim();
-            if (name.isEmpty) return;
-            final colorData = {'name': name, 'hexCode': hexCode};
-            print('Thêm màu: $colorData');
-
-            Navigator.pop(context, colorData);
-          },
-          child: const Text('Thêm'),
+          onPressed: _isLoading ? null : () => _addColorToDatabase(context),
+          child: _isLoading 
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Thêm'),
         ),
       ],
     );

@@ -1,6 +1,6 @@
 import 'package:fashion_app/data/models/colors_model.dart';
 import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
-import 'package:fashion_app/views/shop/dialog_addcolor.dart';
+import 'package:fashion_app/views/admin/dialog_addcolor.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
