@@ -1,4 +1,5 @@
 import 'package:fashion_app/views/login/auth_wrapper.dart';
+import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -123,6 +124,10 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
     }
   }
 
+
+
+
+
   Future<void> _reload() async {
     setState(() {
       isLoading = true;
@@ -130,8 +135,10 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
     await _fetchOrders();
   }
 
-  /// Dialog thông tin nhân viên + nút đăng xuất
- void _showStaffInfoDialog() {
+
+
+ /// Dialog thông tin nhân viên + nút đăng xuất
+void _showStaffInfoDialog() {
   showDialog(
     context: context,
     builder: (dialogContext) => AlertDialog(
@@ -158,32 +165,38 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(),
+          onPressed: () => Navigator.of(dialogContext).pop(), // Đóng dialog
           child: const Text('Đóng'),
         ),
         ElevatedButton(
-  onPressed: () async {
-    // 1. Đóng dialog trước
-    Navigator.of(dialogContext).pop();
+          onPressed: () async {
+            // 1. Đóng dialog trước khi đăng xuất
+            Navigator.of(dialogContext).pop();
 
-    try {
-      // 2. Đăng xuất Firebase
-      await FirebaseAuth.instance.signOut();
+            try {
+              // 2. Đăng xuất Firebase
+              await FirebaseAuth.instance.signOut();
 
-    } catch (e) {
-      print("Logout error: $e");
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Đăng xuất thất bại, vui lòng thử lại."),
-          backgroundColor: Colors.red,
+              // 3. Điều hướng về màn hình đăng nhập sau khi đăng xuất
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (_) => false, // Xóa hết các route cũ
+              );
+
+            } catch (e) {
+              print("Lỗi đăng xuất: $e");
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Đăng xuất thất bại, vui lòng thử lại."),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          child: const Text('Đăng xuất'),
         ),
-      );
-    }
-  },
-  child: const Text('Đăng xuất'),
-),
-
       ],
     ),
   );
