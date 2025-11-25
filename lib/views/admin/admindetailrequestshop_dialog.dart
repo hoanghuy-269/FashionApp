@@ -134,7 +134,6 @@ class _AdmindetailrequestshopDialogState
     );
     final shopVm = Provider.of<ShopViewModel>(context, listen: false);
 
- 
     if (_loadedRequest?.userId.trim().isEmpty ?? true) {
       if (mounted) {
         try {
@@ -208,44 +207,122 @@ class _AdmindetailrequestshopDialogState
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      content: _isLoading ? _buildLoadingState() : _buildFormContent(),
-      actions: [
-        TextButton(
-          onPressed: _isLoading ? null : _handleReject,
-          child: const Text('Từ chối'),
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHeader(),
+            Flexible(
+              child: _isLoading ? _buildLoadingState() : _buildFormContent(),
+            ),
+            _buildActionButtons(),
+          ],
         ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _handleApprove,
-          child: const Text('Chấp nhận'),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
-      ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.blue,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.store_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Chi tiết yêu cầu',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Xem xét thông tin đăng ký shop',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close_rounded),
+            color: Colors.grey[700],
+            iconSize: 24,
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildLoadingState() {
     return const SizedBox(
-      width: 300,
-      height: 200,
-      child: Center(child: CircularProgressIndicator()),
+      height: 300,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text(
+              'Đang tải dữ liệu...',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildFormContent() {
     return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildShopNameField(),
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
           _buildCCCDField(),
-          const SizedBox(height: 10),
-          _buildIDImagesRow(),
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
+          _buildIDImagesSection(),
+          const SizedBox(height: 20),
           _buildBusinessLicenseSection(),
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
           _buildAddressField(),
         ],
       ),
@@ -256,22 +333,46 @@ class _AdmindetailrequestshopDialogState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Tên Shop",
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          children: [
+            Icon(Icons.store_outlined, size: 18, color: Colors.blue.shade700),
+            const SizedBox(width: 8),
+            const Text(
+              "Tên Shop",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 10),
         TextField(
           controller: _nameController,
           enabled: false,
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.store, color: Colors.blueAccent),
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
             ),
           ),
         ),
@@ -283,23 +384,48 @@ class _AdmindetailrequestshopDialogState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Căn cước công dân",
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          children: [
+            Icon(Icons.credit_card_rounded, size: 18, color: Colors.blue.shade700),
+            const SizedBox(width: 8),
+            const Text(
+              "Số CCCD/CMND",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 10),
         TextField(
           controller: _cccdController,
           enabled: false,
           keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.badge, color: Colors.blue),
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 1.5,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
             ),
           ),
         ),
@@ -307,12 +433,44 @@ class _AdmindetailrequestshopDialogState
     );
   }
 
-  Widget _buildIDImagesRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildIDImagesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildImageBox("Mặt trước", url: _frontIDUrl),
-        _buildImageBox("Mặt sau", url: _backIDUrl),
+        Row(
+          children: [
+            Icon(Icons.badge_outlined, size: 18, color: Colors.blue.shade700),
+            const SizedBox(width: 8),
+            const Text(
+              "Ảnh CCCD/CMND",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildImageBox(
+                "Mặt trước",
+                url: _frontIDUrl,
+                height: 140,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildImageBox(
+                "Mặt sau",
+                url: _backIDUrl,
+                height: 140,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -321,18 +479,25 @@ class _AdmindetailrequestshopDialogState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Giấy phép kinh doanh",
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          children: [
+            Icon(Icons.description_outlined, size: 18, color: Colors.blue.shade700),
+            const SizedBox(width: 8),
+            const Text(
+              "Giấy phép kinh doanh",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         _buildImageBox(
           "Giấy phép kinh doanh",
           url: _licenseUrl,
+          height: 180,
           width: double.infinity,
         ),
       ],
@@ -343,23 +508,44 @@ class _AdmindetailrequestshopDialogState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Địa chỉ",
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          children: [
+            Icon(Icons.location_on_outlined, size: 18, color: Colors.blue.shade700),
+            const SizedBox(width: 8),
+            const Text(
+              "Địa chỉ",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 10),
         TextField(
           controller: _addressController,
           enabled: false,
-          maxLines: 2,
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.map, color: Colors.blue),
+          maxLines: 3,
+          style: const TextStyle(
+            fontSize: 14,
+            height: 1.5,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.all(16),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
             ),
           ),
         ),
@@ -367,33 +553,211 @@ class _AdmindetailrequestshopDialogState
     );
   }
 
-  Widget _buildImageBox(String label, {String? url, double width = 100}) {
-    return Container(
-      width: width,
-      height: 100,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade400),
-        color: Colors.grey.shade100,
-        image:
-            url != null
-                ? DecorationImage(image: NetworkImage(url), fit: BoxFit.cover)
-                : null,
-      ),
-      child:
-          url == null
-              ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildImageBox(
+    String label, {
+    String? url,
+    double? width,
+    double height = 120,
+  }) {
+    final hasImage = url != null && url.isNotEmpty;
+
+    return GestureDetector(
+      onTap: hasImage
+          ? () {
+              _showImageDialog(url);
+            }
+          : null,
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: hasImage ? Colors.blue.shade200 : Colors.grey.shade300,
+            width: 2,
+          ),
+          color: Colors.grey.shade50,
+          image: hasImage
+              ? DecorationImage(
+                  image: NetworkImage(url),
+                  fit: BoxFit.cover,
+                )
+              : null,
+        ),
+        child: hasImage
+            ? Stack(
                 children: [
-                  const Icon(Icons.image_not_supported, color: Colors.grey),
-                  const SizedBox(height: 5),
-                  Text(
-                    'Chưa có $label',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.zoom_in,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Xem',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               )
-              : null,
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.image_not_supported_outlined,
+                    color: Colors.grey[400],
+                    size: 40,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Chưa có $label',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  void _showImageDialog(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              constraints: const BoxConstraints(
+                maxHeight: 600,
+                maxWidth: 500,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.white,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                // cho phép phóng to hình ảnh
+                child: InteractiveViewer(
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 300,
+                        color: Colors.grey.shade200,
+                        child: const Center(
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            size: 60,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close_rounded),
+              color: Colors.white,
+              iconSize: 32,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+        border: Border(
+          top: BorderSide(color: Colors.grey.shade200),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _isLoading ? null : _handleReject,
+              icon: const Icon(Icons.close_rounded),
+              label: const Text('Từ chối'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red,
+                side: const BorderSide(color: Colors.red, width: 2),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: _isLoading ? null : _handleApprove,
+              icon: const Icon(Icons.check_rounded),
+              label: const Text('Chấp nhận'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

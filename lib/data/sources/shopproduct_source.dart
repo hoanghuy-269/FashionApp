@@ -184,7 +184,7 @@ Stream<int> getTotalProductsByShopStream(String shopId) {
 
               list.add(combinedData);
             } catch (e) {
-              print('⚠️ Lỗi khi lấy dữ liệu productID: $productID → $e');
+              print(' Lỗi khi lấy dữ liệu productID: $productID → $e');
             }
           }
 
@@ -194,12 +194,12 @@ Stream<int> getTotalProductsByShopStream(String shopId) {
 
   Stream<List<ShopProductWithDetail>> getAllShopProductsWithDetail() {
     try {
-      print('🟡 Bắt đầu lấy dữ liệu từ shop_products...');
+      print(' Bắt đầu lấy dữ liệu từ shop_products...');
 
       return _firestore.collection('shop_products').snapshots().asyncMap((
         shopProductsSnapshot,
       ) async {
-        print('📄 Nhận được ${shopProductsSnapshot.docs.length} shop products');
+        print(' Nhận được ${shopProductsSnapshot.docs.length} shop products');
 
         final List<ShopProductWithDetail> results = [];
 
@@ -213,7 +213,7 @@ Stream<int> getTotalProductsByShopStream(String shopId) {
             final productId = shopProductData['productID'] as String?;
 
             if (productId == null || productId.isEmpty) {
-              print('❌ Shop product ${shopProductDoc.id} thiếu productID');
+              print(' Shop product ${shopProductDoc.id} thiếu productID');
               continue;
             }
 
@@ -221,7 +221,7 @@ Stream<int> getTotalProductsByShopStream(String shopId) {
             final productDoc =
                 await _firestore.collection('products').doc(productId).get();
             if (!productDoc.exists) {
-              print('❌ Không tìm thấy product với ID: $productId');
+              print(' Không tìm thấy product với ID: $productId');
               continue;
             }
 
@@ -230,7 +230,7 @@ Stream<int> getTotalProductsByShopStream(String shopId) {
               productDoc.id,
             );
 
-            print('✅ Product: ${product.name}');
+            print(' Product: ${product.name}');
 
             // Lấy tất cả variants của shop product này
             final variantsSnapshot =
@@ -240,18 +240,18 @@ Stream<int> getTotalProductsByShopStream(String shopId) {
                     .collection('shop_product_variants')
                     .get();
 
-            print('📦 Số lượng variants: ${variantsSnapshot.docs.length}');
+            print(' Số lượng variants: ${variantsSnapshot.docs.length}');
 
             // Xử lý từng variant
             double lowestPrice = double.maxFinite;
             bool hasValidPrice = false;
-            List<ShopProductVariantModel> variants = []; // DANH SÁCH VARIANTS
+            List<ShopProductVariantModel> variants = []; 
 
             for (final variantDoc in variantsSnapshot.docs) {
               try {
                 final variantData = variantDoc.data() as Map<String, dynamic>;
-                print('🎯 Variant ID: ${variantDoc.id}');
-                print('🎨 Variant data: $variantData');
+                print(' Variant ID: ${variantDoc.id}');
+                print(' Variant data: $variantData');
 
                 // TẠO VARIANT MODEL
                 final variant = ShopProductVariantModel.fromMap(
@@ -271,7 +271,7 @@ Stream<int> getTotalProductsByShopStream(String shopId) {
                         .get();
 
                 print(
-                  '👟 Số lượng sizes cho variant ${variantDoc.id}: ${sizesSnapshot.docs.length}',
+                  ' Số lượng sizes cho variant ${variantDoc.id}: ${sizesSnapshot.docs.length}',
                 );
 
                 // Tính lowest price từ sizes
@@ -286,12 +286,12 @@ Stream<int> getTotalProductsByShopStream(String shopId) {
                         hasValidPrice = true;
                       }
                     } catch (e) {
-                      print('❌ Lỗi parse size: $e');
+                      print(' Lỗi parse size: $e');
                     }
                   }
                 }
               } catch (e) {
-                print('❌ Lỗi xử lý variant ${variantDoc.id}: $e');
+                print(' Lỗi xử lý variant ${variantDoc.id}: $e');
               }
             }
 
@@ -300,8 +300,8 @@ Stream<int> getTotalProductsByShopStream(String shopId) {
               lowestPrice = 0.0;
             }
 
-            print('🏷️ Final lowest price: $lowestPrice');
-            print('🎨 Tổng số variants: ${variants.length}');
+            print(' Final lowest price: $lowestPrice');
+            print(' Tổng số variants: ${variants.length}');
 
             // Tạo shop product model
             final shopProduct = ShopProductModel.fromMap(
@@ -318,15 +318,15 @@ Stream<int> getTotalProductsByShopStream(String shopId) {
               ),
             );
           } catch (e) {
-            print('❌ Lỗi xử lý shop product ${shopProductDoc.id}: $e');
+            print(' Lỗi xử lý shop product ${shopProductDoc.id}: $e');
           }
         }
 
-        print('🎉 Hoàn thành! Tổng sản phẩm: ${results.length}');
+        print(' Hoàn thành! Tổng sản phẩm: ${results.length}');
         return results;
       });
     } catch (e) {
-      print('❌ Lỗi nghiêm trọng trong repository: $e');
+      print(' Lỗi nghiêm trọng trong repository: $e');
       return Stream.value([]);
     }
   }
