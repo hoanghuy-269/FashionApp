@@ -1,3 +1,5 @@
+import 'package:fashion_app/views/login/auth_wrapper.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -20,6 +22,9 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
   /// Tên nhân viên có role R02 trong shop (thu ngân)
   String cashierName = '';
 
+  /// Email thu ngân
+  String cashierEmail = '';
+
   @override
   void initState() {
     super.initState();
@@ -39,19 +44,19 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
   /// Lấy tên nhân viên có roleIds = 'R02' trong shop hiện tại
   Future<void> _loadCashierName() async {
     try {
-      final staffSnapshot =
-          await FirebaseFirestore.instance
-              .collection('shops')
-              .doc(widget.shopID)
-              .collection('staff')
-              .where('roleIds', isEqualTo: 'R02')
-              .limit(1)
-              .get();
+      final staffSnapshot = await FirebaseFirestore.instance
+          .collection('shops')
+          .doc(widget.shopID)
+          .collection('staff')
+          .where('roleIds', isEqualTo: 'R02')
+          .limit(1)
+          .get();
 
       if (staffSnapshot.docs.isNotEmpty) {
         final data = staffSnapshot.docs.first.data() as Map<String, dynamic>;
         setState(() {
           cashierName = data['fullName'] ?? '';
+          cashierEmail = data['email'] ?? '';
         });
       }
     } catch (e) {
@@ -71,13 +76,12 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
         final orderId = orderDoc.id;
         final orderData = orderDoc.data() as Map<String, dynamic>;
 
-        final orderItemsSnapshot =
-            await FirebaseFirestore.instance
-                .collection('orders')
-                .doc(orderId)
-                .collection('order_items')
-                .where('shopId', isEqualTo: widget.shopID)
-                .get();
+        final orderItemsSnapshot = await FirebaseFirestore.instance
+            .collection('orders')
+            .doc(orderId)
+            .collection('order_items')
+            .where('shopId', isEqualTo: widget.shopID)
+            .get();
 
         List<Map<String, dynamic>> orderItems = [];
 
@@ -126,6 +130,66 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
     await _fetchOrders();
   }
 
+  /// Dialog thông tin nhân viên + nút đăng xuất
+ void _showStaffInfoDialog() {
+  showDialog(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Thông tin tài khoản'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _InfoRow(
+            label: 'Họ tên',
+            value: cashierName.isEmpty ? 'Đang tải...' : cashierName,
+          ),
+          const SizedBox(height: 6),
+          _InfoRow(
+            label: 'Email',
+            value: cashierEmail.isEmpty ? 'Chưa cập nhật' : cashierEmail,
+          ),
+          const SizedBox(height: 6),
+          _InfoRow(
+            label: 'Shop ID',
+            value: widget.shopID,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: const Text('Đóng'),
+        ),
+        ElevatedButton(
+  onPressed: () async {
+    // 1. Đóng dialog trước
+    Navigator.of(dialogContext).pop();
+
+    try {
+      // 2. Đăng xuất Firebase
+      await FirebaseAuth.instance.signOut();
+
+    } catch (e) {
+      print("Logout error: $e");
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Đăng xuất thất bại, vui lòng thử lại."),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  },
+  child: const Text('Đăng xuất'),
+),
+
+      ],
+    ),
+  );
+}
+
+
   /// Xử lý xác nhận THANH TOÁN:
   /// - cộng tiền vào totalPrice của từng product trong shop_products
   /// - đổi itemStatus của item từ status_004 -> status_006
@@ -153,22 +217,19 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
           itemTotal = rawTotal.toDouble();
         } else {
           final rawPrice = item['price'] ?? 0;
-          final double price =
-              rawPrice is num
-                  ? rawPrice.toDouble()
-                  : double.tryParse(rawPrice.toString()) ?? 0;
+          final double price = rawPrice is num
+              ? rawPrice.toDouble()
+              : double.tryParse(rawPrice.toString()) ?? 0;
 
-          final int qty =
-              (item['quantity'] ?? 1) is int
-                  ? item['quantity'] as int
-                  : int.tryParse(item['quantity'].toString()) ?? 1;
+          final int qty = (item['quantity'] ?? 1) is int
+              ? item['quantity'] as int
+              : int.tryParse(item['quantity'].toString()) ?? 1;
 
           itemTotal = price * qty;
         }
 
-        final productRef = FirebaseFirestore.instance
-            .collection('shop_products')
-            .doc(productId);
+        final productRef =
+            FirebaseFirestore.instance.collection('shop_products').doc(productId);
 
         final itemRef = FirebaseFirestore.instance
             .collection('orders')
@@ -243,10 +304,9 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
           continue;
         }
 
-        final int qty =
-            (item['quantity'] ?? 1) is int
-                ? item['quantity'] as int
-                : int.tryParse(item['quantity'].toString()) ?? 1;
+        final int qty = (item['quantity'] ?? 1) is int
+            ? item['quantity'] as int
+            : int.tryParse(item['quantity'].toString()) ?? 1;
 
         final productRef = FirebaseFirestore.instance
             .collection("shop_products")
@@ -272,25 +332,22 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
 
           final data = productSnap.data() as Map<String, dynamic>;
 
-          int total =
-              (data['totalQuantity'] ?? 0) is int
-                  ? data['totalQuantity'] as int
-                  : int.tryParse(data['totalQuantity'].toString()) ?? 0;
+          int total = (data['totalQuantity'] ?? 0) is int
+              ? data['totalQuantity'] as int
+              : int.tryParse(data['totalQuantity'].toString()) ?? 0;
 
-          int sold =
-              (data['sold'] ?? 0) is int
-                  ? data['sold'] as int
-                  : int.tryParse(data['sold'].toString()) ?? 0;
+          int sold = (data['sold'] ?? 0) is int
+              ? data['sold'] as int
+              : int.tryParse(data['sold'].toString()) ?? 0;
 
           final sizeSnap = await tx.get(sizeRef);
 
           int? sizeQty;
           if (sizeSnap.exists) {
             final sizeData = sizeSnap.data() as Map<String, dynamic>;
-            sizeQty =
-                (sizeData['quantity'] ?? 0) is int
-                    ? sizeData['quantity'] as int
-                    : int.tryParse(sizeData['quantity'].toString()) ?? 0;
+            sizeQty = (sizeData['quantity'] ?? 0) is int
+                ? sizeData['quantity'] as int
+                : int.tryParse(sizeData['quantity'].toString()) ?? 0;
           }
 
           tx.update(productRef, {
@@ -335,48 +392,66 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
       body: SafeArea(
         child: Column(
           children: [
-            // HEADER: back + tên nhân viên r02
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: Row(
-                children: [
-                  InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.arrow_back, size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Nhân viên thu ngân',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                        Text(
-                          cashierName.isEmpty ? "Đang tải..." : cashierName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 🔹 ĐÃ BỎ NÚT REFRESH Ở ĐÂY
-                ],
+            // HEADER: tên nhân viên r02 (click để mở dialog)
+          Padding(
+  padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+  child: InkWell(
+    borderRadius: BorderRadius.circular(16),
+    onTap: _showStaffInfoDialog,
+    child: Row(
+      children: [
+        // Avatar nhân viên
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.blue.shade100,
+          ),
+          child: const Icon(
+            Icons.person,
+            color: Colors.white,
+            size: 26,
+          ),
+        ),
+
+        const SizedBox(width: 14),
+
+        // Tên + chức vụ
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Thu ngân',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
+              const SizedBox(height: 2),
+              Text(
+                cashierName.isEmpty ? "Đang tải..." : cashierName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Icon mở thông tin
+        const Icon(Icons.keyboard_arrow_down, size: 24, color: Colors.grey),
+      ],
+    ),
+  ),
+),
+
 
             // TAB BUTTONS
             Container(
@@ -392,10 +467,8 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
                   color: const Color(0xff4ea0ff),
                   borderRadius: BorderRadius.circular(30),
                 ),
-                labelPadding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 0,
-                ),
+                labelPadding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.black87,
                 tabs: const [
@@ -409,32 +482,31 @@ class _CashierState extends State<Cashier> with SingleTickerProviderStateMixin {
 
             // TAB CONTENT
             Expanded(
-              child:
-                  isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : orders.isEmpty
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : orders.isEmpty
                       ? const Center(
-                        child: Text('Không có đơn nào cho shop này'),
-                      )
+                          child: Text('Không có đơn nào cho shop này'),
+                        )
                       : TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _OrderListView(
-                            itemStatus: 'status_004',
-                            orders: orders,
-                            isReturn: false,
-                            onConfirmPayment: _handleConfirmPayment,
-                            onConfirmReturn: _handleConfirmReturn,
-                          ),
-                          _OrderListView(
-                            itemStatus: 'status_005',
-                            orders: orders,
-                            isReturn: true,
-                            onConfirmPayment: _handleConfirmPayment,
-                            onConfirmReturn: _handleConfirmReturn,
-                          ),
-                        ],
-                      ),
+                          controller: _tabController,
+                          children: [
+                            _OrderListView(
+                              itemStatus: 'status_004',
+                              orders: orders,
+                              isReturn: false,
+                              onConfirmPayment: _handleConfirmPayment,
+                              onConfirmReturn: _handleConfirmReturn,
+                            ),
+                            _OrderListView(
+                              itemStatus: 'status_005',
+                              orders: orders,
+                              isReturn: true,
+                              onConfirmPayment: _handleConfirmPayment,
+                              onConfirmReturn: _handleConfirmReturn,
+                            ),
+                          ],
+                        ),
             ),
           ],
         ),
@@ -460,11 +532,10 @@ class _OrderListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final filteredOrders =
-        orders.where((order) {
-          final items = order['orderItems'] as List;
-          return items.any((item) => item['itemStatus'] == itemStatus);
-        }).toList();
+    final filteredOrders = orders.where((order) {
+      final items = order['orderItems'] as List;
+      return items.any((item) => item['itemStatus'] == itemStatus);
+    }).toList();
 
     if (filteredOrders.isEmpty) {
       return Center(
@@ -511,24 +582,23 @@ class _OrderCard extends StatelessWidget {
   }) {
     showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: Text(title),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Hủy'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  await onConfirm();
-                },
-                child: const Text('Đồng ý'),
-              ),
-            ],
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
           ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await onConfirm();
+            },
+            child: const Text('Đồng ý'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -683,6 +753,29 @@ class _OrderCard extends StatelessWidget {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(fontSize: 14, color: Colors.black87),
+        children: [
+          TextSpan(
+            text: '$label: ',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          TextSpan(text: value),
         ],
       ),
     );
