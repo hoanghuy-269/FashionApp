@@ -83,4 +83,13 @@ class ShopProductRequestViewmodel extends ChangeNotifier{
   Stream<List<ProductRequestModel>> getAllRequestsByShopStream(String shopId) {
     return _repository.getAllRequestsByShopStream(shopId);
   }
+  // lấy tổng số lượng yêu cầu sản phẩm theo shopId
+  Stream<int> getTotalProductRequestsByShopStream(String shopId) {
+    try {
+      return _repository.getTotalProductRequestsByShopStream(shopId);
+    } catch (e) {
+      return Stream.value(0);
+      
+    }
+  }
 }

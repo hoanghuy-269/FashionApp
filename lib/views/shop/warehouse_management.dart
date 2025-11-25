@@ -6,14 +6,14 @@ import 'package:fashion_app/viewmodels/shop_product_viewmodel.dart';
 import 'package:fashion_app/viewmodels/shop_viewmodel.dart';
 import 'package:fashion_app/data/models/shop_product_model.dart';
 
-class WarehouseManagement extends StatefulWidget {
-  const WarehouseManagement({super.key});
+class WarehouseManagementScreen extends StatefulWidget {
+  const WarehouseManagementScreen({super.key});
 
   @override
-  State<WarehouseManagement> createState() => _WarehouseManagementState();
+  State<WarehouseManagementScreen> createState() => _WarehouseManagementScreenState();
 }
 
-class _WarehouseManagementState extends State<WarehouseManagement> {
+class _WarehouseManagementScreenState extends State<WarehouseManagementScreen> {
   @override
   void initState() {
     super.initState();

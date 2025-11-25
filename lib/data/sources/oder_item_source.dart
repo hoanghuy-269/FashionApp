@@ -34,6 +34,14 @@ class OrderItemSource {
           return await Future.wait(futures);
         });
   }
+  // lấy tổng số lượng đơn hàng theo idShop
+  Stream<int> getTotalOrderItemsByShopStream(String shopId) {
+    return _firestore
+        .collectionGroup('order_items')
+        .where('shopId', isEqualTo: shopId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
 
   Future<String> getUserNameById(String userId) async {
     final doc =

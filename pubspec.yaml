@@ -77,6 +77,9 @@ dependencies:
 
   # thu vien intlm: 
   intl: ^0.18.0
+
+  # cache netword
+  cached_network_image_widget: ^1.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

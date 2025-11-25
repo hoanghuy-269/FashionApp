@@ -43,6 +43,11 @@ class ShopProductRepository {
   Future<ProductsModel?> getProductByShopProductID(String shopProductID) async {
     return await _source.getProductOfShopProduct(shopProductID);
   }
+  // lấy tổng số lượng sản phẩm đã bán getTotalProductsByShopStream 
+  Stream<int> getTotalProductsByShopStream(String shopId) {
+    return _source.getTotalProductsByShopStream(shopId);
+  }
+  
 
   Future<void> incrementTotalQuantity(String shopProductID, int additionalQty) async {
     await _source.incrementTotalQuantity(shopProductID, additionalQty);
