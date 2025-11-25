@@ -449,16 +449,8 @@ class OrderDetailScreen extends StatelessWidget {
   // Hàm lấy thông tin shop product và kiểm tra đã đánh giá chưa
   Future<Map<String, dynamic>> _getShopProductData(OrderItem item) async {
     try {
-      print('🛒 DEBUG - Bắt đầu tìm shopProductId cho OrderItem:');
-      print('   - orderItemId: ${item.orderItemId}');
-      print('   - productId: ${item.productId}');
-      print(
-        '   - shopProductId từ item: ${item.shopProductId}',
-      ); // DEBUG SHOP PRODUCT ID
-
       // ƯU TIÊN 1: Nếu item đã có shopProductId thì dùng luôn
       if (item.shopProductId != null && item.shopProductId!.isNotEmpty) {
-        print('✅ Sử dụng shopProductId từ item: ${item.shopProductId}');
 
         // Lấy thông tin shop product để verify
         final shopProductDoc =
@@ -473,10 +465,6 @@ class OrderDetailScreen extends StatelessWidget {
             shopProductData,
             item.shopProductId!,
           );
-
-          print('📋 Shop product data:');
-          print('   - productID: ${shopProductData['productID']}');
-          print('   - shopId: ${shopProductData['shopId']}');
 
           // Kiểm tra đã đánh giá chưa
           final reviewDoc =
@@ -495,12 +483,10 @@ class OrderDetailScreen extends StatelessWidget {
             'reviewData': reviewData,
           };
         } else {
-          print('⚠️ ShopProductId từ item không tồn tại trong database');
+          print(' ShopProductId từ item không tồn tại trong database');
         }
       }
 
-      // ƯU TIÊN 2: Tìm shopProductId từ productId (fallback)
-      print('🔍 Tìm shop_products với productID: ${item.productId}');
       final shopProductsSnapshot =
           await FirebaseFirestore.instance
               .collection('shop_products')
@@ -508,17 +494,12 @@ class OrderDetailScreen extends StatelessWidget {
               .limit(1)
               .get();
 
-      print('📊 Số lượng kết quả: ${shopProductsSnapshot.docs.length}');
 
       if (shopProductsSnapshot.docs.isNotEmpty) {
         final shopProductDoc = shopProductsSnapshot.docs.first;
         final shopProductId = shopProductDoc.id;
         final shopProductData = shopProductDoc.data();
 
-        print('✅ Tìm thấy shopProductId: $shopProductId');
-        print('📋 Shop product data:');
-        print('   - productID: ${shopProductData['productID']}');
-        print('   - shopId: ${shopProductData['shopId']}');
 
         final shopProduct = ShopProductModel.fromMap(
           shopProductData,
@@ -544,7 +525,6 @@ class OrderDetailScreen extends StatelessWidget {
       }
 
       // KHÔNG TÌM THẤY
-      print('❌ KHÔNG tìm thấy shopProductId');
       return {
         'shopProductId': 'unknown',
         'shopProduct': null,
@@ -553,7 +533,6 @@ class OrderDetailScreen extends StatelessWidget {
         'error': 'Không tìm thấy shop product',
       };
     } catch (e) {
-      print('❌ Lỗi khi lấy shop product data: $e');
       return {
         'shopProductId': 'unknown',
         'shopProduct': null,
@@ -576,14 +555,6 @@ class OrderDetailScreen extends StatelessWidget {
     try {
       final reviewId = '${order.orderId}_${item.orderItemId}';
 
-      // DEBUG CHI TIẾT
-      print('=== DEBUG SUBMIT REVIEW ===');
-      print('ShopProductId: $shopProductId');
-      print('ReviewId: $reviewId');
-      print('ProductId: ${item.productId}');
-      print('Rating: $rating');
-      print('ReviewText: $reviewText');
-
       // Kiểm tra shopProductId có hợp lệ không
       if (shopProductId.isEmpty || shopProductId == 'unknown') {
         throw Exception('ShopProductId không hợp lệ: $shopProductId');
@@ -599,7 +570,6 @@ class OrderDetailScreen extends StatelessWidget {
       if (!shopProductDoc.exists) {
         throw Exception('Shop product $shopProductId không tồn tại');
       }
-      print('DEBUG - Shop product tồn tại: ${shopProductDoc.data()}');
 
       // Lưu vào collection shop_product_reviews
       await FirebaseFirestore.instance
@@ -619,12 +589,10 @@ class OrderDetailScreen extends StatelessWidget {
             'imageUrl': item.imageUrl,
           });
 
-      print('DEBUG - Đã lưu review thành công');
 
       // Cập nhật rating trung bình trong shop_products
       await _updateProductRating(shopProductId);
 
-      print('DEBUG - Đã cập nhật rating thành công');
 
       // Hiển thị thông báo thành công
       if (context.mounted) {
@@ -645,7 +613,6 @@ class OrderDetailScreen extends StatelessWidget {
         );
       }
     } catch (e) {
-      print('DEBUG - Lỗi khi gửi đánh giá: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -684,9 +651,9 @@ class OrderDetailScreen extends StatelessWidget {
             .collection('shop_products')
             .doc(shopProductId)
             .update({
-              'rating': roundedRating, // ✅ ĐÂY LÀ RATING TRUNG BÌNH
+              'rating': roundedRating, 
               'totalReviews':
-                  reviewsSnapshot.docs.length, // ✅ SỐ LƯỢNG ĐÁNH GIÁ
+                  reviewsSnapshot.docs.length, 
             });
 
         print('DEBUG - Đã cập nhật shop_products thành công');

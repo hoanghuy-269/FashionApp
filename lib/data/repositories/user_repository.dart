@@ -17,9 +17,7 @@ class UserRepository {
     final firebaseUser = credential.user!;
     final uid = firebaseUser.uid;
 
-    // ⚠️ KHÔNG gửi email xác minh nữa vì bạn đã xác minh qua OTP rồi.
-    print('🔥 Đã tạo tài khoản Firebase thành công cho ${user.email}');
-
+ 
     final userWithUid = User(
       id: uid,
       name: user.name,

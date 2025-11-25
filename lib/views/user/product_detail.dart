@@ -947,8 +947,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   }
   // ==================== REVIEW WIDGETS ====================
 
-  // ==================== REVIEW WIDGETS ====================
-
   Widget _buildProductReviews() {
     return Container(
       margin: const EdgeInsets.only(top: 20),

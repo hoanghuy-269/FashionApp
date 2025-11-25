@@ -58,7 +58,7 @@ class CartViewModel extends ChangeNotifier {
     try {
       await _cartSource.deleteCartItem(userId, cartItemId);
     } catch (e) {
-      debugPrint("❌ Error removeFromCart: $e");
+      debugPrint(" Error removeFromCart: $e");
     }
   }
 
@@ -69,7 +69,7 @@ class CartViewModel extends ChangeNotifier {
         await _cartSource.deleteCartItem(userId, cartItemId);
       }
     } catch (e) {
-      debugPrint("❌ Error removeMultipleFromCart: $e");
+      debugPrint(" Error removeMultipleFromCart: $e");
     }
   }
 
@@ -77,7 +77,7 @@ class CartViewModel extends ChangeNotifier {
     try {
       await _cartSource.clearCartByUser(userId);
     } catch (e) {
-      debugPrint("❌ Error clearCart: $e");
+      debugPrint(" Error clearCart: $e");
     }
   }
 }

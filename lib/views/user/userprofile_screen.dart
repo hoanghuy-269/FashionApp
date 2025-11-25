@@ -107,9 +107,6 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
           content: SingleChildScrollView(
             child: Column(
               children: [
-                // ===========================
-                // ✅ AVATAR
-                // ===========================
                 GestureDetector(
                   onTap: _handleAvatarPick,
                   child: Stack(
@@ -198,9 +195,6 @@ class _UserprofileScreenState extends State<UserprofileScreen> {
             ),
           ),
 
-          // ===========================
-          // ✅ BUTTON ACTIONS
-          // ===========================
           actions: [
             TextButton(
               child: const Text("Hủy"),

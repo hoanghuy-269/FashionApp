@@ -21,6 +21,8 @@ import 'package:fashion_app/views/admin/AdminBranch.dart';
 import 'package:fashion_app/views/admin/adminrequestshop_screen.dart';
 import 'package:fashion_app/views/admin/Admincategories.dart';
 import 'package:fashion_app/views/login/auth_wrapper.dart';
+import 'package:fashion_app/views/login/email_otp_service.dart';
+import 'package:fashion_app/views/login/email_service.dart';
 import 'package:fashion_app/views/login/login_screen.dart';
 import 'package:fashion_app/views/staff/shipper/shipper_screen.dart';
 import 'package:fashion_app/views/staff/warehousemanagement/warehouse_screen.dart';
@@ -40,6 +42,15 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
+final EmailService emailService = EmailService(
+  smtpServer: 'smtp.gmail.com',
+  username: 'hoanghuy29690@gmail.com',
+  password: '',
+  port: 587,
+  isSSL: false,
+);
+
+final EmailOtpService otpService = EmailOtpService(emailService: emailService);
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -68,6 +79,8 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (context) => CartViewModel(userId: 'current_user_id'),
         ),
+        Provider<EmailService>(create: (_) => emailService),
+        Provider<EmailOtpService>(create: (_) => otpService),
       ],
       child: const MyApp(),
     ),

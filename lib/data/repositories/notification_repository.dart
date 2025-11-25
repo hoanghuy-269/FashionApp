@@ -13,7 +13,7 @@ class NotificationRepository {
           .set(notification.toMap());
       return true;
     } catch (e) {
-      print('❌ Lỗi gửi thông báo: $e');
+      print(' Lỗi gửi thông báo: $e');
       return false;
     }
   }
@@ -41,7 +41,7 @@ class NotificationRepository {
       });
       return true;
     } catch (e) {
-      print('❌ Lỗi đánh dấu đã đọc: $e');
+      print(' Lỗi đánh dấu đã đọc: $e');
       return false;
     }
   }
@@ -64,7 +64,7 @@ class NotificationRepository {
       await batch.commit();
       return true;
     } catch (e) {
-      print('❌ Lỗi đánh dấu tất cả đã đọc: $e');
+      print(' Lỗi đánh dấu tất cả đã đọc: $e');
       return false;
     }
   }
@@ -85,7 +85,7 @@ class NotificationRepository {
       await _firestore.collection('notifications').doc(notificationId).delete();
       return true;
     } catch (e) {
-      print('❌ Lỗi xóa thông báo: $e');
+      print(' Lỗi xóa thông báo: $e');
       return false;
     }
   }
@@ -114,7 +114,7 @@ class NotificationRepository {
       await batch.commit();
       return true;
     } catch (e) {
-      print('❌ Lỗi xóa tất cả thông báo: $e');
+      print('Lỗi xóa tất cả thông báo: $e');
       return false;
     }
   }
@@ -156,7 +156,7 @@ class NotificationRepository {
       await batch.commit();
       return true;
     } catch (e) {
-      print('❌ Lỗi xóa thông báo theo điều kiện: $e');
+      print('Lỗi xóa thông báo theo điều kiện: $e');
       return false;
     }
   }

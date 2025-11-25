@@ -6,8 +6,8 @@ class AppNotification {
   final String userId;
   final String title;
   final String message;
-  final String type; // order_confirmation, order_success, promotion, etc.
-  final Map<String, dynamic>? data; // Additional data like orderId, requestId
+  final String type;
+  final Map<String, dynamic>? data;
   final bool isRead;
   final DateTime createdAt;
 

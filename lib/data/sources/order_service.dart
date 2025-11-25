@@ -10,7 +10,7 @@ class OrderService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final OrderViewModel _orderViewModel = OrderViewModel();
   final OrderRequestRepository _orderRequestRepo = OrderRequestRepository();
-
+  String? lastError;
   Future<bool> confirmOrderAndCreate(String requestId) async {
     try {
       // Lấy order request
