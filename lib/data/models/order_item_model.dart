@@ -17,6 +17,7 @@ class OrderItem {
   final String imageUrl;
   final String? cartId;
   FashionOrder? parentOrder;
+  final String? shopProductId;
 
   OrderItem({
     required this.orderItemId,
@@ -34,6 +35,7 @@ class OrderItem {
     required this.imageUrl,
     this.cartId,
     this.parentOrder,
+    this.shopProductId,
   });
 
   factory OrderItem.fromFirestore(DocumentSnapshot doc) {
@@ -53,6 +55,7 @@ class OrderItem {
       voucherId: data['voucherId'] ?? '',
       imageUrl: data['imageUrl'] ?? '',
       cartId: data['cartId'],
+      shopProductId: data['shopProductId'],
     );
   }
 
@@ -73,6 +76,7 @@ class OrderItem {
       'imageUrl': imageUrl,
       'cartId': cartId,
       'createdAt': Timestamp.now(),
+      'shopProductId': shopProductId,
     };
   }
 }

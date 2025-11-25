@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:math' as Math;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fashion_app/views/user/cart_screen.dart';
 import 'package:fashion_app/views/user/payment_screen.dart';
 import 'package:fashion_app/views/user/widget/product_detail_helper.dart';
 import 'package:fashion_app/views/user/widget/widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:fashion_app/data/models/cart_model.dart';
 import 'package:fashion_app/data/models/shop_product_with_detail.dart';
@@ -55,6 +57,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   List<String> get productImages =>
       _helper.getProductImages(widget.product.variants);
 
+  // THÊM STATE MỚI CHO REVIEWS
+  List<Map<String, dynamic>> _reviews = [];
+  bool _isLoadingReviews = true;
+  String? _reviewsError;
+
   @override
   void initState() {
     super.initState();
@@ -68,7 +75,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
     _initializeData();
     _startImageAutoScroll();
+    _loadReviews();
   }
+
+  // Method debug
 
   Future<void> _initializeData() async {
     await _helper.loadAllSizes();
@@ -253,6 +263,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               ? widget.product.variants[selectedColorIndex].imageUrls
               : '',
       addedAt: DateTime.now(),
+      shopProductId: widget.product.shopProduct.shopproductID,
     );
 
     try {
@@ -265,7 +276,273 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     }
   }
 
+  // Hàm đồng bộ rating từ reviews - SỬA LẠI
+  double _getSyncedRating() {
+    if (_reviews.isEmpty) return widget.product.shopProduct.rating ?? 0;
+
+    double totalRating = 0;
+    for (final review in _reviews) {
+      totalRating += review['rating'] as double;
+    }
+
+    final averageRating = totalRating / _reviews.length;
+    return double.parse(averageRating.toStringAsFixed(1)); // Giữ 1 số thập phân
+  }
+
+  // Hàm lấy dữ liệu reviews
+  Future<List<Map<String, dynamic>>> _getProductReviewsData() async {
+    try {
+      print(
+        '🔄 Đang lấy reviews cho: ${widget.product.shopProduct.shopproductID}',
+      );
+
+      final querySnapshot =
+          await FirebaseFirestore.instance
+              .collection('shop_product_reviews')
+              .where(
+                'shopProductId',
+                isEqualTo: widget.product.shopProduct.shopproductID,
+              )
+              .orderBy('createdAt', descending: true)
+              .get();
+
+      print('✅ Tìm thấy ${querySnapshot.docs.length} reviews');
+
+      // Tạo list reviews với user name
+      final List<Map<String, dynamic>> reviews = [];
+
+      for (final doc in querySnapshot.docs) {
+        final data = doc.data();
+        final String userId = data['userId'] ?? ''; // Giả sử field là 'userId'
+
+        // Lấy tên người dùng
+        final String userName = await _getUserName(userId);
+
+        reviews.add({
+          'userName': userName,
+          'rating': (data['rating'] as num).toDouble(),
+          'reviewText': data['reviewText'] ?? '',
+          'createdAt': data['createdAt'] as Timestamp,
+          'userId': userId, // Có thể thêm nếu cần
+        });
+      }
+
+      return reviews;
+    } catch (e) {
+      print('❌ Lỗi khi lấy reviews: $e');
+      throw e;
+    }
+  }
+
+  // Thêm hàm này vào class _ProductDetailScreenState
+  Future<String> _getUserName(String userId) async {
+    try {
+      if (userId.isEmpty) return 'Người dùng';
+
+      final userDoc =
+          await FirebaseFirestore.instance
+              .collection('users') // Thay đổi tên collection nếu cần
+              .doc(userId)
+              .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+        // Tuỳ chỉnh field name theo cấu trúc database của bạn
+        return userData?['name'] ??
+            userData?['userName'] ??
+            userData?['displayName'] ??
+            'Người dùng';
+      }
+
+      return 'Người dùng';
+    } catch (e) {
+      print('❌ Lỗi khi lấy tên người dùng: $e');
+      return 'Người dùng';
+    }
+  }
+
   // ==================== UI WIDGETS ====================
+  Future<void> _loadReviews() async {
+    try {
+      setState(() {
+        _isLoadingReviews = true;
+        _reviewsError = null;
+      });
+
+      final reviews = await _getProductReviewsData();
+
+      setState(() {
+        _reviews = reviews;
+        _isLoadingReviews = false;
+      });
+
+      print('✅ DEBUG - Đã load ${_reviews.length} reviews vào state');
+    } catch (e) {
+      setState(() {
+        _reviewsError = e.toString();
+        _isLoadingReviews = false;
+      });
+      print('❌ DEBUG - Lỗi load reviews: $e');
+    }
+  }
+
+  // Sửa lại widget dùng state
+  Widget _buildRatingOverview() {
+    if (_isLoadingReviews) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_reviewsError != null) {
+      return Center(
+        child: Text(
+          'Lỗi tải đánh giá: $_reviewsError',
+          style: const TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    if (_reviews.isEmpty) {
+      return const Center(
+        child: Text(
+          'Chưa có đánh giá nào',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    print('🎯 DEBUG - Hiển thị ${_reviews.length} reviews');
+
+    double totalRating = 0;
+    final ratingCounts = List.filled(5, 0);
+
+    for (final review in _reviews) {
+      final rating = review['rating'] as double;
+      totalRating += rating;
+
+      final starIndex = rating.floor() - 1;
+      if (starIndex >= 0 && starIndex < 5) {
+        ratingCounts[starIndex]++;
+      }
+    }
+
+    final averageRating = totalRating / _reviews.length;
+    final roundedRating = double.parse(averageRating.toStringAsFixed(1));
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Row(
+        children: [
+          // Điểm rating trung bình
+          Column(
+            children: [
+              Text(
+                roundedRating.toString(),
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber,
+                ),
+              ),
+              RatingBar.builder(
+                initialRating: roundedRating,
+                minRating: 1,
+                direction: Axis.horizontal,
+                allowHalfRating: true,
+                itemCount: 5,
+                itemSize: 16,
+                itemPadding: const EdgeInsets.symmetric(horizontal: 1.0),
+                itemBuilder:
+                    (context, _) => const Icon(Icons.star, color: Colors.amber),
+                onRatingUpdate: (_) {},
+                ignoreGestures: true,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${_reviews.length} đánh giá',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          const SizedBox(width: 24),
+
+          // Phân bố rating theo sao
+          Expanded(
+            child: Column(
+              children:
+                  List.generate(5, (index) {
+                    final starCount = 5 - index;
+                    final count = ratingCounts[4 - index];
+                    final percentage =
+                        _reviews.isNotEmpty
+                            ? (count / _reviews.length) * 100
+                            : 0;
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        children: [
+                          Text(
+                            '$starCount',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          const Icon(Icons.star, size: 14, color: Colors.amber),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: LinearProgressIndicator(
+                              value: percentage / 100,
+                              backgroundColor: Colors.grey[300],
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                Colors.amber,
+                              ),
+                              minHeight: 6,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${percentage.toStringAsFixed(0)}%',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).reversed.toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewsList() {
+    if (_isLoadingReviews || _reviews.isEmpty) {
+      return const SizedBox();
+    }
+
+    return Column(
+      children: [
+        ..._reviews.take(5).map((review) {
+          return _buildReviewItem(review);
+        }).toList(),
+
+        if (_reviews.length > 5)
+          TextButton(
+            onPressed: () {
+              _showAllReviews();
+            },
+            child: const Text('Xem tất cả đánh giá'),
+          ),
+      ],
+    );
+  }
 
   Widget _buildCartIcon() {
     return StreamBuilder<int>(
@@ -476,7 +753,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${widget.product.shopProduct.rating ?? 0}',
+                          '${_getSyncedRating()}',
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -488,7 +765,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    "(${widget.product.shopProduct.sold ?? 0} đánh giá)",
+                    "(${_reviews.length ?? 0} đánh giá)",
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
@@ -506,6 +783,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               _buildQuantitySelector(),
               const SizedBox(height: 20),
               _buildDescription(),
+              const SizedBox(height: 20),
+              _buildProductReviews(),
               const SizedBox(height: 20),
             ],
           ),
@@ -642,6 +921,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                 ? selectedVariant.imageUrls
                 : '',
         addedAt: DateTime.now(),
+        shopProductId: widget.product.shopProduct.shopproductID,
       );
 
       // Điều hướng đến checkout với sản phẩm đã chọn
@@ -664,5 +944,121 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         ),
       );
     }
+  }
+  // ==================== REVIEW WIDGETS ====================
+
+  // ==================== REVIEW WIDGETS ====================
+
+  Widget _buildProductReviews() {
+    return Container(
+      margin: const EdgeInsets.only(top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Đánh giá sản phẩm',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+
+          // Hiển thị tổng quan rating
+          _buildRatingOverview(),
+          const SizedBox(height: 16),
+
+          // Danh sách đánh giá
+          _buildReviewsList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewItem(Map<String, dynamic> review) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Thông tin người đánh giá và rating
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                review['userName'],
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              RatingBar.builder(
+                initialRating: review['rating'],
+                minRating: 1,
+                direction: Axis.horizontal,
+                allowHalfRating: true,
+                itemCount: 5,
+                itemSize: 16,
+                itemPadding: const EdgeInsets.symmetric(horizontal: 1.0),
+                itemBuilder:
+                    (context, _) => const Icon(Icons.star, color: Colors.amber),
+                onRatingUpdate: (_) {},
+                ignoreGestures: true,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // Nội dung đánh giá
+          if (review['reviewText'] != null &&
+              (review['reviewText'] as String).isNotEmpty)
+            Text(review['reviewText'], style: const TextStyle(fontSize: 14)),
+
+          const SizedBox(height: 8),
+
+          // Ngày đánh giá
+          Text(
+            _formatReviewDate((review['createdAt'] as Timestamp).toDate()),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatReviewDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 30) {
+      return '${date.day}/${date.month}/${date.year}';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} ngày trước';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} giờ trước';
+    } else {
+      return 'Vừa xong';
+    }
+  }
+
+  void _showAllReviews() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Tất cả đánh giá'),
+            content: const Text('Tính năng đang phát triển'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Đóng'),
+              ),
+            ],
+          ),
+    );
   }
 }

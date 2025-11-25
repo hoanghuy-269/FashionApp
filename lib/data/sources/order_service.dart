@@ -46,6 +46,7 @@ class OrderService {
               voucherId: orderRequest.voucherCode ?? '',
               imageUrl: cartItem.imageUrl,
               cartId: cartItem.cartItemId,
+              shopProductId: cartItem.shopProductId,
             );
           }).toList();
 
@@ -176,5 +177,25 @@ class OrderService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     });
+  }
+
+  Future<String?> _findShopProductId(String productId, String shopId) async {
+    try {
+      final shopProductsSnapshot =
+          await _firestore
+              .collection('shop_products')
+              .where('productID', isEqualTo: productId)
+              .where('shopId', isEqualTo: shopId)
+              .limit(1)
+              .get();
+
+      if (shopProductsSnapshot.docs.isNotEmpty) {
+        return shopProductsSnapshot.docs.first.id;
+      }
+      return null;
+    } catch (e) {
+      print('❌ Lỗi khi tìm shopProductId: $e');
+      return null;
+    }
   }
 }
