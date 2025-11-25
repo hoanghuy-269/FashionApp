@@ -49,6 +49,42 @@ class ProductDetailHelper {
     }
   }
 
+  // Trong ProductDetailHelper class
+  Future<QuerySnapshot> getProductReviewsFuture(String shopProductId) async {
+    try {
+      print('🔄 Đang lấy reviews cho shopProductId: $shopProductId');
+
+      final result =
+          await FirebaseFirestore.instance
+              .collection('shop_product_reviews')
+              .where('shopProductId', isEqualTo: shopProductId)
+              .orderBy('createdAt', descending: true)
+              .get();
+
+      print('✅ Lấy được ${result.docs.length} reviews');
+
+      // Debug: in ra từng review
+      for (final doc in result.docs) {
+        final data = doc.data();
+        print('📝 Review: ${data['rating']} sao - "${data['reviewText']}"');
+      }
+
+      return result;
+    } catch (e) {
+      print('❌ Lỗi khi lấy reviews: $e');
+      rethrow;
+    }
+  }
+
+  // Giữ lại stream method nếu cần real-time updates
+  Stream<QuerySnapshot> getProductReviewsStream(String shopProductId) {
+    return FirebaseFirestore.instance
+        .collection('shop_product_reviews')
+        .where('shopProductId', isEqualTo: shopProductId)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
   /// Load tất cả sizes từ collection sizes
   Future<void> loadAllSizes() async {
     final snapshot = await _firestore.collection('sizes').get();

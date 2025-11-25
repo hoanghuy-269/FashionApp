@@ -104,6 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
           selectedVariant.imageUrls, // selectedVariant.imageUrls là String
         ),
         addedAt: DateTime.now(),
+        shopProductId: product.shopProduct.shopproductID,
       );
 
       Navigator.push(
@@ -251,6 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
           selectedVariant.imageUrls, // selectedVariant.imageUrls là String
         ),
         addedAt: DateTime.now(),
+        shopProductId: product.shopProduct.shopproductID,
       );
 
       runAddToCartAnimation();

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class CartItem {
   final String cartItemId;
   final String productId;
+  final String shopProductId; // THÊM DÒNG NÀY
   final String productName;
   final String variantId;
   final String shopId;
@@ -17,6 +18,7 @@ class CartItem {
   CartItem({
     required this.cartItemId,
     required this.productId,
+    required this.shopProductId, // THÊM VÀO CONSTRUCTOR
     required this.productName,
     required this.variantId,
     required this.shopId,
@@ -33,6 +35,7 @@ class CartItem {
     return {
       'cartItemId': cartItemId,
       'productId': productId,
+      'shopProductId': shopProductId, // THÊM VÀO TO MAP
       'productName': productName,
       'variantId': variantId,
       'shopId': shopId,
@@ -52,6 +55,7 @@ class CartItem {
     return CartItem(
       cartItemId: data['cartItemId'] ?? '',
       productId: data['productId'] ?? '',
+      shopProductId: data['shopProductId'] ?? '', // THÊM VÀO FROM MAP
       productName: data['productName'] ?? '',
       variantId: data['variantId'] ?? '',
       shopId: data['shopId'] ?? '',
@@ -71,4 +75,37 @@ class CartItem {
   }
 
   String get uniqueKey => '$productId-$variantId-$sizeId';
+
+  // Có thể thêm copyWith nếu cần
+  CartItem copyWith({
+    String? cartItemId,
+    String? productId,
+    String? shopProductId,
+    String? productName,
+    String? variantId,
+    String? shopId,
+    String? colorId,
+    String? sizeId,
+    double? price,
+    int? quantity,
+    String? imageUrl,
+    String? userId,
+    DateTime? addedAt,
+  }) {
+    return CartItem(
+      cartItemId: cartItemId ?? this.cartItemId,
+      productId: productId ?? this.productId,
+      shopProductId: shopProductId ?? this.shopProductId,
+      productName: productName ?? this.productName,
+      variantId: variantId ?? this.variantId,
+      shopId: shopId ?? this.shopId,
+      colorId: colorId ?? this.colorId,
+      sizeId: sizeId ?? this.sizeId,
+      price: price ?? this.price,
+      quantity: quantity ?? this.quantity,
+      imageUrl: imageUrl ?? this.imageUrl,
+      userId: userId ?? this.userId,
+      addedAt: addedAt ?? this.addedAt,
+    );
+  }
 }
