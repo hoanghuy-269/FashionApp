@@ -1,6 +1,6 @@
 import 'package:fashion_app/data/models/colors_model.dart';
 import 'package:fashion_app/viewmodels/colors_viewmodel.dart';
-import 'package:fashion_app/views/shop/dialog_addcolor.dart';
+import 'package:fashion_app/views/admin/dialog_addcolor.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,19 +14,17 @@ class Builldcolor extends StatefulWidget {
 }
 
 class _BuilldcolorState extends State<Builldcolor> {
-  final List<ColorsModel> _localSelected = [];
+  List<ColorsModel> _selectedColors = []; // Chỉ lưu tạm để hiển thị UI
+
   @override
   Widget build(BuildContext context) {
-   return Consumer<ColorsViewmodel>(
+    return Consumer<ColorsViewmodel>(
       builder: (context, colorVM, child) {
         final colors = colorVM.colors;
 
         if (colorVM.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
-        // if (colors.isEmpty) {
-        //   return const Text("Chưa có màu nào, hãy thêm mới!");
-        // }
 
         return Wrap(
           spacing: 8,
@@ -36,20 +34,20 @@ class _BuilldcolorState extends State<Builldcolor> {
               final colorValue = Color(
                 int.parse(color.hexCode.substring(1), radix: 16) + 0xFF000000,
               );
-              final isSelected = _localSelected.any((c) => c.colorID == color.colorID);
+              final isSelected = _selectedColors.any((c) => c.colorID == color.colorID);
+              
               return GestureDetector(
                 onTap: () {
                   setState(() {
                     if (isSelected) {
-                      _localSelected.removeWhere((c) => c.colorID == color.colorID);
+                      _selectedColors.removeWhere((c) => c.colorID == color.colorID);
                     } else {
-                      _localSelected.add(color);
+                      _selectedColors.add(color);
                     }
                   });
 
-                  if (widget.onColorsSelected != null) {
-                    widget.onColorsSelected!(_localSelected);
-                  }
+                  // Gọi callback để thông báo cho parent
+                  widget.onColorsSelected?.call(_selectedColors);
                 },
                 child: Container(
                   width: 40,
@@ -72,17 +70,11 @@ class _BuilldcolorState extends State<Builldcolor> {
             // Ô thêm màu mới
             GestureDetector(
               onTap: () async {
-                final newColor = await showDialog(
+                await showDialog(
                   context: context,
                   builder: (_) => const DialogAddcolor(),
                 );
-
-                if (newColor != null) {
-                  Provider.of<ColorsViewmodel>(
-                    context,
-                    listen: false,
-                  ).addColor(newColor['name'], newColor['hexCode']);
-                }
+                
               },
               child: Container(
                 width: 40,

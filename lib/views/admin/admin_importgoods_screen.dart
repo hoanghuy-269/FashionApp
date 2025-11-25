@@ -30,14 +30,10 @@ class AdminImportgoodsScreen extends StatefulWidget {
 
 class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
   final nameController = TextEditingController();
-  final descriptionController = TextEditingController();
 
-  // Lưu ảnh theo màu
-  Map<String, File?> selectedImagesByColor = {};
-
-  // THAY ĐỔI: Lưu sizes theo từng màu (List structure)
-  Map<String, List<SizesModel>> selectedSizesByColor = {};
-  // colorID -> [SizesModel]
+  // Lưu theo index thay vì colorID
+  Map<int, File?> selectedImagesByColorIndex = {};
+  Map<int, List<SizesModel>> selectedSizesByColorIndex = {};
 
   BrandsModel? selectedBrand;
   CategoryModel? selectedCategory;
@@ -54,11 +50,11 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
     });
   }
 
-  Future<void> pickImageForColor(String colorID) async {
+  Future<void> pickImageForColor(int colorIndex) async {
     final image = await showPickImageBottomSheet(context);
     if (image != null) {
       setState(() {
-        selectedImagesByColor[colorID] = image;
+        selectedImagesByColorIndex[colorIndex] = image;
       });
     }
   }
@@ -83,14 +79,15 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
     }
 
     // Validate từng màu phải có ít nhất 1 size và 1 ảnh
-    for (var color in selectedColors) {
-      final sizes = selectedSizesByColor[color.colorID];
+    for (int i = 0; i < selectedColors.length; i++) {
+      final color = selectedColors[i];
+      final sizes = selectedSizesByColorIndex[i];
       if (sizes == null || sizes.isEmpty) {
         _showError('Vui lòng chọn ít nhất 1 size cho màu ${color.name}');
         return;
       }
 
-      if (selectedImagesByColor[color.colorID] == null) {
+      if (selectedImagesByColorIndex[i] == null) {
         _showError('Vui lòng chọn ảnh cho màu ${color.name}');
         return;
       }
@@ -120,10 +117,11 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
         throw Exception('Lỗi tạo sản phẩm');
       }
 
-      // 2. Tạo ProductDetail cho từng màu (với Map sizes)
-      for (final color in selectedColors) {
-        final sizesMap = selectedSizesByColor[color.colorID]!;
-        final imageFile = selectedImagesByColor[color.colorID]!;
+      // 2. Tạo ProductDetail cho từng màu
+      for (int i = 0; i < selectedColors.length; i++) {
+        final color = selectedColors[i];
+        final sizesMap = selectedSizesByColorIndex[i]!;
+        final imageFile = selectedImagesByColorIndex[i]!;
 
         // Upload ảnh
         final imageUrl = await GalleryUtil.uploadImageToFirebase(
@@ -135,16 +133,16 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
           throw Exception('Lỗi tải lên hình ảnh cho màu ${color.name}');
         }
 
-        // Convert List<SizesModel> -> List<String> cho sizeIDs
+        // Convert List<SizesModel> -> List<String>
         final sizeIDs = sizesMap.map((s) => s.sizeID).toList();
 
-        // Tạo ProductDetail với List sizeIDs
+        // Tạo ProductDetail
         final productDetail = ProductsdetailModel(
           productsDetailID: "",
           productID: productId,
           colorID: color.colorID,
           imageUrls: imageUrl,
-          sizeIDs: sizeIDs, // List: [size_s, size_m]
+          sizeIDs: sizeIDs,
         );
 
         await context.read<ProductDetailViewModel>().addProductDetail(
@@ -154,7 +152,7 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
       }
 
       Navigator.of(context).pop(); // Close loading
-      _showSuccess(' Lưu sản phẩm thành công!');
+      _showSuccess('Lưu sản phẩm thành công!');
       Navigator.of(context).pop(); // Back to previous screen
     } catch (e) {
       Navigator.of(context).pop(); // Close loading
@@ -163,15 +161,15 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+    );
   }
 
   void _showSuccess(String msg) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.green));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.green),
+    );
   }
 
   @override
@@ -188,7 +186,6 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
             children: [
               _buildHeader(),
               const SizedBox(height: 20),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
@@ -197,11 +194,11 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
                     brandVM.isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : Buildbranchdropdown(
-                          onBrandSelected:
-                              (b) => setState(() => selectedBrand = b),
-                        ),
+                            onBrandSelected: (b) => setState(() => selectedBrand = b),
+                          ),
                     const SizedBox(height: 20),
 
+                    // Tên sản phẩm
                     _buildTextField(
                       label: 'Tên sản phẩm',
                       controller: nameController,
@@ -213,63 +210,44 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
                     categoryVM.isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : Buildcategorydropdown(
-                          onCategorySelected:
-                              (c) => setState(() => selectedCategory = c),
-                        ),
+                            onCategorySelected: (c) => setState(() => selectedCategory = c),
+                          ),
                     const SizedBox(height: 20),
 
                     // Màu
                     const Text(
                       'Chọn Màu',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     colorVM.isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : Builldcolor(
-                          onColorsSelected: (colors) {
-                            setState(() {
-                              selectedColors = colors;
+                            onColorsSelected: (colors) {
+                              setState(() {
+                                // Lưu data cũ
+                                final oldImages = Map<int, File?>.from(selectedImagesByColorIndex);
+                                final oldSizes = Map<int, List<SizesModel>>.from(selectedSizesByColorIndex);
 
-                              // Cập nhật map ảnh và sizes cho từng màu
-                              for (var color in selectedColors) {
-                                selectedImagesByColor.putIfAbsent(
-                                  color.colorID,
-                                  () => null,
-                                );
-                                selectedSizesByColor.putIfAbsent(
-                                  color.colorID,
-                                  () => [],
-                                );
-                              }
+                                selectedColors = colors;
 
-                              // Xóa màu không còn chọn
-                              selectedImagesByColor.removeWhere(
-                                (key, _) =>
-                                    !selectedColors.any(
-                                      (c) => c.colorID == key,
-                                    ),
-                              );
-                              selectedSizesByColor.removeWhere(
-                                (key, _) =>
-                                    !selectedColors.any(
-                                      (c) => c.colorID == key,
-                                    ),
-                              );
-                            });
-                          },
-                        ),
+                                // Reset và khởi tạo lại
+                                selectedImagesByColorIndex.clear();
+                                selectedSizesByColorIndex.clear();
 
+                                for (int i = 0; i < selectedColors.length; i++) {
+                                  selectedImagesByColorIndex[i] = oldImages[i];
+                                  selectedSizesByColorIndex[i] = oldSizes[i] ?? [];
+                                }
+                              });
+                            },
+                          ),
                     const SizedBox(height: 20),
-                    Text(
-                      "Thêm Size ",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+
+                    // Thêm Size
+                    const Text(
+                      "Thêm Size",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -282,23 +260,27 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
                       ),
                       child: IconButton(
                         onPressed: () {
+                          if (selectedCategory == null) {
+                            _showError('Vui lòng chọn danh mục trước');
+                            return;
+                          }
                           showDialog(
                             context: context,
-                            builder:
-                                (_) => AddsizeDialog(
-                                  selectedCategory: selectedCategory!,
-                                ),
+                            builder: (_) => AddsizeDialog(
+                              selectedCategory: selectedCategory!,
+                            ),
                           );
                         },
-                        icon: Icon(Icons.add, color: Colors.black),
+                        icon: const Icon(Icons.add, color: Colors.black),
                       ),
                     ),
                     const SizedBox(height: 20),
 
-                    // Hiển thị từng màu với ảnh và sizes
+                    // Hiển thị từng màu
                     if (selectedColors.isNotEmpty)
-                      ...selectedColors.map(
-                        (color) => _buildColorSection(color),
+                      ...List.generate(
+                        selectedColors.length,
+                        (index) => _buildColorSection(selectedColors[index], index),
                       ),
                   ],
                 ),
@@ -310,10 +292,8 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
     );
   }
 
-  // Build section cho từng màu
-  Widget _buildColorSection(ColorsModel color) {
-    final image = selectedImagesByColor[color.colorID];
-    final selectedSizesList = selectedSizesByColor[color.colorID] ?? [];
+  Widget _buildColorSection(ColorsModel color, int colorIndex) {
+    final image = selectedImagesByColorIndex[colorIndex];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -332,9 +312,7 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: Color(
-                    int.parse(color.hexCode.replaceFirst('#', '0xFF')),
-                  ),
+                  color: Color(int.parse(color.hexCode.replaceFirst('#', '0xFF'))),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.grey),
                 ),
@@ -342,80 +320,56 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
               const SizedBox(width: 8),
               Text(
                 color.name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-
           const SizedBox(height: 12),
 
           // Image picker
           GestureDetector(
-            onTap: () => pickImageForColor(color.colorID),
+            onTap: () => pickImageForColor(colorIndex),
             child: Container(
               width: double.infinity,
               height: 150,
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey),
                 borderRadius: BorderRadius.circular(10),
-                image:
-                    image != null
-                        ? DecorationImage(
-                          image: FileImage(image),
-                          fit: BoxFit.cover,
-                        )
-                        : null,
+                image: image != null
+                    ? DecorationImage(image: FileImage(image), fit: BoxFit.cover)
+                    : null,
               ),
-              child:
-                  image == null
-                      ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_a_photo,
-                              size: 40,
-                              color: Colors.grey,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Chọn ảnh',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      )
-                      : Stack(
+              child: image == null
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: GestureDetector(
-                              onTap:
-                                  () => setState(
-                                    () =>
-                                        selectedImagesByColor[color.colorID] =
-                                            null,
-                                  ),
-                              child: const CircleAvatar(
-                                radius: 14,
-                                backgroundColor: Colors.black54,
-                                child: Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                          ),
+                          Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
+                          SizedBox(height: 8),
+                          Text('Chọn ảnh', style: TextStyle(color: Colors.grey)),
                         ],
                       ),
+                    )
+                  : Stack(
+                      children: [
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () => setState(
+                              () => selectedImagesByColorIndex[colorIndex] = null,
+                            ),
+                            child: const CircleAvatar(
+                              radius: 14,
+                              backgroundColor: Colors.black54,
+                              child: Icon(Icons.close, color: Colors.white, size: 18),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
-
           const SizedBox(height: 12),
 
           // Size selector
@@ -427,19 +381,17 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
             selectedCategory: selectedCategory,
             onSizeToggled: (size, selected) {
               setState(() {
-                final list = selectedSizesByColor[color.colorID] ?? [];
+                final list = selectedSizesByColorIndex[colorIndex] ?? [];
 
                 if (selected) {
-                  // Thêm size nếu chưa có
                   if (!list.any((s) => s.sizeID == size.sizeID)) {
                     list.add(size);
                   }
                 } else {
-                  // Xóa size
                   list.removeWhere((s) => s.sizeID == size.sizeID);
                 }
 
-                selectedSizesByColor[color.colorID] = list;
+                selectedSizesByColorIndex[colorIndex] = list;
               });
             },
           ),
@@ -449,44 +401,45 @@ class _AdminImportgoodsScreenState extends State<AdminImportgoodsScreen> {
   }
 
   Widget _buildHeader() => Row(
-    children: [
-      IconButton(
-        onPressed: () => Navigator.pop(context),
-        icon: const Icon(Icons.arrow_back, size: 30),
-      ),
-      const Spacer(),
-      const Text(
-        'Sản phẩm mới',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
-      const Spacer(),
-      IconButton(
-        onPressed: saveImportGoods,
-        icon: const Icon(Icons.check, size: 30, color: Colors.green),
-      ),
-    ],
-  );
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, size: 30),
+          ),
+          const Spacer(),
+          const Text(
+            'Sản phẩm mới',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: saveImportGoods,
+            icon: const Icon(Icons.check, size: 30, color: Colors.green),
+          ),
+        ],
+      );
 
   Widget _buildTextField({
     required String label,
     TextEditingController? controller,
     IconData? icon,
-  }) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 8),
-      TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          hintText: 'Nhập $label',
-          border: const OutlineInputBorder(),
-          prefixIcon: icon != null ? Icon(icon, color: Colors.blue) : null,
-        ),
-      ),
-    ],
-  );
+  }) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: 'Nhập $label',
+              border: const OutlineInputBorder(),
+              prefixIcon: icon != null ? Icon(icon, color: Colors.blue) : null,
+            ),
+          ),
+        ],
+      );
 }
